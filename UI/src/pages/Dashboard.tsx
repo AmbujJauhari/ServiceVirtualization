@@ -77,10 +77,6 @@ const protocols = [
 const Dashboard: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Service Virtualization Dashboard</h1>
-        <p className="text-lg text-gray-600">Manage your virtual services across multiple protocols</p>
-      </div>
 
       <section>
         <h2 className="text-xl font-semibold text-gray-700 mb-4">Available Protocols</h2>

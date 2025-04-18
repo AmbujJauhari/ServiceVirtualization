@@ -15,9 +15,7 @@ const RestDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-800">REST API Management</h1>
         </div>
-        <p className="text-gray-600 mb-6">Configure and manage REST API virtual services</p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">

@@ -44,7 +44,8 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
     responseHeaders: [{ key: '', value: '' }],
     responseBody: '',
     responseBodyType: 'json',
-    callbackUrl: ''
+    callbackUrl: '',
+    callbackMethod: 'POST'
   });
   
   // Extract unique methods from stubs data
@@ -77,9 +78,19 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
         const response = existingStub.response || {};
         
         // Determine response type
-        const isCallbackResponse = !!response.callbackUrl;
+        const isCallbackResponse = !!response.callback;
         
         setResponseType(isCallbackResponse ? 'callback' : 'direct');
+        
+        // Extract callback data if present
+        let callbackUrl = '';
+        let callbackMethod = 'POST';
+        
+        if (isCallbackResponse && response.callback) {
+          const callback = response.callback;
+          callbackUrl = callback.url || '';
+          callbackMethod = callback.method || 'POST';
+        }
         
         // Map existing data to form structure
         setFormData({
@@ -125,7 +136,8 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                   ? 'html' 
                   : 'text'
             : 'json',
-          callbackUrl: response.callbackUrl || ''
+          callbackUrl,
+          callbackMethod
         });
       } catch (error) {
         console.error('Error loading stub data:', error);
@@ -187,10 +199,10 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
     });
   };
 
-  const removeArrayItem = (field: 'requestHeaders' | 'responseHeaders' | 'requestQueryParams', index: number) => {
+  const removeArrayItem = (field: 'requestHeaders' | 'responseHeaders' | 'requestQueryParams') => {
     setFormData({
       ...formData,
-      [field]: formData[field].filter((_, i) => i !== index)
+      [field]: formData[field].filter((_, i) => i !== 0)
     });
   };
 
@@ -262,8 +274,14 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
         contentType
       };
     } else {
+      // Format callback data
+      const callback: Record<string, any> = {
+        url: formData.callbackUrl,
+        method: formData.callbackMethod
+      };
+      
       response = {
-        callbackUrl: formData.callbackUrl
+        callback: callback
       };
     }
     
@@ -590,7 +608,7 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                     <div className="col-span-1">
                       <button
                         type="button"
-                        onClick={() => removeArrayItem('requestHeaders', index)}
+                        onClick={() => removeArrayItem('requestHeaders')}
                         className="text-red-600 hover:text-red-900 p-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -650,7 +668,7 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                     <div className="col-span-1">
                       <button
                         type="button"
-                        onClick={() => removeArrayItem('requestQueryParams', index)}
+                        onClick={() => removeArrayItem('requestQueryParams')}
                         className="text-red-600 hover:text-red-900 p-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -762,23 +780,23 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                     </div>
                   </>
                 ) : (
-                  <div>
-                    <label htmlFor="callbackUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                      Callback URL <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      id="callbackUrl"
-                      name="callbackUrl"
-                      value={formData.callbackUrl}
-                      onChange={handleInputChange}
-                      placeholder="https://your-callback-endpoint.com/api"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      required={responseType === 'callback'}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      The request will be forwarded to this URL, and its response will be returned.
-                    </p>
+                  <div className="bg-gray-50 p-4 rounded-md mt-4">
+                    <div className="mb-4">
+                      <label htmlFor="callbackUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                        Callback URL <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="callbackUrl"
+                        name="callbackUrl"
+                        value={formData.callbackUrl}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://your-service.com/webhook"
+                        required={responseType === 'callback'}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">The URL that will be called when this stub is matched</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -822,7 +840,7 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                         <div className="col-span-1">
                           <button
                             type="button"
-                            onClick={() => removeArrayItem('responseHeaders', index)}
+                            onClick={() => removeArrayItem('responseHeaders')}
                             className="text-red-600 hover:text-red-900 p-2"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

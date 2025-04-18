@@ -168,8 +168,6 @@ public class RestStubService {
         }
     }
 
-
-
     /**
      * Register stub with WireMock server
      */
@@ -214,17 +212,8 @@ public class RestStubService {
             addResponseHeaders(responseBuilder, stub);
         }
 
-        // Add response body if present
-        String responseBody = getResponseBody(stub);
-        if (responseBody != null) {
-            responseBuilder.withBody(responseBody);
-        }
-
-        // Add content type if present
-        String contentType = getResponseContentType(stub);
-        if (contentType != null && !contentType.isEmpty()) {
-            responseBuilder.withHeader("Content-Type", contentType);
-        }
+        // Check if this is a callback response
+        checkForCallback(stub);
 
         // Register with WireMock
         mappingBuilder.willReturn(responseBuilder);
@@ -375,5 +364,31 @@ public class RestStubService {
             }
         }
         return 200;
+    }
+
+    private void checkForCallback(RestStub stub) {
+        Map<String, Object> response = stub.response();
+        if (response != null && response.containsKey("callback")) {
+            Map<String, Object> callback = (Map<String, Object>) response.get("callback");
+            String callbackUrl = (String) callback.get("url");
+            String callbackMethod = (String) callback.getOrDefault("method", "POST");
+
+            // This will store the original callback data
+            response.put("_original_callback", Map.of(
+                "url", callbackUrl,
+                "method", callbackMethod
+            ));
+
+            // Configure a simple response that indicates a callback will be made
+            response.put("body", "Callback will be forwarded to " + callbackUrl);
+            response.put("headers", Map.of(
+                "Content-Type", "text/plain",
+                "X-Callback-Url", callbackUrl,
+                "X-Callback-Method", callbackMethod,
+                "X-Callback-Type", "forward-request"
+            ));
+
+            logger.info("Configured callback forwarding to {} with method {}", callbackUrl, callbackMethod);
+        }
     }
 } 
