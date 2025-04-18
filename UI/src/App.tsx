@@ -2,9 +2,7 @@ import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import RestDashboard from './pages/rest/RestDashboard';
-import RecordingDetail from './pages/rest/recordings/RecordingDetail';
 import StubForm from './pages/rest/stubs/StubForm';
-import RecordingConfigForm from './pages/rest/configs/RecordingConfigForm';
 import { MainLayout } from './components/layout/MainLayout';
 
 const App: React.FC = () => {
@@ -66,10 +64,8 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/rest" element={<RestDashboard />} />
-        <Route path="/rest/recordings/:id" element={<RecordingDetail />} />
         <Route path="/rest/stubs/new" element={<StubForm />} />
         <Route path="/rest/stubs/:id/edit" element={<StubForm isEdit={true} />} />
-        <Route path="/rest/configs/new" element={<RecordingConfigForm />} />
       </Routes>
     </MainLayout>
   );

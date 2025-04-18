@@ -2,10 +2,9 @@ package com.service.virtualization.rest.controller;
 
 import com.service.virtualization.dto.DtoConverter;
 import com.service.virtualization.model.RestStub;
-import com.service.virtualization.model.Stub;
 import com.service.virtualization.dto.RestStubDTO;
 import com.service.virtualization.model.StubStatus;
-import com.service.virtualization.rest.service.impl.RestStubService;
+import com.service.virtualization.rest.service.RestStubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -135,15 +134,4 @@ public class RestStubController {
                 })
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stub not found with ID: " + id));
     }
-//
-//    /**
-//     * Convert a recording to a stub
-//     */
-//    @PostMapping("/convert-recording/{recordingId}")
-//    public ResponseEntity<RestStubDTO> convertRecordingToStub(@PathVariable String recordingId) {
-//        logger.debug("Converting recording to stub: {}", recordingId);
-//        Stub stub = restStubService.convertRecordingToStub(recordingId);
-//        return ResponseEntity.status(HttpStatus.CREATED)
-//                .body(RestStubDTO.fromStub(stub));
-//    }
-} 
+}

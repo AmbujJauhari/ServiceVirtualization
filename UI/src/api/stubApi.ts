@@ -21,11 +21,11 @@ export const stubApi = createApi({
   tagTypes: ['Stub'],
   endpoints: (builder) => ({
     getStubs: builder.query<Stub[], void>({
-      query: () => '/stubs',
+      query: () => '/rest/stubs',
       providesTags: ['Stub'],
     }),
     getStubById: builder.query<Stub, string>({
-      query: (id) => `/stubs/${id}`,
+      query: (id) => `/rest/stubs/${id}`,
       providesTags: (result, error, id) => [{ type: 'Stub', id }],
     }),
     createStub: builder.mutation<Stub, Partial<Stub>>({
@@ -38,7 +38,7 @@ export const stubApi = createApi({
     }),
     updateStub: builder.mutation<Stub, Stub>({
       query: (stub) => ({
-        url: `/stubs/${stub.id}`,
+        url: `/rest/stubs/${stub.id}`,
         method: 'PUT',
         body: stub,
       }),
@@ -46,21 +46,21 @@ export const stubApi = createApi({
     }),
     deleteStub: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/stubs/${id}`,
+        url: `/rest/stubs/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Stub'],
     }),
     updateActiveStatus: builder.mutation<Stub, { id: string; active: boolean }>({
       query: ({ id, active }) => ({
-        url: `/stubs/${id}/active`,
+        url: `/rest/stubs/${id}/active`,
         method: 'PATCH',
         params: { active },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Stub', id }],
     }),
     getStubsByTag: builder.query<Stub[], string>({
-      query: (tag) => `/stubs/tag/${tag}`,
+      query: (tag) => `/rest/stubs/tag/${tag}`,
       providesTags: ['Stub'],
     }),
   }),

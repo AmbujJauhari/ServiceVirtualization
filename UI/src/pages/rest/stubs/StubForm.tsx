@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useCreateStubMutation, useGetStubByIdQuery, useUpdateStubMutation } from '../../../api/stubApi';
+import { useCreateStubMutation, useGetStubByIdQuery, useUpdateStubMutation, useGetStubsQuery } from '../../../api/stubApi';
 
 interface StubFormProps {
   isEdit?: boolean;
@@ -16,6 +16,12 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
   const { data: existingStub, isLoading: isLoadingStub } = useGetStubByIdQuery(id ?? '', { 
     skip: !isEdit || !id 
   });
+  const { data: stubs } = useGetStubsQuery();
+  
+  // State for available methods
+  const [availableMethods, setAvailableMethods] = useState<string[]>([
+    'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'ANY'
+  ]);
   
   // Form state
   const [activeSection, setActiveSection] = useState<'request' | 'response'>('request');
@@ -40,6 +46,22 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
     responseBodyType: 'json',
     callbackUrl: ''
   });
+  
+  // Extract unique methods from stubs data
+  useEffect(() => {
+    if (stubs && stubs.length > 0) {
+      // Get methods from existing stubs
+      const methodsFromStubs = stubs
+        .map(stub => stub.matchConditions?.method || 'ANY')
+        .filter((method, index, self) => self.indexOf(method) === index);
+      
+      // Combine with standard methods and remove duplicates
+      const standardMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'ANY'];
+      const allMethods = [...new Set([...methodsFromStubs, ...standardMethods])].sort();
+      
+      setAvailableMethods(allMethods);
+    }
+  }, [stubs]);
   
   // State for managing tag input
   const [tagInput, setTagInput] = useState('');
@@ -397,45 +419,50 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                     value={tagInput}
                     onChange={handleTagInputChange}
                     onKeyDown={handleTagKeyDown}
+                    className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Add tag and press Enter"
-                    className="flex-grow px-3 py-2 border border-gray-300 rounded-l-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                   />
                   <button
                     type="button"
                     onClick={addTag}
-                    className="bg-primary-600 py-2 px-3 border border-primary-600 rounded-r-md shadow-sm text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
-                    Add
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
                   </button>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
-                    <div key={index} className="flex items-center bg-primary-100 text-primary-800 px-2 py-1 rounded-md text-sm">
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                    >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="ml-1 text-primary-600 hover:text-primary-900"
+                        className="ml-1.5 inline-flex text-primary-500 focus:outline-none"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                    </div>
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tabs for Request/Response */}
-          <div className="mb-6">
+          {/* Request & Response Tabs */}
+          <div className="mb-8">
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex">
+              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                 <button
                   type="button"
-                  className={`py-2 px-4 border-b-2 font-medium text-sm ${
-                    activeSection === 'request'
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                    ${activeSection === 'request' 
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -445,8 +472,8 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                 </button>
                 <button
                   type="button"
-                  className={`ml-8 py-2 px-4 border-b-2 font-medium text-sm ${
-                    activeSection === 'response'
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                    ${activeSection === 'response' 
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -476,14 +503,9 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       required
                     >
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="DELETE">DELETE</option>
-                      <option value="PATCH">PATCH</option>
-                      <option value="HEAD">HEAD</option>
-                      <option value="OPTIONS">OPTIONS</option>
-                      <option value="ANY">ANY</option>
+                      {availableMethods.map(method => (
+                        <option key={method} value={method}>{method}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="md:col-span-2">

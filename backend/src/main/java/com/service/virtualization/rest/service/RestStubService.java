@@ -1,4 +1,4 @@
-package com.service.virtualization.rest.service.impl;
+package com.service.virtualization.rest.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -6,11 +6,8 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import com.service.virtualization.model.Recording;
 import com.service.virtualization.model.RestStub;
-import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.repository.RestStubRepository;
-import com.service.virtualization.rest.service.RecordingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,14 +25,11 @@ public class RestStubService {
 
     private final RestStubRepository restStubRepository;
     private final WireMockServer wireMockServer;
-    private final RecordingService recordingService;
 
     public RestStubService(RestStubRepository restStubRepository,
-                           WireMockServer wireMockServer,
-                           RecordingService recordingService) {
+                           WireMockServer wireMockServer) {
         this.restStubRepository = restStubRepository;
         this.wireMockServer = wireMockServer;
-        this.recordingService = recordingService;
     }
 
     public RestStub createStub(RestStub stub) {
@@ -174,64 +168,7 @@ public class RestStubService {
         }
     }
 
-    public RestStub convertRecordingToStub(String recordingId) {
-        logger.info("Converting recording to stub: {}", recordingId);
 
-        // Find recording
-        Optional<Recording> recordingOpt = recordingService.findRecordingById(recordingId);
-        if (recordingOpt.isEmpty()) {
-            throw new IllegalArgumentException("Recording not found with ID: " + recordingId);
-        }
-
-        Recording recording = recordingOpt.get();
-
-        // Create stub from recording
-        Map<String, Object> requestData = new HashMap<>(recording.requestData());
-        Map<String, Object> responseData = new HashMap<>(recording.responseData());
-
-        RestStub stub = new RestStub(
-                UUID.randomUUID().toString(),
-                "Stub from recording: " + recording.name(),
-                "Created from recording ID: " + recordingId,
-                recording.userId(),
-                recording.behindProxy(),
-                recording.protocol().name(),
-                null,  // tags will be set after creation
-                StubStatus.ACTIVE,
-                LocalDateTime.now(),
-                LocalDateTime.now(),
-                null,  // wiremockMappingId will be set after creation
-                null,
-                null
-        );
-
-        // Save and register stub
-        RestStub savedStub = createStub(stub);
-
-        // Update recording status
-        Recording updatedRecording = new Recording(
-                recording.id(),
-                recording.name(),
-                recording.description(),
-                recording.userId(),
-                recording.behindProxy(),
-                recording.protocol(),
-                recording.protocolData(),
-                recording.createdAt(),
-                LocalDateTime.now(),
-                recording.sessionId(),
-                recording.recordedAt(),
-                true,  // convertedToStub = true
-                savedStub.id(),  // convertedStubId = savedStub.id()
-                recording.sourceIp(),
-                recording.requestData(),
-                recording.responseData()
-        );
-
-//        rec.save(updatedRecording);
-
-        return savedStub;
-    }
 
     /**
      * Register stub with WireMock server

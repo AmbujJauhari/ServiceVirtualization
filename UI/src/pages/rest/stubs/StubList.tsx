@@ -1,220 +1,159 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useGetStubsQuery, useUpdateStubMutation, useDeleteStubMutation } from '../../../api/stubApi';
 
 interface StubListProps {
   isEmbedded?: boolean;
 }
 
-interface Stub {
-  id: string;
-  name: string;
-  method: string;
-  url: string;
-  createdAt: string;
-  isActive: boolean;
-  responseStatus: number;
-  responseTime: number;
-}
-
-// Mock data for stubs
-const mockStubs: Stub[] = [
-  {
-    id: '1',
-    name: 'Get Users',
-    method: 'GET',
-    url: '/api/users',
-    createdAt: '2023-05-15T10:30:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 50
-  },
-  {
-    id: '2',
-    name: 'Get User By ID',
-    method: 'GET',
-    url: '/api/users/:id',
-    createdAt: '2023-05-15T11:45:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 30
-  },
-  {
-    id: '3',
-    name: 'Create User',
-    method: 'POST',
-    url: '/api/users',
-    createdAt: '2023-05-16T09:20:00Z',
-    isActive: false,
-    responseStatus: 201,
-    responseTime: 75
-  },
-  {
-    id: '4',
-    name: 'Update User',
-    method: 'PUT',
-    url: '/api/users/:id',
-    createdAt: '2023-05-16T14:10:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 40
-  },
-  {
-    id: '5',
-    name: 'Delete User',
-    method: 'DELETE',
-    url: '/api/users/:id',
-    createdAt: '2023-05-17T10:15:00Z',
-    isActive: false,
-    responseStatus: 204,
-    responseTime: 25
-  },
-  {
-    id: '6',
-    name: 'Authentication',
-    method: 'POST',
-    url: '/api/auth/login',
-    createdAt: '2023-05-17T16:30:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 60
-  },
-  {
-    id: '7',
-    name: 'Logout',
-    method: 'POST',
-    url: '/api/auth/logout',
-    createdAt: '2023-05-18T09:45:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 20
-  },
-  {
-    id: '8',
-    name: 'Get User Profile',
-    method: 'GET',
-    url: '/api/profile',
-    createdAt: '2023-05-18T13:20:00Z',
-    isActive: false,
-    responseStatus: 200,
-    responseTime: 35
-  },
-  {
-    id: '9',
-    name: 'Update User Profile',
-    method: 'PUT',
-    url: '/api/profile',
-    createdAt: '2023-05-19T11:10:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 45
-  },
-  {
-    id: '10',
-    name: 'Upload Profile Picture',
-    method: 'POST',
-    url: '/api/profile/picture',
-    createdAt: '2023-05-19T15:40:00Z',
-    isActive: true,
-    responseStatus: 201,
-    responseTime: 80
-  },
-  {
-    id: '11',
-    name: 'Get Products',
-    method: 'GET',
-    url: '/api/products',
-    createdAt: '2023-05-20T10:25:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 55
-  },
-  {
-    id: '12',
-    name: 'Get Product By ID',
-    method: 'GET',
-    url: '/api/products/:id',
-    createdAt: '2023-05-20T14:15:00Z',
-    isActive: true,
-    responseStatus: 200,
-    responseTime: 30
-  }
-];
-
 const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
-  const getMethodColor = (method: string) => {
-    switch (method) {
-      case 'GET':
-        return 'bg-blue-100 text-blue-800';
-      case 'POST':
-        return 'bg-green-100 text-green-800';
-      case 'PUT':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'DELETE':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // Fetch stubs from API
+  const { data: stubs, isLoading, error, refetch } = useGetStubsQuery();
+  const [updateStub] = useUpdateStubMutation();
+  const [deleteStub] = useDeleteStubMutation();
+  
+  // State for search and filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [methodFilter, setMethodFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [uniqueMethods, setUniqueMethods] = useState<string[]>([]);
+  
+  // Extract unique methods from stubs data
+  useEffect(() => {
+    if (stubs && stubs.length > 0) {
+      const methods = stubs
+        .map(stub => stub.matchConditions?.method || 'ANY')
+        .filter((method, index, self) => self.indexOf(method) === index)
+        .sort();
+      
+      setUniqueMethods(methods);
+    }
+  }, [stubs]);
+  
+  // Handle toggle active status
+  const handleToggleActive = async (stub: any) => {
+    try {
+      const updatedStatus = stub.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await updateStub({ 
+        ...stub, 
+        status: updatedStatus 
+      });
+      // Refetch to update the list
+      refetch();
+    } catch (error) {
+      console.error("Error toggling stub status:", error);
     }
   };
-
-  const getStatusColor = (status: number) => {
-    if (status >= 200 && status < 300) return 'bg-green-100 text-green-800';
-    if (status >= 300 && status < 400) return 'bg-blue-100 text-blue-800';
-    if (status >= 400 && status < 500) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+  
+  // Handle delete stub
+  const handleDeleteStub = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this stub?")) {
+      return;
+    }
+    
+    try {
+      await deleteStub(id);
+      // Refetch to update the list
+      refetch();
+    } catch (error) {
+      console.error("Error deleting stub:", error);
+    }
   };
-
-  return (
-    <div>
-      {!isEmbedded && (
-        <div className="flex justify-between items-center mb-6">
-          <Link to="/rest" className="text-primary-600 hover:text-primary-700 flex items-center">
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to REST Dashboard
-          </Link>
-        </div>
-      )}
-
-      <div className={isEmbedded ? "" : "bg-white rounded-lg shadow-md overflow-hidden mb-6"}>
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">Stubs ({mockStubs.length})</h3>
-            <div className="flex space-x-2">
-              <input 
-                type="text" 
-                placeholder="Search stubs..." 
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-              />
-              <select className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
-                <option value="">All Methods</option>
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="DELETE">DELETE</option>
-              </select>
-              <select className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              {isEmbedded && (
-                <Link 
-                  to="/rest/stubs/new" 
-                  className="bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors"
-                >
-                  Create New Stubs
-                </Link>
-              )}
+  
+  // Filter stubs based on search term and filters
+  const filteredStubs = stubs ? stubs.filter(stub => {
+    const matchesSearch = searchTerm === '' || 
+      stub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (stub.matchConditions?.url && stub.matchConditions.url.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesMethod = methodFilter === '' || 
+      (stub.matchConditions?.method && stub.matchConditions.method === methodFilter);
+    
+    const matchesStatus = statusFilter === '' || 
+      (statusFilter === 'active' && stub.status === 'ACTIVE') ||
+      (statusFilter === 'inactive' && stub.status === 'INACTIVE');
+    
+    return matchesSearch && matchesMethod && matchesStatus;
+  }) : [];
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="py-8 px-4">
+        <div className="animate-pulse flex space-x-4">
+          <div className="flex-1 space-y-4 py-1">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
             </div>
           </div>
         </div>
-        
+        <p className="text-center text-gray-500 mt-4">Loading stubs...</p>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="py-8 px-4 text-center">
+        <div className="bg-red-50 p-4 rounded-md">
+          <p className="text-red-700">Error loading stubs. Please try again later.</p>
+        </div>
+        <button 
+          onClick={() => refetch()} 
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`bg-white shadow-md rounded-lg overflow-hidden ${isEmbedded ? '' : 'mt-8'}`}>
+      <div className="border-b border-gray-200 px-6 py-4">
+        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <h2 className="text-xl font-semibold text-gray-800">REST API Stubs</h2>
+          <div className="flex space-x-2">
+            <input 
+              type="text" 
+              placeholder="Search stubs..." 
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <select 
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+            >
+              <option value="">All Methods</option>
+              {uniqueMethods.map(method => (
+                <option key={method} value={method}>{method}</option>
+              ))}
+            </select>
+            <select 
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <Link 
+              to="/rest/stubs/new" 
+              className="bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors"
+            >
+              Create Stub
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -228,16 +167,10 @@ const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
                 URL
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Response Status
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Response
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Response Time
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Created
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -245,50 +178,79 @@ const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {mockStubs.map((stub) => (
-              <tr key={stub.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{stub.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getMethodColor(stub.method)}`}>
-                    {stub.method}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500 font-mono">{stub.url}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    stub.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {stub.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(stub.responseStatus)}`}>
-                    {stub.responseStatus}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {stub.responseTime} ms
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(stub.createdAt)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/rest/stubs/${stub.id}/edit`} className="text-primary-600 hover:text-primary-900 mr-3">
-                    Edit
-                  </Link>
-                  <button className={`${stub.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'} mr-3`}>
-                    {stub.isActive ? 'Disable' : 'Enable'}
-                  </button>
-                  <button className="text-red-600 hover:text-red-900">
-                    Delete
-                  </button>
+            {filteredStubs.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  No stubs found. {searchTerm || methodFilter || statusFilter ? 'Try adjusting your filters.' : 'Create your first stub!'}
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredStubs.map((stub) => (
+                <tr key={stub.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <div className="flex flex-col">
+                      <span>{stub.name}</span>
+                      {stub.description && (
+                        <span className="text-xs text-gray-500">{stub.description}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`px-2 py-1 rounded text-xs font-medium
+                      ${stub.matchConditions?.method === 'GET' ? 'bg-green-100 text-green-800' : ''}
+                      ${stub.matchConditions?.method === 'POST' ? 'bg-blue-100 text-blue-800' : ''}
+                      ${stub.matchConditions?.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' : ''}
+                      ${stub.matchConditions?.method === 'DELETE' ? 'bg-red-100 text-red-800' : ''}
+                      ${stub.matchConditions?.method === 'PATCH' ? 'bg-purple-100 text-purple-800' : ''}
+                    `}>
+                      {stub.matchConditions?.method || 'ANY'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {stub.matchConditions?.url || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`px-2 py-1 rounded text-xs font-medium
+                      ${(stub.response?.status >= 200 && stub.response?.status < 300) ? 'bg-green-100 text-green-800' : ''}
+                      ${(stub.response?.status >= 300 && stub.response?.status < 400) ? 'bg-blue-100 text-blue-800' : ''}
+                      ${(stub.response?.status >= 400 && stub.response?.status < 500) ? 'bg-yellow-100 text-yellow-800' : ''}
+                      ${(stub.response?.status >= 500) ? 'bg-red-100 text-red-800' : ''}
+                    `}>
+                      {stub.response?.status || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button
+                      onClick={() => handleToggleActive(stub)}
+                      className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 
+                        ${stub.status === 'ACTIVE' ? 'bg-primary-600' : 'bg-gray-200'}`}
+                    >
+                      <span
+                        className={`${
+                          stub.status === 'ACTIVE' ? 'translate-x-5' : 'translate-x-0'
+                        } inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                      />
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Link
+                        to={`/rest/stubs/${stub.id}/edit`}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteStub(stub.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

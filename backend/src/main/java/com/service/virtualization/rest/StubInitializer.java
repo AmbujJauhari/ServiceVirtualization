@@ -1,9 +1,8 @@
 package com.service.virtualization.rest;
 
 import com.service.virtualization.model.RestStub;
-import com.service.virtualization.model.Stub;
 import com.service.virtualization.model.StubStatus;
-import com.service.virtualization.rest.service.impl.RestStubService;
+import com.service.virtualization.rest.service.RestStubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
