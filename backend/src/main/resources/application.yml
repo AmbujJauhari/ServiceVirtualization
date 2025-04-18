@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: service-virtualization
+  profiles:
+    default: mongodb # Default to MongoDB storage
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: service_virtualization
+  datasource:
+    url: jdbc:sybase:Tds:localhost:5000/service_virtualization
+    username: sa
+    password: password
+    driver-class-name: com.sybase.jdbc4.jdbc.SybDriver
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# Wiremock configuration
+wiremock:
+  server:
+    port: 8081
+    files-path: ./wiremock-files
+
+# Database configuration
+database:
+  primary: mongodb # Options: mongodb, sybase
+  # Use both or one - configuration controls which one is used
+
+# REST API paths
+rest:
+  api-path: /api
+  proxy-path: /proxy
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.service.virtualization: DEBUG
+    org.wiremock: INFO
+    org.springframework.web: INFO
