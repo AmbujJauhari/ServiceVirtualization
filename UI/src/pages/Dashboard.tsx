@@ -44,7 +44,7 @@ const protocols = [
     id: 'soap',
     name: 'SOAP',
     description: 'XML-based messaging protocol',
-    isEnabled: false,
+    isEnabled: true,
     recordingCount: 3,
     stubCount: 8
   },
@@ -116,6 +116,13 @@ const Dashboard: React.FC = () => {
                   className="inline-block bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors w-full text-center"
                 >
                   Manage REST API
+                </Link>
+              ) : protocol.id === 'soap' ? (
+                <Link 
+                  to="/soap" 
+                  className="inline-block bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors w-full text-center"
+                >
+                  Manage SOAP API
                 </Link>
               ) : (
                 <div className="inline-block bg-gray-200 text-gray-700 py-2 px-4 rounded w-full text-center">
