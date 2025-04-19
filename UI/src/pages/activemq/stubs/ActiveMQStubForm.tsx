@@ -7,7 +7,8 @@ import {
   ActiveMQStub,
   MessageHeader,
   StubStatus,
-  ContentMatchType
+  ContentMatchType,
+  CreateStubErrorResponse
 } from '../../../api/activemqApi';
 
 interface ActiveMQStubFormProps {
@@ -22,13 +23,16 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const isEditMode = isEdit || Boolean(id);
   const navigate = useNavigate();
 
+  // Error state
+  const [error, setError] = useState<string | null>(null);
+
   // Fetch existing stub for edit mode
   const { data: existingStub, isLoading: isLoadingStub } = useGetActiveMQStubQuery(id ?? '', {
     skip: !isEditMode
   });
 
   // Mutations
-  const [createStub, { isLoading: isCreating }] = useCreateActiveMQStubMutation();
+  const [createStub, { isLoading: isCreating, error: createError }] = useCreateActiveMQStubMutation();
   const [updateStub, { isLoading: isUpdating }] = useUpdateActiveMQStubMutation();
 
   // Form state
@@ -40,6 +44,7 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
   const [contentPattern, setContentPattern] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
+  const [priority, setPriority] = useState(0);
   const [responseType, setResponseType] = useState('text');
   const [responseContent, setResponseContent] = useState('');
   const [latency, setLatency] = useState(0);
@@ -62,6 +67,7 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
       setContentPattern(existingStub.contentPattern || '');
       setCaseSensitive(existingStub.caseSensitive ?? true);
+      setPriority(existingStub.priority ?? 0);
       setResponseType(existingStub.responseType || 'text');
       setResponseContent(existingStub.responseContent || '');
       setLatency(existingStub.latency || 0);
@@ -91,6 +97,7 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const stubData: Partial<ActiveMQStub> = {
       name,
@@ -101,6 +108,7 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       contentMatchType,
       contentPattern,
       caseSensitive,
+      priority,
       responseType,
       responseContent,
       latency,
@@ -114,13 +122,24 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
           id,
           ...stubData
         });
+        navigate('/activemq');
       } else {
-        await createStub(stubData);
+        try {
+          const result = await createStub(stubData).unwrap();
+          navigate('/activemq');
+        } catch (err: any) {
+          if (err.status === 409) { // Conflict status code
+            const errorResponse = err.data as CreateStubErrorResponse;
+            setError(errorResponse.message || 'A stub with higher priority already exists for this destination.');
+          } else {
+            setError('An error occurred while creating the stub. Please try again.');
+            console.error('Error creating stub:', err);
+          }
+        }
       }
-      navigate('/activemq');
     } catch (error) {
+      setError('An error occurred while saving the stub. Please try again.');
       console.error('Error saving ActiveMQ stub:', error);
-      alert('Failed to save ActiveMQ stub. Please try again.');
     }
   };
 
@@ -134,6 +153,13 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
         <h1 className="text-2xl font-bold text-gray-800 mb-6">
           {isEditMode ? 'Edit ActiveMQ Stub' : 'Create ActiveMQ Stub'}
         </h1>
+
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
@@ -215,6 +241,23 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
               />
               <p className="text-sm text-gray-500 mt-1">
                 JMS selector expression to filter which messages this stub responds to.
+              </p>
+            </div>
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="priority">
+                Priority
+              </label>
+              <input
+                id="priority"
+                type="number"
+                min="0"
+                max="100"
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Priority for matching (higher values = higher priority). New stubs cannot have a priority lower than existing stubs.
               </p>
             </div>
           </div>

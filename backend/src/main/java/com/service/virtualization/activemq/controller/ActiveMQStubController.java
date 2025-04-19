@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for managing ActiveMQ stubs.
@@ -52,9 +54,20 @@ public class ActiveMQStubController {
      * @return The created stub
      */
     @PostMapping
-    public ResponseEntity<ActiveMQStub> createStub(@RequestBody ActiveMQStub stub) {
+    public ResponseEntity<?> createStub(@RequestBody ActiveMQStub stub) {
         logger.info("Creating a new ActiveMQ stub");
-        return new ResponseEntity<>(activeMQStubService.createStub(stub), HttpStatus.CREATED);
+        try {
+            return new ResponseEntity<>(activeMQStubService.createStub(stub), HttpStatus.CREATED);
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("higher priority")) {
+                // Priority conflict
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "priority_conflict");
+                errorResponse.put("message", e.getMessage());
+                return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+            }
+            throw e; // Re-throw other exceptions
+        }
     }
     
     /**

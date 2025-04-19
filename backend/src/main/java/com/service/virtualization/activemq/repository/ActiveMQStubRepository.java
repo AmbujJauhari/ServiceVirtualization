@@ -45,4 +45,36 @@ public interface ActiveMQStubRepository extends MongoRepository<ActiveMQStub, St
      * @return List of stubs with the specified destination name
      */
     List<ActiveMQStub> findByDestinationName(String destinationName);
+    
+    /**
+     * Find stubs by destination name and type with priority greater than the given value.
+     *
+     * @param destinationName The destination name to filter by
+     * @param destinationType The destination type to filter by
+     * @param priority The minimum priority to filter by
+     * @return List of stubs matching the criteria
+     */
+    List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThan(
+            String destinationName, String destinationType, int priority);
+    
+    /**
+     * Find stubs by destination name and type with priority greater than or equal to the given value.
+     *
+     * @param destinationName The destination name to filter by
+     * @param destinationType The destination type to filter by
+     * @param priority The minimum priority to filter by (inclusive)
+     * @return List of stubs matching the criteria
+     */
+    List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThanEqual(
+            String destinationName, String destinationType, int priority);
+            
+    /**
+     * Find the highest priority among stubs with the specified destination name and type.
+     * 
+     * @param destinationName The destination name to filter by
+     * @param destinationType The destination type to filter by
+     * @return The stub with the highest priority, if any
+     */
+    ActiveMQStub findFirstByDestinationNameAndDestinationTypeOrderByPriorityDesc(
+            String destinationName, String destinationType);
 } 

@@ -10,6 +10,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
@@ -39,12 +40,13 @@ public class StubMatcher {
             // Extract message content for content-based matching
             String messageContent = extractMessageContent(message);
             
-            // Find all stubs that match the destination
+            // Find matching stubs and sort by priority (highest first)
             return registeredStubs.stream()
                     .filter(stub -> isDestinationMatch(stub, destination))
                     .filter(stub -> isMessageSelectorMatch(stub, message))
                     .filter(stub -> isContentMatch(stub, messageContent))
                     .filter(stub -> stub.getStatus() == StubStatus.ACTIVE) // Only consider active stubs
+                    .sorted(Comparator.comparing(ActiveMQStub::getPriority).reversed()) // Sort by priority (highest first)
                     .findFirst()
                     .orElse(null);
         } catch (Exception e) {

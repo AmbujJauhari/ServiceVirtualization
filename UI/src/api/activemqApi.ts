@@ -31,6 +31,7 @@ export interface ActiveMQStub {
   contentMatchType?: ContentMatchType;
   contentPattern?: string;
   caseSensitive?: boolean;
+  priority?: number;
   responseContent?: string;
   responseType?: string;
   latency?: number;
@@ -43,6 +44,11 @@ export interface ActiveMQStub {
 export interface UpdateActiveMQStubStatusRequest {
   id: string;
   status: StubStatus;
+}
+
+export interface CreateStubErrorResponse {
+  error: string;
+  message: string;
 }
 
 export const activemqApi = createApi({

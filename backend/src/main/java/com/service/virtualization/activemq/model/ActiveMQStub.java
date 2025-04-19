@@ -39,7 +39,7 @@ public class ActiveMQStub {
     // Content matching configuration
     private ContentMatchType contentMatchType = ContentMatchType.NONE;
     private String contentPattern;
-    private boolean caseSensitive = true;
+    private boolean caseSensitive = false;
     
     // Response configuration
     private String responseType; // "queue" or "topic"
@@ -48,6 +48,9 @@ public class ActiveMQStub {
     
     // Webhook configuration
     private String webhookUrl;
+    
+    // Priority for stub matching (higher number = higher priority)
+    private int priority = 0;
     
     // Custom headers for response
     private Map<String, String> headers = new HashMap<>();
@@ -58,6 +61,9 @@ public class ActiveMQStub {
     // Auditing fields
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    private String contentMatch;
+    private long latency;
     
     /**
      * Default constructor.
@@ -199,6 +205,14 @@ public class ActiveMQStub {
         this.webhookUrl = webhookUrl;
     }
     
+    public int getPriority() {
+        return priority;
+    }
+    
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+    
     public Map<String, String> getHeaders() {
         return headers;
     }
@@ -242,16 +256,42 @@ public class ActiveMQStub {
         this.updatedAt = updatedAt;
     }
     
+    public String getContentMatch() {
+        return contentMatch;
+    }
+    
+    public void setContentMatch(String contentMatch) {
+        this.contentMatch = contentMatch;
+    }
+    
+    public long getLatency() {
+        return latency;
+    }
+    
+    public void setLatency(long latency) {
+        this.latency = latency;
+    }
+    
     @Override
     public String toString() {
         return "ActiveMQStub{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", userId='" + userId + '\'' +
                 ", destinationType='" + destinationType + '\'' +
                 ", destinationName='" + destinationName + '\'' +
-                ", contentMatchType=" + contentMatchType +
-                ", responseDestination='" + responseDestination + '\'' +
+                ", messageSelector='" + messageSelector + '\'' +
+                ", contentMatch='" + contentMatch + '\'' +
+                ", responseContent='" + responseContent + '\'' +
+                ", responseType='" + responseType + '\'' +
+                ", webhookUrl='" + webhookUrl + '\'' +
+                ", priority=" + priority +
+                ", latency=" + latency +
+                ", headers=" + headers +
                 ", status=" + status +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 } 

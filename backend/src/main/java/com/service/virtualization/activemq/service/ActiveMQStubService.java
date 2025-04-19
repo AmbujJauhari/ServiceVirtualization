@@ -16,6 +16,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
+ * Custom exception for priority conflicts with existing stubs
+ */
+class StubPriorityConflictException extends RuntimeException {
+    private final ActiveMQStub conflictingStub;
+    
+    public StubPriorityConflictException(String message, ActiveMQStub conflictingStub) {
+        super(message);
+        this.conflictingStub = conflictingStub;
+    }
+    
+    public ActiveMQStub getConflictingStub() {
+        return conflictingStub;
+    }
+}
+
+/**
  * Service for managing ActiveMQ stubs.
  */
 @Service
@@ -68,12 +84,16 @@ public class ActiveMQStubService {
     }
     
     /**
-     * Create a new ActiveMQ stub.
+     * Create a new ActiveMQ stub after validating priority constraints.
      *
      * @param stub The stub to create
      * @return The created stub
+     * @throws StubPriorityConflictException if a higher priority stub exists
      */
     public ActiveMQStub createStub(ActiveMQStub stub) {
+        // Check for existing stubs with higher priority for the same destination
+        validateStubPriority(stub);
+        
         LocalDateTime now = LocalDateTime.now();
         stub.setCreatedAt(now);
         stub.setUpdatedAt(now);
@@ -86,6 +106,35 @@ public class ActiveMQStubService {
         }
         
         return savedStub;
+    }
+    
+    /**
+     * Validate that no existing stub has a higher priority than the provided stub.
+     * 
+     * @param stub The stub to validate
+     * @throws StubPriorityConflictException if a higher priority stub exists
+     */
+    private void validateStubPriority(ActiveMQStub stub) {
+        // If this is an update of an existing stub, skip validation
+        if (stub.getId() != null) {
+            return;
+        }
+        
+        // Find the highest priority stub for this destination
+        ActiveMQStub highestPriorityStub = activeMQStubRepository
+                .findFirstByDestinationNameAndDestinationTypeOrderByPriorityDesc(
+                        stub.getDestinationName(), stub.getDestinationType());
+        
+        // If we found a stub with higher priority, throw an exception
+        if (highestPriorityStub != null && highestPriorityStub.getPriority() > stub.getPriority()) {
+            String message = String.format(
+                "Cannot create stub with priority %d. A stub with higher priority (%d) already exists: %s",
+                stub.getPriority(), 
+                highestPriorityStub.getPriority(),
+                highestPriorityStub.getName()
+            );
+            throw new StubPriorityConflictException(message, highestPriorityStub);
+        }
     }
     
     /**
@@ -104,10 +153,14 @@ public class ActiveMQStubService {
         existingStub.setDestinationType(stubDetails.getDestinationType());
         existingStub.setDestinationName(stubDetails.getDestinationName());
         existingStub.setMessageSelector(stubDetails.getMessageSelector());
+        existingStub.setContentMatchType(stubDetails.getContentMatchType());
+        existingStub.setContentPattern(stubDetails.getContentPattern());
+        existingStub.setCaseSensitive(stubDetails.isCaseSensitive());
         existingStub.setResponseType(stubDetails.getResponseType());
         existingStub.setResponseDestination(stubDetails.getResponseDestination());
         existingStub.setResponseContent(stubDetails.getResponseContent());
         existingStub.setWebhookUrl(stubDetails.getWebhookUrl());
+        existingStub.setPriority(stubDetails.getPriority());
         existingStub.setHeaders(stubDetails.getHeaders());
         existingStub.setStatus(stubDetails.getStatus());
         existingStub.setUpdatedAt(LocalDateTime.now());
