@@ -4,6 +4,7 @@ export interface FileEntry {
   filename: string;
   contentType?: string;
   content?: string;
+  webhookUrl?: string;
 }
 
 export interface FileStub {
@@ -14,6 +15,7 @@ export interface FileStub {
   filePath: string;
   content?: string;
   contentType?: string;
+  webhookUrl?: string;
   cronExpression?: string;
   status: boolean;
   createdAt?: string;
@@ -27,6 +29,7 @@ export interface CreateFileStubRequest {
   filePath: string;
   content?: string;
   contentType?: string;
+  webhookUrl?: string;
   cronExpression?: string;
   status?: boolean;
   files?: FileEntry[];

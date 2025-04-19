@@ -7,6 +7,8 @@ import {
   FileEntry
 } from '../../../api/fileApi';
 
+type ContentSourceType = 'static' | 'webhook';
+
 const FileStubForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
@@ -18,10 +20,15 @@ const FileStubForm: React.FC = () => {
     filePath: '',
     contentType: '',
     content: '',
+    webhookUrl: '',
     cronExpression: '',
     status: true,
     files: [] as FileEntry[]
   });
+  
+  // Track content source type for primary file and additional files
+  const [primaryContentSource, setPrimaryContentSource] = useState<ContentSourceType>('static');
+  const [additionalContentSources, setAdditionalContentSources] = useState<ContentSourceType[]>([]);
   
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
@@ -42,10 +49,21 @@ const FileStubForm: React.FC = () => {
         filePath: stub.filePath || '',
         contentType: stub.contentType || '',
         content: stub.content || '',
+        webhookUrl: stub.webhookUrl || '',
         cronExpression: stub.cronExpression || '',
         status: stub.status,
         files: stub.files || []
       });
+      
+      // Set the appropriate content source based on which field has data
+      setPrimaryContentSource(stub.webhookUrl ? 'webhook' : 'static');
+      
+      // Set content sources for additional files
+      if (stub.files && stub.files.length > 0) {
+        setAdditionalContentSources(
+          stub.files.map(file => file.webhookUrl ? 'webhook' : 'static')
+        );
+      }
     }
   }, [stub]);
   
@@ -90,14 +108,63 @@ const FileStubForm: React.FC = () => {
   const addFile = () => {
     setFormData(prev => ({
       ...prev,
-      files: [...prev.files, { filename: '', content: '', contentType: '' }]
+      files: [...prev.files, { filename: '', content: '', contentType: '', webhookUrl: '' }]
     }));
+    
+    // Set default content source for the new file
+    setAdditionalContentSources(prev => [...prev, 'static']);
   };
   
   const removeFile = (index: number) => {
     setFormData(prev => ({
       ...prev,
       files: prev.files.filter((_, i) => i !== index)
+    }));
+    
+    // Remove content source for the deleted file
+    setAdditionalContentSources(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  const handleContentSourceChange = (source: ContentSourceType) => {
+    setPrimaryContentSource(source);
+    
+    // Clear the non-selected field
+    if (source === 'static') {
+      setFormData(prev => ({ ...prev, webhookUrl: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, content: '' }));
+    }
+    
+    // Clear any validation errors
+    setValidationErrors(prev => ({
+      ...prev,
+      content: '',
+      webhookUrl: ''
+    }));
+  };
+  
+  const handleAdditionalContentSourceChange = (index: number, source: ContentSourceType) => {
+    setAdditionalContentSources(prev => {
+      const updated = [...prev];
+      updated[index] = source;
+      return updated;
+    });
+    
+    // Clear the non-selected field
+    setFormData(prev => {
+      const updatedFiles = [...prev.files];
+      updatedFiles[index] = {
+        ...updatedFiles[index],
+        ...(source === 'static' ? { webhookUrl: '' } : { content: '' })
+      };
+      return { ...prev, files: updatedFiles };
+    });
+    
+    // Clear any validation errors
+    setValidationErrors(prev => ({
+      ...prev,
+      [`file-${index}-content`]: '',
+      [`file-${index}-webhookUrl`]: ''
     }));
   };
   
@@ -119,15 +186,34 @@ const FileStubForm: React.FC = () => {
       errors.cronExpression = 'Invalid cron expression format';
     }
     
+    // Validate webhook URL format if provided
+    if (primaryContentSource === 'webhook' && formData.webhookUrl && !isValidUrl(formData.webhookUrl)) {
+      errors.webhookUrl = 'Please enter a valid URL';
+    }
+    
     // Validate files array
     formData.files.forEach((file, index) => {
       if (!file.filename.trim()) {
         errors[`file-${index}-filename`] = 'Filename is required';
       }
+      
+      // Validate webhook URL format if provided
+      if (additionalContentSources[index] === 'webhook' && file.webhookUrl && !isValidUrl(file.webhookUrl)) {
+        errors[`file-${index}-webhookUrl`] = 'Please enter a valid URL';
+      }
     });
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+  
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -269,19 +355,76 @@ const FileStubForm: React.FC = () => {
                 />
               </div>
               
-              <div className="mb-0">
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                  Content
-                </label>
-                <textarea
-                  id="content"
-                  name="content"
-                  value={formData.content}
-                  onChange={handleInputChange}
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter file content here"
-                ></textarea>
+              {/* Tabs for selecting content source */}
+              <div className="mb-4">
+                <div className="border-b border-gray-200 mb-4">
+                  <nav className="-mb-px flex" aria-label="Tabs">
+                    <button
+                      type="button"
+                      onClick={() => handleContentSourceChange('static')}
+                      className={`${
+                        primaryContentSource === 'static'
+                          ? 'border-primary-500 text-primary-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      } w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none`}
+                    >
+                      Static Content
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleContentSourceChange('webhook')}
+                      className={`${
+                        primaryContentSource === 'webhook'
+                          ? 'border-primary-500 text-primary-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      } w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none`}
+                    >
+                      Webhook URL
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Content based on selected tab */}
+                {primaryContentSource === 'static' ? (
+                  <div>
+                    <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                      Static Content
+                    </label>
+                    <textarea
+                      id="content"
+                      name="content"
+                      value={formData.content}
+                      onChange={handleInputChange}
+                      rows={8}
+                      className={`w-full px-3 py-2 border ${validationErrors.content ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+                      placeholder="Enter file content here"
+                    ></textarea>
+                    {validationErrors.content && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.content}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                      Webhook URL
+                    </label>
+                    <input
+                      id="webhookUrl"
+                      name="webhookUrl"
+                      type="text"
+                      value={formData.webhookUrl}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${validationErrors.webhookUrl ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+                      placeholder="https://example.com/api/data"
+                    />
+                    {validationErrors.webhookUrl && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.webhookUrl}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Content will be fetched from this URL when generating the file
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -361,23 +504,89 @@ const FileStubForm: React.FC = () => {
                       />
                     </div>
                     
-                    <div>
-                      <label 
-                        htmlFor={`file-${index}-content`} 
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Content
-                      </label>
-                      <textarea
-                        id={`file-${index}-content`}
-                        name="content"
-                        value={file.content || ''}
-                        onChange={(e) => handleFileInputChange(index, e)}
-                        rows={5}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="Enter file content here"
-                      ></textarea>
+                    {/* Tabs for selecting content source for this file */}
+                    <div className="border-b border-gray-200 mb-4">
+                      <nav className="-mb-px flex" aria-label="Tabs">
+                        <button
+                          type="button"
+                          onClick={() => handleAdditionalContentSourceChange(index, 'static')}
+                          className={`${
+                            additionalContentSources[index] === 'static'
+                              ? 'border-primary-500 text-primary-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          } w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none`}
+                        >
+                          Static Content
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdditionalContentSourceChange(index, 'webhook')}
+                          className={`${
+                            additionalContentSources[index] === 'webhook'
+                              ? 'border-primary-500 text-primary-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          } w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none`}
+                        >
+                          Webhook URL
+                        </button>
+                      </nav>
                     </div>
+                    
+                    {/* Content based on selected tab for this file */}
+                    {additionalContentSources[index] === 'static' ? (
+                      <div>
+                        <label 
+                          htmlFor={`file-${index}-content`} 
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          Static Content
+                        </label>
+                        <textarea
+                          id={`file-${index}-content`}
+                          name="content"
+                          value={file.content || ''}
+                          onChange={(e) => handleFileInputChange(index, e)}
+                          rows={5}
+                          className={`w-full px-3 py-2 border ${
+                            validationErrors[`file-${index}-content`] 
+                              ? 'border-red-500' 
+                              : 'border-gray-300'
+                          } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+                          placeholder="Enter file content here"
+                        ></textarea>
+                        {validationErrors[`file-${index}-content`] && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors[`file-${index}-content`]}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <label 
+                          htmlFor={`file-${index}-webhookUrl`} 
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          Webhook URL
+                        </label>
+                        <input
+                          id={`file-${index}-webhookUrl`}
+                          name="webhookUrl"
+                          type="text"
+                          value={file.webhookUrl || ''}
+                          onChange={(e) => handleFileInputChange(index, e)}
+                          className={`w-full px-3 py-2 border ${
+                            validationErrors[`file-${index}-webhookUrl`] 
+                              ? 'border-red-500' 
+                              : 'border-gray-300'
+                          } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
+                          placeholder="https://example.com/api/data"
+                        />
+                        {validationErrors[`file-${index}-webhookUrl`] && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors[`file-${index}-webhookUrl`]}</p>
+                        )}
+                        <p className="mt-1 text-xs text-gray-500">
+                          Content will be fetched from this URL when generating the file
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
