@@ -1,8 +1,8 @@
 package com.service.virtualization.soap.controller;
 
 import com.service.virtualization.dto.DtoConverter;
-import com.service.virtualization.dto.SoapStubDTO;
-import com.service.virtualization.model.SoapStub;
+import com.service.virtualization.soap.SoapStubDTO;
+import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.soap.service.SoapStubService;
 import org.slf4j.Logger;

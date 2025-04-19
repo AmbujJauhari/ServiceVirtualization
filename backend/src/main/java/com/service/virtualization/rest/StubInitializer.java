@@ -1,7 +1,7 @@
 package com.service.virtualization.rest;
 
-import com.service.virtualization.model.RestStub;
 import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.rest.model.RestStub;
 import com.service.virtualization.rest.service.RestStubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

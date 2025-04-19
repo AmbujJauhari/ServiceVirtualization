@@ -5,7 +5,9 @@ import {
   useCreateActiveMQStubMutation, 
   useUpdateActiveMQStubMutation,
   ActiveMQStub,
-  MessageHeader
+  MessageHeader,
+  StubStatus,
+  ContentMatchType
 } from '../../../api/activemqApi';
 
 interface ActiveMQStubFormProps {
@@ -35,11 +37,14 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const [destinationType, setDestinationType] = useState('queue');
   const [destinationName, setDestinationName] = useState('');
   const [selector, setSelector] = useState('');
+  const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
+  const [contentPattern, setContentPattern] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(true);
   const [responseType, setResponseType] = useState('text');
   const [responseContent, setResponseContent] = useState('');
   const [latency, setLatency] = useState(0);
   const [headers, setHeaders] = useState<MessageHeader[]>([]);
-  const [status, setStatus] = useState(true);
+  const [status, setStatus] = useState<StubStatus>(StubStatus.ACTIVE);
 
   // New header form fields
   const [newHeaderName, setNewHeaderName] = useState('');
@@ -54,11 +59,14 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       setDestinationType(existingStub.destinationType || 'queue');
       setDestinationName(existingStub.destinationName || '');
       setSelector(existingStub.selector || '');
+      setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
+      setContentPattern(existingStub.contentPattern || '');
+      setCaseSensitive(existingStub.caseSensitive ?? true);
       setResponseType(existingStub.responseType || 'text');
       setResponseContent(existingStub.responseContent || '');
       setLatency(existingStub.latency || 0);
       setHeaders(existingStub.headers || []);
-      setStatus(existingStub.status ?? true);
+      setStatus(existingStub.status ?? StubStatus.ACTIVE);
     }
   }, [existingStub]);
 
@@ -90,6 +98,9 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       destinationType,
       destinationName,
       selector,
+      contentMatchType,
+      contentPattern,
+      caseSensitive,
       responseType,
       responseContent,
       latency,
@@ -206,6 +217,71 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                 JMS selector expression to filter which messages this stub responds to.
               </p>
             </div>
+          </div>
+
+          {/* Content Matching Configuration */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Content Matching</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentMatchType">
+                  Match Type
+                </label>
+                <select
+                  id="contentMatchType"
+                  value={contentMatchType}
+                  onChange={(e) => setContentMatchType(e.target.value as ContentMatchType)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value={ContentMatchType.NONE}>No Content Matching</option>
+                  <option value={ContentMatchType.CONTAINS}>Contains Text</option>
+                  <option value={ContentMatchType.EXACT}>Exact Match</option>
+                  <option value={ContentMatchType.REGEX}>Regular Expression</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  How to match the message content.
+                </p>
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="caseSensitive">
+                  Case Sensitivity
+                </label>
+                <div className="flex items-center">
+                  <input
+                    id="caseSensitive"
+                    type="checkbox"
+                    checked={caseSensitive}
+                    onChange={(e) => setCaseSensitive(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="ml-2 block text-gray-700" htmlFor="caseSensitive">
+                    Case sensitive matching
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            {contentMatchType !== ContentMatchType.NONE && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentPattern">
+                  Content Pattern
+                </label>
+                <textarea
+                  id="contentPattern"
+                  value={contentPattern}
+                  onChange={(e) => setContentPattern(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-20"
+                  placeholder={contentMatchType === ContentMatchType.REGEX ? '^\\s*<order>.*</order>\\s*$' : contentMatchType === ContentMatchType.EXACT ? 'Exact message content to match' : 'Text to search for in the message'}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {contentMatchType === ContentMatchType.REGEX ? 
+                    'Regular expression pattern to match against message content.' : 
+                    contentMatchType === ContentMatchType.CONTAINS ?
+                    'Text pattern that must be contained in the message content.' :
+                    'Exact text that the message content must match.'}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Response Configuration */}
@@ -359,17 +435,24 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
           {/* Status */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Status</h2>
-            <div className="flex items-center">
-              <input
-                id="status"
-                type="checkbox"
-                checked={status}
-                onChange={(e) => setStatus(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label className="ml-2 block text-gray-700" htmlFor="status">
-                Activate stub immediately
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="status">
+                Status
               </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as StubStatus)}
+                className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value={StubStatus.ACTIVE}>Active</option>
+                <option value={StubStatus.INACTIVE}>Inactive</option>
+                <option value={StubStatus.DRAFT}>Draft</option>
+                <option value={StubStatus.ARCHIVED}>Archived</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                Set the status of this stub. Only Active stubs will receive and respond to messages.
+              </p>
             </div>
           </div>
 

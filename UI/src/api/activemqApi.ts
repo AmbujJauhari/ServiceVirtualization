@@ -1,5 +1,19 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+export enum StubStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  ARCHIVED = 'ARCHIVED',
+  DRAFT = 'DRAFT'
+}
+
+export enum ContentMatchType {
+  NONE = 'NONE',
+  CONTAINS = 'CONTAINS',
+  EXACT = 'EXACT',
+  REGEX = 'REGEX'
+}
+
 export interface MessageHeader {
   name: string;
   value: string;
@@ -14,18 +28,21 @@ export interface ActiveMQStub {
   destinationType: string;
   destinationName: string;
   selector?: string;
+  contentMatchType?: ContentMatchType;
+  contentPattern?: string;
+  caseSensitive?: boolean;
   responseContent?: string;
   responseType?: string;
   latency?: number;
   headers?: MessageHeader[];
-  status?: boolean;
+  status?: StubStatus;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface UpdateActiveMQStubStatusRequest {
   id: string;
-  status: boolean;
+  status: StubStatus;
 }
 
 export const activemqApi = createApi({

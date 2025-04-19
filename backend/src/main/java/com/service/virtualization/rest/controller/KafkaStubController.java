@@ -1,8 +1,8 @@
 package com.service.virtualization.rest.controller;
 
-import com.service.virtualization.dto.KafkaStubDTO;
-import com.service.virtualization.model.KafkaStub;
-import com.service.virtualization.service.KafkaStubService;
+import com.service.virtualization.kafka.KafkaStubDTO;
+import com.service.virtualization.kafka.KafkaStub;
+import com.service.virtualization.kafka.KafkaStubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

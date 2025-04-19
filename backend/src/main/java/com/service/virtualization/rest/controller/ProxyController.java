@@ -1,6 +1,6 @@
 package com.service.virtualization.rest.controller;
 
-import com.service.virtualization.proxy.ProxyHandler;
+import com.service.virtualization.rest.service.ProxyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,17 +1,20 @@
 package com.service.virtualization.dto;
 
-import com.service.virtualization.model.RestStub;
-import com.service.virtualization.model.SoapStub;
+import com.service.virtualization.files.FileEntryDTO;
+import com.service.virtualization.files.FileStubDTO;
+import com.service.virtualization.rest.model.RestStub;
+import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
-import com.service.virtualization.model.FileEntry;
-import com.service.virtualization.model.FileStub;
+import com.service.virtualization.files.FileEntry;
+import com.service.virtualization.files.FileStub;
+import com.service.virtualization.rest.dto.RestStubDTO;
+import com.service.virtualization.soap.SoapStubDTO;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -173,8 +176,8 @@ public class DtoConverter {
             return null;
         }
         
-        List<FileEntryDTO> fileEntryDTOs = fileStub.files() != null
-            ? fileStub.files().stream()
+        List<FileEntryDTO> fileEntryDTOs = fileStub.getFiles() != null
+            ? fileStub.getFiles().stream()
                 .map(DtoConverter::fromFileEntry)
                 .collect(Collectors.toList())
             : new ArrayList<>();

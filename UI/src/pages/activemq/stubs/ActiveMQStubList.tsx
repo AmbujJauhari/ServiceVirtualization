@@ -4,7 +4,9 @@ import {
   useGetActiveMQStubsQuery, 
   useUpdateActiveMQStubStatusMutation, 
   useDeleteActiveMQStubMutation,
-  ActiveMQStub
+  ActiveMQStub,
+  StubStatus,
+  ContentMatchType
 } from '../../../api/activemqApi';
 
 /**
@@ -22,7 +24,7 @@ const ActiveMQStubList: React.FC = () => {
     try {
       await updateStatus({
         id: stub.id,
-        status: !stub.status
+        status: stub.status === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE
       });
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -47,11 +49,13 @@ const ActiveMQStubList: React.FC = () => {
     const description = stub.description?.toLowerCase() || '';
     const destinationType = stub.destinationType?.toLowerCase() || '';
     const destinationName = stub.destinationName?.toLowerCase() || '';
+    const contentPattern = stub.contentPattern?.toLowerCase() || '';
     
     return name.includes(lowercaseFilter) ||
            description.includes(lowercaseFilter) ||
            destinationType.includes(lowercaseFilter) ||
-           destinationName.includes(lowercaseFilter);
+           destinationName.includes(lowercaseFilter) ||
+           contentPattern.includes(lowercaseFilter);
   });
 
   if (isLoading) {
@@ -69,6 +73,50 @@ const ActiveMQStubList: React.FC = () => {
       </div>
     );
   }
+
+  const getStatusBadgeClasses = (status?: StubStatus) => {
+    switch (status) {
+      case StubStatus.ACTIVE:
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case StubStatus.INACTIVE:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+      case StubStatus.DRAFT:
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case StubStatus.ARCHIVED:
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status?: StubStatus) => {
+    switch (status) {
+      case StubStatus.ACTIVE:
+        return 'Active';
+      case StubStatus.INACTIVE:
+        return 'Inactive';
+      case StubStatus.DRAFT:
+        return 'Draft';
+      case StubStatus.ARCHIVED:
+        return 'Archived';
+      default:
+        return 'Unknown';
+    }
+  };
+  
+  const getContentMatchTypeLabel = (matchType?: ContentMatchType) => {
+    switch (matchType) {
+      case ContentMatchType.CONTAINS:
+        return 'Contains';
+      case ContentMatchType.EXACT:
+        return 'Exact Match';
+      case ContentMatchType.REGEX:
+        return 'Regex';
+      case ContentMatchType.NONE:
+      default:
+        return 'None';
+    }
+  };
 
   return (
     <div>
@@ -93,6 +141,7 @@ const ActiveMQStubList: React.FC = () => {
               <tr>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Matching</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -119,15 +168,37 @@ const ActiveMQStubList: React.FC = () => {
                     )}
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">
+                    {stub.contentMatchType && stub.contentMatchType !== ContentMatchType.NONE ? (
+                      <div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                          ${stub.contentMatchType === ContentMatchType.CONTAINS ? 'bg-blue-100 text-blue-800' : 
+                            stub.contentMatchType === ContentMatchType.EXACT ? 'bg-indigo-100 text-indigo-800' : 
+                            'bg-green-100 text-green-800'}`}>
+                          {getContentMatchTypeLabel(stub.contentMatchType)}
+                        </span>
+                        {stub.contentPattern && (
+                          <div className="text-gray-500 text-sm mt-1 truncate max-w-xs">
+                            <span className="font-semibold">Pattern:</span> 
+                            <span className="font-mono">{stub.contentPattern.length > 30 ? 
+                              `${stub.contentPattern.substring(0, 30)}...` : 
+                              stub.contentPattern}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-gray-500 text-sm">
+                          <span className="font-semibold">Case:</span> {stub.caseSensitive ? 'Sensitive' : 'Insensitive'}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">None</span>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200">
                     <button
                       onClick={() => stub.id && handleStatusToggle(stub)}
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        stub.status
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeClasses(stub.status)}`}
                     >
-                      {stub.status ? 'Active' : 'Inactive'}
+                      {getStatusLabel(stub.status)}
                     </button>
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">

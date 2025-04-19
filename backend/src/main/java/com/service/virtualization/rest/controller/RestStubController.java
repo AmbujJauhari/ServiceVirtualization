@@ -1,8 +1,8 @@
 package com.service.virtualization.rest.controller;
 
 import com.service.virtualization.dto.DtoConverter;
-import com.service.virtualization.model.RestStub;
-import com.service.virtualization.dto.RestStubDTO;
+import com.service.virtualization.rest.model.RestStub;
+import com.service.virtualization.rest.dto.RestStubDTO;
 import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.rest.service.RestStubService;
 import org.slf4j.Logger;

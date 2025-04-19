@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.connection.CachingConnectionFactory;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
 import com.tibco.tibjms.TibjmsConnectionFactory;
 
 /**
@@ -29,9 +29,11 @@ public class TibcoConfig {
 
     /**
      * Creates a TIBCO EMS connection factory.
+     *
+     * @throws javax.jms.JMSException
      */
     @Bean(name = "tibcoConnectionFactory")
-    public ConnectionFactory tibcoConnectionFactory() throws JMSException {
+    public ConnectionFactory tibcoConnectionFactory() throws javax.jms.JMSException {
         TibjmsConnectionFactory connectionFactory = new TibjmsConnectionFactory();
         connectionFactory.setServerUrl(serverUrl);
         connectionFactory.setUserName(username);
@@ -39,7 +41,7 @@ public class TibcoConfig {
 
         // Wrap with caching connection factory for better performance
         CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory();
-        cachingConnectionFactory.setTargetConnectionFactory(connectionFactory);
+        cachingConnectionFactory.setTargetConnectionFactory((ConnectionFactory) connectionFactory);
         cachingConnectionFactory.setSessionCacheSize(sessionCacheSize);
         cachingConnectionFactory.setReconnectOnException(true);
 

@@ -1,6 +1,6 @@
 package com.service.virtualization.soap.service;
 
-import com.service.virtualization.model.SoapStub;
+import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
 
 import java.util.List;
