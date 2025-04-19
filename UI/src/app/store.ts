@@ -9,6 +9,7 @@ import { kafkaApi } from '../api/kafkaApi';
 import { fileApi } from '../api/fileApi';
 import { activemqApi } from '../api/activemqApi';
 import { ibmMqApi } from '../api/ibmMqApi';
+import { healthApi } from '../api/healthApi';
 
 // Create middleware array explicitly
 const middleware = [
@@ -20,7 +21,8 @@ const middleware = [
   kafkaApi.middleware,
   fileApi.middleware,
   activemqApi.middleware,
-  ibmMqApi.middleware
+  ibmMqApi.middleware,
+  healthApi.middleware
 ];
 
 export const store = configureStore({
@@ -34,6 +36,7 @@ export const store = configureStore({
     [fileApi.reducerPath]: fileApi.reducer,
     [activemqApi.reducerPath]: activemqApi.reducer,
     [ibmMqApi.reducerPath]: ibmMqApi.reducer,
+    [healthApi.reducerPath]: healthApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(middleware),
