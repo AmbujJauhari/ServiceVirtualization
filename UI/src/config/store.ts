@@ -3,6 +3,8 @@ import { recordingConfigApi } from '../api/recordingConfigApi';
 import { recordingApi } from '../api/recordingApi';
 import { stubApi } from '../api/stubApi';
 import { soapStubApi } from '../api/soapStubApi';
+import { tibcoApi } from '../api/tibcoApi';
+import { setupListeners } from '@reduxjs/toolkit/query';
 
 export const store = configureStore({
   reducer: {
@@ -10,14 +12,19 @@ export const store = configureStore({
     [recordingApi.reducerPath]: recordingApi.reducer,
     [stubApi.reducerPath]: stubApi.reducer,
     [soapStubApi.reducerPath]: soapStubApi.reducer,
+    [tibcoApi.reducerPath]: tibcoApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       .concat(recordingConfigApi.middleware)
       .concat(recordingApi.middleware)
       .concat(stubApi.middleware)
-      .concat(soapStubApi.middleware),
+      .concat(soapStubApi.middleware)
+      .concat(tibcoApi.middleware),
 });
+
+// Optional, but recommended for refetchOnFocus/refetchOnReconnect behaviors
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch; 

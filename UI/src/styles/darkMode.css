@@ -1,0 +1,79 @@
+/* Dark mode overrides for common components */
+
+/* Card styles */
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+/* Form elements */
+.dark input,
+.dark select,
+.dark textarea {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  @apply border-primary-500 bg-gray-800;
+}
+
+/* Tables */
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-900 {
+  @apply text-gray-100;
+}
+
+/* Button overrides */
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-gray-700;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  @apply hover:bg-gray-700;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  @apply hover:bg-gray-600;
+}
+
+/* Shadows */
+.dark .shadow-md,
+.dark .shadow-sm,
+.dark .shadow-lg {
+  @apply shadow-none;
+}
+
+/* Make code editor more visible in dark mode */
+.dark .monaco-editor {
+  @apply bg-gray-900;
+}
+
+/* Modal and dialog styles */
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+/* Form feedback */
+.dark .bg-red-100 {
+  @apply bg-red-900 bg-opacity-20;
+}
+
+.dark .text-red-700 {
+  @apply text-red-400;
+} 

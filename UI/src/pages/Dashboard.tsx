@@ -52,9 +52,9 @@ const protocols = [
     id: 'tibco',
     name: 'TIBCO',
     description: 'TIBCO Enterprise Message Service',
-    isEnabled: false,
-    recordingCount: 2,
-    stubCount: 4
+    isEnabled: true,
+    recordingCount: 0,
+    stubCount: 0
   },
   {
     id: 'ibm-mq',
@@ -119,6 +119,13 @@ const Dashboard: React.FC = () => {
                   className="inline-block bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors w-full text-center"
                 >
                   Manage SOAP API
+                </Link>
+              ) : protocol.id === 'tibco' ? (
+                <Link 
+                  to="/tibco" 
+                  className="inline-block bg-primary-600 text-white py-2 px-4 rounded hover:bg-primary-700 transition-colors w-full text-center"
+                >
+                  Manage TIBCO EMS
                 </Link>
               ) : (
                 <div className="inline-block bg-gray-200 text-gray-700 py-2 px-4 rounded w-full text-center">
