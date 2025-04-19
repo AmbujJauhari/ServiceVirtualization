@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: sv-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: service_virtualization
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb/init:/docker-entrypoint-initdb.d
+      - ./mongodb/config/mongod.conf:/etc/mongod.conf
+    command: ["--config", "/etc/mongod.conf"]
+    restart: unless-stopped
+    networks:
+      - sv-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+      
+  mongo-express:
+    image: mongo-express:latest
+    container_name: sv-mongo-express
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
+    restart: unless-stopped
+    networks:
+      - sv-network
+      
+  # Initialization container for MongoDB collections
+  mongo-init:
+    image: mongo:6.0
+    container_name: sv-mongo-init
+    depends_on:
+      - mongodb
+    volumes:
+      - ./mongodb/init:/scripts
+    command: >
+      bash -c "
+        echo 'Waiting for MongoDB to be ready...' &&
+        sleep 10 &&
+        mongosh mongodb://admin:password@mongodb:27017/service_virtualization --file /scripts/init-db.js &&
+        echo 'MongoDB initialization completed!'
+      "
+    networks:
+      - sv-network
+    restart: on-failure
+
+networks:
+  sv-network:
+    name: service-virtualization-network
+    driver: bridge
+    external: true
+
+volumes:
+  mongodb-data:
+    name: sv-mongodb-data 

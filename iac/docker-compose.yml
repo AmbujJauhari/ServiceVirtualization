@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  activemq:
+    build:
+      context: ./activemq
+      dockerfile: Dockerfile
+    container_name: sv-activemq
+    ports:
+      - "61616:61616" # JMS
+      - "8161:8161"   # Web console
+      - "5672:5672"   # AMQP
+      - "61613:61613" # STOMP
+      - "1883:1883"   # MQTT
+    volumes:
+      - activemq-data:/opt/activemq/data
+      - ./activemq/conf:/opt/activemq/conf
+    environment:
+      ACTIVEMQ_ADMIN_LOGIN: admin
+      ACTIVEMQ_ADMIN_PASSWORD: admin
+      ACTIVEMQ_STATIC_TOPICS: virtualization.topic
+      ACTIVEMQ_STATIC_QUEUES: virtualization.queue
+    restart: unless-stopped
+    networks:
+      - sv-network
+
+networks:
+  sv-network:
+    name: service-virtualization-network
+    driver: bridge
+
+volumes:
+  activemq-data:
+    name: sv-activemq-data 

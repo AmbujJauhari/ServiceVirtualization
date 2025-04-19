@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+  <!-- Allows us to use system properties as variables in this configuration file -->
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations">
+      <value>file:${activemq.conf}/credentials.properties</value>
+    </property>
+  </bean>
+
+  <!-- The <broker> element is used to configure the ActiveMQ broker -->
+  <broker xmlns="http://activemq.apache.org/schema/core" brokerName="localhost" dataDirectory="${activemq.data}">
+
+    <!-- Configure message persistence using KahaDB -->
+    <persistenceAdapter>
+      <kahaDB directory="${activemq.data}/kahadb"/>
+    </persistenceAdapter>
+
+    <!-- Configure security for authentication and authorization -->
+    <plugins>
+      <simpleAuthenticationPlugin>
+        <users>
+          <authenticationUser username="admin" password="admin" groups="admins,users"/>
+          <authenticationUser username="user" password="user" groups="users"/>
+        </users>
+      </simpleAuthenticationPlugin>
+      <authorizationPlugin>
+        <map>
+          <authorizationMap>
+            <authorizationEntries>
+              <authorizationEntry queue=">" read="admins,users" write="admins,users" admin="admins"/>
+              <authorizationEntry topic=">" read="admins,users" write="admins,users" admin="admins"/>
+              <authorizationEntry queue="USERS.>" read="users" write="users" admin="users"/>
+              <authorizationEntry topic="USERS.>" read="users" write="users" admin="users"/>
+            </authorizationEntries>
+            <tempDestinationAuthorizationEntry>
+              <tempDestinationAuthorizationEntry read="tempDestinationAdmins" write="tempDestinationAdmins" admin="tempDestinationAdmins"/>
+            </tempDestinationAuthorizationEntry>
+          </authorizationMap>
+        </map>
+      </authorizationPlugin>
+    </plugins>
+
+    <!-- The transport connectors define how clients can connect to the broker -->
+    <transportConnectors>
+      <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+      <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+      <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+      <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+    </transportConnectors>
+
+    <!-- Destroy the spring context on shutdown to stop jetty -->
+    <shutdownHooks>
+      <bean xmlns="http://www.springframework.org/schema/beans" class="org.apache.activemq.hooks.SpringContextHook" />
+    </shutdownHooks>
+
+  </broker>
+
+  <!-- Configure the Jetty web server used to serve the ActiveMQ web console -->
+  <import resource="jetty.xml"/>
+
+</beans> 
