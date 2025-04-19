@@ -4,6 +4,7 @@ import { recordingApi } from '../api/recordingApi';
 import { stubApi } from '../api/stubApi';
 import { soapStubApi } from '../api/soapStubApi';
 import { tibcoApi } from '../api/tibcoApi';
+import { kafkaApi } from '../api/kafkaApi';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     [stubApi.reducerPath]: stubApi.reducer,
     [soapStubApi.reducerPath]: soapStubApi.reducer,
     [tibcoApi.reducerPath]: tibcoApi.reducer,
+    [kafkaApi.reducerPath]: kafkaApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -20,7 +22,8 @@ export const store = configureStore({
       .concat(recordingApi.middleware)
       .concat(stubApi.middleware)
       .concat(soapStubApi.middleware)
-      .concat(tibcoApi.middleware),
+      .concat(tibcoApi.middleware)
+      .concat(kafkaApi.middleware),
 });
 
 // Optional, but recommended for refetchOnFocus/refetchOnReconnect behaviors

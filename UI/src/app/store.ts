@@ -5,6 +5,23 @@ import { soapStubApi } from '../api/soapStubApi';
 import { recordingApi } from '../api/recordingApi';
 import { recordingConfigApi } from '../api/recordingConfigApi';
 import { tibcoApi } from '../api/tibcoApi';
+import { kafkaApi } from '../api/kafkaApi';
+import { fileApi } from '../api/fileApi';
+import { activemqApi } from '../api/activemqApi';
+import { ibmMqApi } from '../api/ibmMqApi';
+
+// Create middleware array explicitly
+const middleware = [
+  stubApi.middleware,
+  soapStubApi.middleware,
+  recordingApi.middleware,
+  recordingConfigApi.middleware,
+  tibcoApi.middleware,
+  kafkaApi.middleware,
+  fileApi.middleware,
+  activemqApi.middleware,
+  ibmMqApi.middleware
+];
 
 export const store = configureStore({
   reducer: {
@@ -13,15 +30,13 @@ export const store = configureStore({
     [recordingApi.reducerPath]: recordingApi.reducer,
     [recordingConfigApi.reducerPath]: recordingConfigApi.reducer,
     [tibcoApi.reducerPath]: tibcoApi.reducer,
+    [kafkaApi.reducerPath]: kafkaApi.reducer,
+    [fileApi.reducerPath]: fileApi.reducer,
+    [activemqApi.reducerPath]: activemqApi.reducer,
+    [ibmMqApi.reducerPath]: ibmMqApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      stubApi.middleware,
-      soapStubApi.middleware,
-      recordingApi.middleware,
-      recordingConfigApi.middleware,
-      tibcoApi.middleware
-    ),
+    getDefaultMiddleware().concat(middleware),
 });
 
 setupListeners(store.dispatch);

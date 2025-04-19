@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import './index.css';
 import './styles/darkMode.css';
 import App from './App';
-import { store } from './config/store';
+import { store } from './app/store';
 import config from './config/configLoader';
 
 // Initialize dark mode from localStorage if present

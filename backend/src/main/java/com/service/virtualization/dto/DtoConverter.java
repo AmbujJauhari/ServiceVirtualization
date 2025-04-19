@@ -3,14 +3,21 @@ package com.service.virtualization.dto;
 import com.service.virtualization.model.RestStub;
 import com.service.virtualization.model.SoapStub;
 import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.model.FileEntry;
+import com.service.virtualization.model.FileStub;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for converting between DTOs and domain models
  */
+@Component
 public class DtoConverter {
 
     /**
@@ -125,6 +132,98 @@ public class DtoConverter {
                 dto.operationName(),
                 dto.matchConditions() != null ? dto.matchConditions() : new HashMap<>(),
                 dto.response() != null ? dto.response() : new HashMap<>()
+        );
+    }
+
+    /**
+     * Convert a FileEntry domain model to a DTO
+     */
+    public static FileEntryDTO fromFileEntry(FileEntry fileEntry) {
+        if (fileEntry == null) {
+            return null;
+        }
+        
+        return new FileEntryDTO(
+            fileEntry.filename(),
+            fileEntry.contentType(),
+            fileEntry.content()
+        );
+    }
+
+    /**
+     * Convert a FileEntryDTO to a domain model
+     */
+    public static FileEntry toFileEntry(FileEntryDTO fileEntryDTO) {
+        if (fileEntryDTO == null) {
+            return null;
+        }
+        
+        return new FileEntry(
+            fileEntryDTO.filename(),
+            fileEntryDTO.contentType(),
+            fileEntryDTO.content()
+        );
+    }
+
+    /**
+     * Convert a FileStub domain model to a DTO
+     */
+    public static FileStubDTO fromFileStub(FileStub fileStub) {
+        if (fileStub == null) {
+            return null;
+        }
+        
+        List<FileEntryDTO> fileEntryDTOs = fileStub.files() != null
+            ? fileStub.files().stream()
+                .map(DtoConverter::fromFileEntry)
+                .collect(Collectors.toList())
+            : new ArrayList<>();
+            
+        return new FileStubDTO(
+            fileStub.id(),
+            fileStub.name(),
+            fileStub.description(),
+            fileStub.userId(),
+            fileStub.filePath(),
+            fileStub.content(),
+            fileStub.contentType(),
+            fileEntryDTOs,
+            fileStub.cronExpression(),
+            fileStub.status() != null ? fileStub.status().name() : null,
+            fileStub.createdAt(),
+            fileStub.updatedAt()
+        );
+    }
+
+    /**
+     * Convert a FileStubDTO to a domain model
+     */
+    public static FileStub toFileStub(FileStubDTO fileStubDTO) {
+        if (fileStubDTO == null) {
+            return null;
+        }
+        
+        List<FileEntry> fileEntries = fileStubDTO.files() != null
+            ? fileStubDTO.files().stream()
+                .map(DtoConverter::toFileEntry)
+                .collect(Collectors.toList())
+            : new ArrayList<>();
+            
+        return new FileStub(
+            fileStubDTO.id(),
+            fileStubDTO.name(),
+            fileStubDTO.description(),
+            fileStubDTO.userId(),
+            fileStubDTO.filePath(),
+            fileStubDTO.content(),
+            fileStubDTO.contentType(),
+            fileEntries,
+            fileStubDTO.cronExpression(),
+            fileStubDTO.status() != null
+                ? StubStatus.valueOf(fileStubDTO.status())
+                : StubStatus.INACTIVE,
+            fileStubDTO.createdAt(),
+            fileStubDTO.updatedAt()
         );
     }
 }
