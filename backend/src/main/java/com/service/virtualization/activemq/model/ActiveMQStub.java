@@ -62,7 +62,6 @@ public class ActiveMQStub {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    private String contentMatch;
     private long latency;
     
     /**
@@ -256,14 +255,6 @@ public class ActiveMQStub {
         this.updatedAt = updatedAt;
     }
     
-    public String getContentMatch() {
-        return contentMatch;
-    }
-    
-    public void setContentMatch(String contentMatch) {
-        this.contentMatch = contentMatch;
-    }
-    
     public long getLatency() {
         return latency;
     }
@@ -282,7 +273,6 @@ public class ActiveMQStub {
                 ", destinationType='" + destinationType + '\'' +
                 ", destinationName='" + destinationName + '\'' +
                 ", messageSelector='" + messageSelector + '\'' +
-                ", contentMatch='" + contentMatch + '\'' +
                 ", responseContent='" + responseContent + '\'' +
                 ", responseType='" + responseType + '\'' +
                 ", webhookUrl='" + webhookUrl + '\'' +

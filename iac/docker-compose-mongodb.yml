@@ -16,8 +16,6 @@ services:
       - ./mongodb/config/mongod.conf:/etc/mongod.conf
     command: ["--config", "/etc/mongod.conf"]
     restart: unless-stopped
-    networks:
-      - sv-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -41,8 +39,6 @@ services:
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
     restart: unless-stopped
-    networks:
-      - sv-network
       
   # Initialization container for MongoDB collections
   mongo-init:
@@ -59,15 +55,7 @@ services:
         mongosh mongodb://admin:password@mongodb:27017/service_virtualization --file /scripts/init-db.js &&
         echo 'MongoDB initialization completed!'
       "
-    networks:
-      - sv-network
     restart: on-failure
-
-networks:
-  sv-network:
-    name: service-virtualization-network
-    driver: bridge
-    external: true
 
 volumes:
   mongodb-data:

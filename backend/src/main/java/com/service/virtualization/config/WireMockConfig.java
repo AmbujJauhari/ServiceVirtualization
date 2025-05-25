@@ -39,7 +39,7 @@ public class WireMockConfig {
     @Value("${wiremock.auto-persist-stubs:false}")
     private boolean autoPersistStubs;
     
-    @Value("${wiremock.keystore-path:#{null}}")
+    @Value("${wiremock.keystore-filePath:#{null}}")
     private String keystorePath;
     
     @Value("${wiremock.keystore-password:#{null}}")

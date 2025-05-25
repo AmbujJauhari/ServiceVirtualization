@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import config from '../config/configLoader';
 
 export enum StubStatus {
   ACTIVE = 'ACTIVE',
@@ -27,15 +28,17 @@ export interface ActiveMQStub {
   userId?: string;
   destinationType: string;
   destinationName: string;
-  selector?: string;
+  messageSelector?: string;
   contentMatchType?: ContentMatchType;
   contentPattern?: string;
   caseSensitive?: boolean;
   priority?: number;
   responseContent?: string;
   responseType?: string;
+  responseDestination?: string;
+  webhookUrl?: string;
   latency?: number;
-  headers?: MessageHeader[];
+  headers?: Record<string, string>;
   status?: StubStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -53,7 +56,7 @@ export interface CreateStubErrorResponse {
 
 export const activemqApi = createApi({
   reducerPath: 'activemqApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
   tagTypes: ['ActiveMQStub'],
   endpoints: (builder) => ({
     getActiveMQStubs: builder.query<ActiveMQStub[], void>({

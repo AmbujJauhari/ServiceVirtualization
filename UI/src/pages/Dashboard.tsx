@@ -97,6 +97,14 @@ const protocols = [
     isEnabled: true,
     recordingCount: 0,
     stubCount: 0,
+  },
+  {
+    id: 'fol',
+    name: 'File Management',
+    description: 'File-based service virtualization with scheduling capabilities',
+    isEnabled: true,
+    recordingCount: 0,
+    stubCount: 0,
   }
 ];
 
@@ -156,15 +164,15 @@ const Dashboard: React.FC = () => {
                 </Link>
               )}
               
-              {protocol.id === 'file' && (
-                <Link to="/file" className="block text-center w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition duration-150 ease-in-out">
-                  Manage Files
-                </Link>
-              )}
-              
               {protocol.id === 'activemq' && (
                 <Link to="/activemq" className="block text-center w-full py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-md transition duration-150 ease-in-out">
                   Manage ActiveMQ
+                </Link>
+              )}
+              
+              {protocol.id === 'fol' && (
+                <Link to="/fol" className="block text-center w-full py-2 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-md transition duration-150 ease-in-out">
+                  Manage Files
                 </Link>
               )}
             </div>

@@ -1,16 +1,14 @@
 package com.service.virtualization.rest.service;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.MappingBuilder;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.matching.UrlPattern;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.service.virtualization.rest.model.RestStub;
 import com.service.virtualization.rest.repository.RestStubRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,14 +20,18 @@ import java.util.*;
 public class RestStubService {
 
     private static final Logger logger = LoggerFactory.getLogger(RestStubService.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final RestStubRepository restStubRepository;
-    private final WireMockServer wireMockServer;
+    private final RestTemplate restTemplate;
+    private final String wiremockBaseUrl;
 
     public RestStubService(RestStubRepository restStubRepository,
-                           WireMockServer wireMockServer) {
+                           @Value("${wiremock.server.host}") String wiremockHost,
+                           @Value("${wiremock.server.port}") int wiremockPort) {
         this.restStubRepository = restStubRepository;
-        this.wireMockServer = wireMockServer;
+        this.restTemplate = new RestTemplate();
+        this.wiremockBaseUrl = String.format("http://%s:%d", wiremockHost, wiremockPort);
     }
 
     public RestStub createStub(RestStub stub) {
@@ -53,30 +55,13 @@ public class RestStubService {
                 stub.status(),
                 LocalDateTime.now(),
                 LocalDateTime.now(),
-                stub.wiremockMappingId(),
+                id, // Use the same ID for WireMock mapping
                 stub.matchConditions(),
                 stub.response()
         );
 
-        // Register stub with WireMock
-        StubMapping stubMapping = registerWithWireMock(stub);
-
-        // Create updated stub with WireMock mapping ID
-        stub = new RestStub(
-                id,
-                stub.name(),
-                stub.description(),
-                stub.userId(),
-                stub.behindProxy(),
-                stub.protocol(),
-                stub.tags(),
-                stub.status(),
-                LocalDateTime.now(),
-                LocalDateTime.now(),
-                stubMapping.getId().toString(),
-                stub.matchConditions(),
-                stub.response()
-        );
+        // Register stub with remote WireMock
+        registerWithWireMock(stub);
 
         // Save to repository
         return restStubRepository.save(stub);
@@ -103,35 +88,14 @@ public class RestStubService {
                 stub.status(),
                 stub.createdAt(),
                 LocalDateTime.now(),
-                stub.wiremockMappingId(),
+                stub.id(), // Use the same ID for WireMock mapping
                 stub.matchConditions(),
                 stub.response()
         );
 
         // Remove existing WireMock mapping and create a new one
-        String wiremockId = existingStub.get().wiremockMappingId();
-        if (wiremockId != null) {
-            wireMockServer.removeStubMapping(UUID.fromString(wiremockId));
-        }
-
-        StubMapping stubMapping = registerWithWireMock(stub);
-
-        // Create updated stub with new WireMock mapping ID
-        stub = new RestStub(
-                stub.id(),
-                stub.name(),
-                stub.description(),
-                stub.userId(),
-                stub.behindProxy(),
-                stub.protocol(),
-                stub.tags(),
-                stub.status(),
-                stub.createdAt(),
-                LocalDateTime.now(),
-                stubMapping.getId().toString(),
-                stub.matchConditions(),
-                stub.response()
-        );
+        deleteWireMockMapping(stub.id());
+        registerWithWireMock(stub);
 
         // Update in repository
         return restStubRepository.save(stub);
@@ -156,10 +120,7 @@ public class RestStubService {
         Optional<RestStub> stub = findStubById(id);
         if (stub.isPresent()) {
             // Remove from WireMock
-            String wiremockId = stub.get().wiremockMappingId();
-            if (wiremockId != null) {
-                wireMockServer.removeStubMapping(UUID.fromString(wiremockId));
-            }
+            deleteWireMockMapping(id);
 
             // Delete from repository
             restStubRepository.deleteById(id);
@@ -168,227 +129,188 @@ public class RestStubService {
         }
     }
 
+    private void deleteWireMockMapping(String id) {
+        try {
+            restTemplate.delete(wiremockBaseUrl + "/__admin/mappings/" + id);
+        } catch (Exception e) {
+            logger.warn("Failed to delete WireMock mapping for stub: {}", id, e);
+        }
+    }
+
     /**
-     * Register stub with WireMock server
+     * Register stub with remote WireMock service
      */
-    private StubMapping registerWithWireMock(RestStub stub) {
-        // Create request matching
-        MappingBuilder mappingBuilder;
+    private void registerWithWireMock(RestStub stub) {
+        try {
+            // Extract match conditions
+            Map<String, Object> matchConditions = stub.matchConditions();
+            String method = (String) matchConditions.getOrDefault("method", "GET");
+            String url = (String) matchConditions.getOrDefault("url", "/");
+            String urlMatchType = (String) matchConditions.getOrDefault("urlMatchType", "exact");
+            int priority = (int) matchConditions.getOrDefault("priority", 1);
 
-        // Extract method and service path from request data
-        String method = getMethod(stub);
-        String servicePath = getServicePath(stub);
+            // Build request matcher
+            Map<String, Object> request = new HashMap<>();
 
-        // Determine URL matching strategy based on matchConditions.urlMatchType
-        String urlMatchType = getUrlMatchType(stub);
-
-        mappingBuilder = switch (method.toUpperCase()) {
-            case "GET" -> WireMock.get(createUrlMatcher(servicePath, urlMatchType));
-            case "POST" -> WireMock.post(createUrlMatcher(servicePath, urlMatchType));
-            case "PUT" -> WireMock.put(createUrlMatcher(servicePath, urlMatchType));
-            case "DELETE" -> WireMock.delete(createUrlMatcher(servicePath, urlMatchType));
-            case "PATCH" -> WireMock.patch(createUrlMatcher(servicePath, urlMatchType));
-            default -> WireMock.any(createUrlMatcher(servicePath, urlMatchType));
-        };
-
-        // Add request headers
-        if (stub.matchConditions().containsKey("headers")) {
-            addRequestHeaders(mappingBuilder, stub);
-        }
-
-        // Add request body if present
-        String requestBody = getRequestBody(stub);
-        String bodyMatchType = getBodyMatchType(stub);
-        if (requestBody != null && !requestBody.isEmpty()) {
-            addRequestBodyMatching(mappingBuilder, requestBody, bodyMatchType);
-        }
-
-        // Create response
-        ResponseDefinitionBuilder responseBuilder = WireMock.aResponse()
-                .withStatus(getResponseStatus(stub));
-
-        // Add response headers
-        if (stub.response().containsKey("headers")) {
-            addResponseHeaders(responseBuilder, stub);
-        }
-
-        // Check if this is a callback response
-        checkForCallback(stub);
-
-        // Register with WireMock
-        mappingBuilder.willReturn(responseBuilder);
-        StubMapping stubMapping = mappingBuilder.build();
-        wireMockServer.addStubMapping(stubMapping);
-        return stubMapping;
-    }
-
-    // Create appropriate URL matcher based on matchType
-    private UrlPattern createUrlMatcher(String servicePath, String matchType) {
-        switch (matchType.toLowerCase()) {
+            // Add URL matching
+            switch (urlMatchType) {
+                case "exact":
+                    request.put("url", url);
+                    break;
             case "regex":
-                return WireMock.urlMatching(servicePath);
-            case "glob":
-                // Convert glob pattern to regex
-                String regex = servicePath.replace("*", "[^/]*").replace("**", ".*");
-                return WireMock.urlMatching(regex);
-            case "exact":
-            default:
-                return WireMock.urlEqualTo(servicePath);
-        }
-    }
-
-    // Add request body matching based on bodyMatchType
-    private void addRequestBodyMatching(MappingBuilder mappingBuilder, String requestBody, String bodyMatchType) {
-        switch (bodyMatchType.toLowerCase()) {
-            case "regex":
-                mappingBuilder.withRequestBody(WireMock.matching(requestBody));
+                    request.put("urlPattern", url);
                 break;
-            case "jsonpath":
-                mappingBuilder.withRequestBody(WireMock.matchingJsonPath(requestBody));
-                break;
-            case "xpath":
-                mappingBuilder.withRequestBody(WireMock.matchingXPath(requestBody));
-                break;
-            case "contains":
-                mappingBuilder.withRequestBody(WireMock.containing(requestBody));
-                break;
-            case "exact":
-            default:
-                mappingBuilder.withRequestBody(WireMock.equalTo(requestBody));
+                case "glob":
+                    request.put("urlPath", url);
                 break;
         }
-    }
 
-    // Add request headers from stub to mapping builder
-    @SuppressWarnings("unchecked")
-    private void addRequestHeaders(MappingBuilder mappingBuilder, RestStub stub) {
-        List<Map<String, Object>> headers = (List<Map<String, Object>>) stub.matchConditions().get("headers");
-        if (headers != null) {
+            // Add method matching
+            request.put("method", method);
+
+            // Add headers matching if present
+            List<Map<String, Object>> headers = (List<Map<String, Object>>) matchConditions.getOrDefault("headers", Collections.emptyList());
+            if (!headers.isEmpty()) {
+                Map<String, Object> headersPattern = new HashMap<>();
             for (Map<String, Object> header : headers) {
                 String name = (String) header.get("name");
                 String value = (String) header.get("value");
-                String matchType = header.containsKey("matchType") ? (String) header.get("matchType") : "exact";
+                    String matchType = (String) header.getOrDefault("matchType", "exact");
 
-                if (name != null && value != null) {
-                    switch (matchType.toLowerCase()) {
+                    Map<String, Object> headerPattern = new HashMap<>();
+                    switch (matchType) {
+                        case "exact":
+                            headerPattern.put("equalTo", value);
+                            break;
                         case "regex":
-                            mappingBuilder.withHeader(name, WireMock.matching(value));
+                            headerPattern.put("matches", value);
                             break;
                         case "contains":
-                            mappingBuilder.withHeader(name, WireMock.containing(value));
-                            break;
-                        case "exact":
-                        default:
-                            mappingBuilder.withHeader(name, WireMock.equalTo(value));
+                            headerPattern.put("contains", value);
                             break;
                     }
+                    headersPattern.put(name, headerPattern);
                 }
+                request.put("headers", headersPattern);
             }
-        }
-    }
 
-    // Add response headers from stub to response builder
-    @SuppressWarnings("unchecked")
-    private void addResponseHeaders(ResponseDefinitionBuilder responseBuilder, RestStub stub) {
-        List<Map<String, Object>> headers = (List<Map<String, Object>>) stub.response().get("headers");
-        if (headers != null) {
-            for (Map<String, Object> header : headers) {
-                String name = (String) header.get("name");
-                String value = (String) header.get("value");
+            // Add query parameters matching if present
+            List<Map<String, Object>> queryParams = (List<Map<String, Object>>) matchConditions.getOrDefault("queryParams", Collections.emptyList());
+            if (!queryParams.isEmpty()) {
+                Map<String, Object> queryPattern = new HashMap<>();
+                for (Map<String, Object> param : queryParams) {
+                    String name = (String) param.get("name");
+                    String value = (String) param.get("value");
+                    String matchType = (String) param.getOrDefault("matchType", "exact");
 
-                if (name != null && value != null) {
-                    responseBuilder.withHeader(name, value);
+                    Map<String, Object> paramPattern = new HashMap<>();
+                    switch (matchType) {
+                        case "exact":
+                            paramPattern.put("equalTo", value);
+                            break;
+                        case "regex":
+                            paramPattern.put("matches", value);
+                            break;
+                        case "contains":
+                            paramPattern.put("contains", value);
+                            break;
+                    }
+                    queryPattern.put(name, paramPattern);
                 }
+                request.put("queryParameters", queryPattern);
             }
-        }
-    }
 
-    // Helper methods to extract data from the stub record using new format
-
-    private String getMethod(RestStub stub) {
-        if (stub.matchConditions().containsKey("method")) {
-            return (String) stub.matchConditions().get("method");
-        }
-        return "GET";
-    }
-
-    private String getServicePath(RestStub stub) {
-        if (stub.matchConditions().containsKey("url")) {
-            return (String) stub.matchConditions().get("url");
-        }
-        return "/";
-    }
-
-    private String getUrlMatchType(RestStub stub) {
-        if (stub.matchConditions().containsKey("urlMatchType")) {
-            return (String) stub.matchConditions().get("urlMatchType");
-        }
-        return "exact";
-    }
-
-    private String getBodyMatchType(RestStub stub) {
-        if (stub.matchConditions().containsKey("bodyMatchType")) {
-            return (String) stub.matchConditions().get("bodyMatchType");
-        }
-        return "exact";
-    }
-
-    private String getRequestBody(RestStub stub) {
-        if (stub.matchConditions().containsKey("body")) {
-            return (String) stub.matchConditions().get("body");
-        }
-        return "";
-    }
-
-    private String getResponseBody(RestStub stub) {
-        if (stub.response().containsKey("body")) {
-            return (String) stub.response().get("body");
-        }
-        return "";
-    }
-
-    private String getResponseContentType(RestStub stub) {
-        if (stub.response().containsKey("contentType")) {
-            return (String) stub.response().get("contentType");
-        }
-        return "application/json";
-    }
-
-    private int getResponseStatus(RestStub stub) {
-        if (stub.response().containsKey("status")) {
-            Object status = stub.response().get("status");
-            if (status instanceof Integer) {
-                return (Integer) status;
-            } else if (status instanceof String) {
-                return Integer.parseInt((String) status);
+            // Add body matching if present
+            String body = (String) matchConditions.get("body");
+            String bodyMatchType = (String) matchConditions.getOrDefault("bodyMatchType", "exact");
+            if (body != null && !body.isEmpty()) {
+                Map<String, Object> bodyPattern = new HashMap<>();
+                switch (bodyMatchType) {
+                    case "exact":
+                        bodyPattern.put("equalTo", body);
+                        break;
+                    case "json":
+                        bodyPattern.put("matchesJsonSchema", body);
+                        break;
+                    case "jsonpath":
+                        bodyPattern.put("matchesJsonPath", body);
+                        break;
+                    case "xpath":
+                        bodyPattern.put("matchesXPath", body);
+                        break;
+                    case "contains":
+                        bodyPattern.put("contains", body);
+                        break;
+                    case "regex":
+                        bodyPattern.put("matches", body);
+                        break;
+                }
+                request.put("bodyPatterns", Collections.singletonList(bodyPattern));
             }
-        }
-        return 200;
-    }
 
-    private void checkForCallback(RestStub stub) {
-        Map<String, Object> response = stub.response();
-        if (response != null && response.containsKey("callback")) {
-            Map<String, Object> callback = (Map<String, Object>) response.get("callback");
-            String callbackUrl = (String) callback.get("url");
-            String callbackMethod = (String) callback.getOrDefault("method", "POST");
+            // Build response
+            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> stubResponse = stub.response();
 
-            // This will store the original callback data
-            response.put("_original_callback", Map.of(
-                "url", callbackUrl,
-                "method", callbackMethod
-            ));
+            // Add status code
+            response.put("status", stubResponse.getOrDefault("status", 200));
 
-            // Configure a simple response that indicates a callback will be made
-            response.put("body", "Callback will be forwarded to " + callbackUrl);
-            response.put("headers", Map.of(
-                "Content-Type", "text/plain",
-                "X-Callback-Url", callbackUrl,
-                "X-Callback-Method", callbackMethod,
-                "X-Callback-Type", "forward-request"
-            ));
+            // Add response headers if present
+            List<Map<String, Object>> responseHeadersList = (List<Map<String, Object>>) stubResponse.getOrDefault("headers", Collections.emptyList());
+            if (!responseHeadersList.isEmpty()) {
+                Map<String, String> responseHeadersMap = new HashMap<>();
+                for (Map<String, Object> header : responseHeadersList) {
+                    responseHeadersMap.put((String) header.get("name"), (String) header.get("value"));
+                }
+                response.put("headers", responseHeadersMap);
+            }
 
-            logger.info("Configured callback forwarding to {} with method {}", callbackUrl, callbackMethod);
+            // Add response body if present
+            String responseBody = (String) stubResponse.get("body");
+            if (responseBody != null && !responseBody.isEmpty()) {
+                response.put("body", responseBody);
+            }
+
+            // Add content type if specified
+            String contentType = (String) stubResponse.get("contentType");
+            if (contentType != null && !contentType.isEmpty()) {
+                response.put("headers", new HashMap<>(Map.of("Content-Type", contentType)));
+            }
+
+            // Build the complete stub mapping
+            Map<String, Object> stubMapping = new HashMap<>();
+            stubMapping.put("id", stub.id());
+            stubMapping.put("priority", priority);
+            stubMapping.put("request", request);
+            stubMapping.put("response", response);
+
+            // Log the final request payload
+            try {
+                String requestPayload = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(stubMapping);
+                logger.info("Registering stub with WireMock. Request payload:\n{}", requestPayload);
+            } catch (Exception e) {
+                logger.warn("Failed to log request payload", e);
+            }
+
+            // Register with WireMock
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(stubMapping, httpHeaders);
+
+            ResponseEntity<String> responseEntity = restTemplate.exchange(
+                    wiremockBaseUrl + "/__admin/mappings",
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+
+            if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("Failed to register stub with WireMock: " + responseEntity.getBody());
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to register stub with WireMock", e);
+            throw new RuntimeException("Failed to register stub with WireMock", e);
         }
     }
 } 

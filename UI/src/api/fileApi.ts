@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import config from '../config/configLoader';
 
 export interface FileEntry {
   filename: string;
@@ -54,7 +55,7 @@ export interface FileGroup {
 
 export const fileApi = createApi({
   reducerPath: 'fileApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
   tagTypes: ['FileStub', 'FileGroup'],
   endpoints: (builder) => ({
     getFileStubs: builder.query<FileStub[], void>({

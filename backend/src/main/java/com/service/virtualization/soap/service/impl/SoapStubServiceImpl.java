@@ -277,7 +277,7 @@ public class SoapStubServiceImpl implements SoapStubService {
      * Build a WireMock mapping for SOAP request/response
      */
     private StubMapping buildWireMockMapping(SoapStub stub, Map<String, Object> matchConditions, Map<String, Object> responseData) {
-        // Get service path for SOAP endpoint
+        // Get service filePath for SOAP endpoint
         String servicePath = getSoapEndpointPath(stub);
         
         // Create SOAP request matcher
@@ -346,7 +346,7 @@ public class SoapStubServiceImpl implements SoapStubService {
     }
     
     /**
-     * Get the SOAP endpoint path from stub
+     * Get the SOAP endpoint filePath from stub
      */
     private String getSoapEndpointPath(SoapStub stub) {
         return "/soap/" + stub.serviceName(); // Default convention

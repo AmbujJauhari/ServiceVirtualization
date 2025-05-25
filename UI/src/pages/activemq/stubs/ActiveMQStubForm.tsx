@@ -40,13 +40,16 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const [description, setDescription] = useState('');
   const [destinationType, setDestinationType] = useState('queue');
   const [destinationName, setDestinationName] = useState('');
-  const [selector, setSelector] = useState('');
+  const [messageSelector, setMessageSelector] = useState('');
   const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
   const [contentPattern, setContentPattern] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
   const [priority, setPriority] = useState(0);
-  const [responseType, setResponseType] = useState('text');
+  const [responseContentType, setResponseContentType] = useState('text');
+  const [responseType, setResponseType] = useState('queue');
+  const [responseDestination, setResponseDestination] = useState('');
   const [responseContent, setResponseContent] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [latency, setLatency] = useState(0);
   const [headers, setHeaders] = useState<MessageHeader[]>([]);
   const [status, setStatus] = useState<StubStatus>(StubStatus.ACTIVE);
@@ -63,15 +66,31 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       setDescription(existingStub.description || '');
       setDestinationType(existingStub.destinationType || 'queue');
       setDestinationName(existingStub.destinationName || '');
-      setSelector(existingStub.selector || '');
+      setMessageSelector(existingStub.messageSelector || '');
       setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
       setContentPattern(existingStub.contentPattern || '');
       setCaseSensitive(existingStub.caseSensitive ?? true);
       setPriority(existingStub.priority ?? 0);
-      setResponseType(existingStub.responseType || 'text');
+      setResponseContentType('text');
+      setResponseType(existingStub.responseType || 'queue');
+      setResponseDestination(existingStub.responseDestination || '');
       setResponseContent(existingStub.responseContent || '');
+      setWebhookUrl(existingStub.webhookUrl || '');
       setLatency(existingStub.latency || 0);
-      setHeaders(existingStub.headers || []);
+      
+      // Convert headers from Record<string, string> to MessageHeader[]
+      const headersArray: MessageHeader[] = [];
+      if (existingStub.headers) {
+        Object.entries(existingStub.headers).forEach(([name, value]) => {
+          headersArray.push({
+            name,
+            value,
+            type: 'string' // Default type since backend doesn't store type
+          });
+        });
+      }
+      setHeaders(headersArray);
+      
       setStatus(existingStub.status ?? StubStatus.ACTIVE);
     }
   }, [existingStub]);
@@ -99,20 +118,28 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
     e.preventDefault();
     setError(null);
 
+    // Transform headers from MessageHeader[] to Map<string, string> format expected by backend
+    const headersMap: Record<string, string> = {};
+    headers.forEach(header => {
+      headersMap[header.name] = header.value;
+    });
+
     const stubData: Partial<ActiveMQStub> = {
       name,
       description,
       destinationType,
       destinationName,
-      selector,
+      messageSelector,
       contentMatchType,
       contentPattern,
       caseSensitive,
       priority,
       responseType,
+      responseDestination,
       responseContent,
+      webhookUrl,
       latency,
-      headers,
+      headers: headersMap, // Use transformed headers object
       status
     };
 
@@ -228,14 +255,14 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="selector">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="messageSelector">
                 Message Selector
               </label>
               <input
-                id="selector"
+                id="messageSelector"
                 type="text"
-                value={selector}
-                onChange={(e) => setSelector(e.target.value)}
+                value={messageSelector}
+                onChange={(e) => setMessageSelector(e.target.value)}
                 placeholder="e.g. type='important' AND priority > 5"
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
@@ -313,15 +340,15 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                   id="contentPattern"
                   value={contentPattern}
                   onChange={(e) => setContentPattern(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-20"
-                  placeholder={contentMatchType === ContentMatchType.REGEX ? '^\\s*<order>.*</order>\\s*$' : contentMatchType === ContentMatchType.EXACT ? 'Exact message content to match' : 'Text to search for in the message'}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32"
+                  placeholder={contentMatchType === ContentMatchType.REGEX ? '^\\s*<order>.*</order>\\s*$' : contentMatchType === ContentMatchType.EXACT ? 'Enter complete message content to match exactly' : 'Enter text to search for in the message content'}
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   {contentMatchType === ContentMatchType.REGEX ? 
                     'Regular expression pattern to match against message content.' : 
                     contentMatchType === ContentMatchType.CONTAINS ?
                     'Text pattern that must be contained in the message content.' :
-                    'Exact text that the message content must match.'}
+                    'Complete message content that must match exactly (e.g., full XML or JSON content).'}
                 </p>
               </div>
             )}
@@ -332,13 +359,13 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Response Configuration</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseType">
-                  Response Type
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseContentType">
+                  Response Content Type
                 </label>
                 <select
-                  id="responseType"
-                  value={responseType}
-                  onChange={(e) => setResponseType(e.target.value)}
+                  id="responseContentType"
+                  value={responseContentType}
+                  onChange={(e) => setResponseContentType(e.target.value)}
                   className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 >
                   <option value="text">Text</option>
@@ -348,21 +375,70 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                 </select>
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
-                  Response Latency (ms)
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseType">
+                  Response Destination Type
                 </label>
-                <input
-                  id="latency"
-                  type="number"
-                  min="0"
-                  value={latency}
-                  onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Add artificial delay to simulate processing time.
-                </p>
+                <select
+                  id="responseType"
+                  value={responseType}
+                  onChange={(e) => setResponseType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="queue">Queue</option>
+                  <option value="topic">Topic</option>
+                </select>
               </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseDestination">
+                Response Destination
+              </label>
+              <input
+                id="responseDestination"
+                type="text"
+                value={responseDestination}
+                onChange={(e) => setResponseDestination(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Leave empty to use JMSReplyTo from request"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Destination where the response will be sent. If empty, uses JMSReplyTo from the incoming message.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="webhookUrl">
+                Webhook URL
+              </label>
+              <input
+                id="webhookUrl"
+                type="text"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="http://example.com/webhook"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Optional webhook URL for dynamic response generation. If provided, overrides static response content.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
+                Response Latency (ms)
+              </label>
+              <input
+                id="latency"
+                type="number"
+                min="0"
+                value={latency}
+                onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Add artificial delay to simulate processing time.
+              </p>
             </div>
 
             <div className="mt-4">
@@ -374,7 +450,7 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                 value={responseContent}
                 onChange={(e) => setResponseContent(e.target.value)}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-40"
-                placeholder={responseType === 'json' ? '{"key": "value"}' : responseType === 'xml' ? '<root><element>value</element></root>' : 'Your response content here...'}
+                placeholder={responseContentType === 'json' ? '{"key": "value"}' : responseContentType === 'xml' ? '<root><element>value</element></root>' : 'Your response content here...'}
               />
             </div>
           </div>

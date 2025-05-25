@@ -5,7 +5,6 @@ import RestDashboard from './pages/rest/RestDashboard';
 import SoapDashboard from './pages/soap/SoapDashboard';
 import TibcoDashboard from './pages/tibco/TibcoDashboard';
 import KafkaDashboard from './pages/kafka/KafkaDashboard';
-import FileDashboard from './pages/file/FileDashboard';
 import ActiveMQDashboard from './pages/activemq/ActiveMQDashboard';
 import IBMMQDashboard from './pages/ibmmq/IBMMQDashboard';
 import StubForm from './pages/rest/stubs/StubForm';
@@ -13,13 +12,14 @@ import SoapStubForm from './pages/soap/stubs/SoapStubForm';
 import TibcoStubForm from './pages/tibco/stubs/TibcoStubForm';
 import CreateKafkaStub from './pages/kafka/stubs/CreateKafkaStub';
 import EditKafkaStub from './pages/kafka/stubs/EditKafkaStub';
-import CreateFileStub from './pages/file/stubs/CreateFileStub';
-import EditFileStub from './pages/file/stubs/EditFileStub';
 import CreateActiveMQStub from './pages/activemq/stubs/CreateActiveMQStub';
 import EditActiveMQStub from './pages/activemq/stubs/EditActiveMQStub';
 import CreateIBMMQStub from './pages/ibmmq/stubs/CreateIBMMQStub';
 import EditIBMMQStub from './pages/ibmmq/stubs/EditIBMMQStub';
 import { MainLayout } from './components/layout/MainLayout';
+import FolDashboard from './pages/fol/FolDashboard';
+import CreateFolStub from './pages/fol/stubs/CreateFolStub';
+import EditFolStub from './pages/fol/stubs/EditFolStub';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -81,6 +81,13 @@ const App: React.FC = () => {
       return {
         title: 'IBM MQ Management',
         subtitle: 'Configure and manage IBM MQ messaging services'
+      };
+    }
+    
+    if (path === '/fol') {
+      return {
+        title: 'File Management',
+        subtitle: 'Manage file stubs, publish files, and schedule file publications'
       };
     }
     
@@ -182,14 +189,14 @@ const App: React.FC = () => {
       };
     }
     
-    if (path === '/file/stubs/create') {
+    if (path === '/fol/stubs/create') {
       return {
         title: 'Create File Stub',
         subtitle: 'Define a new file stub for virtual file services'
       };
     }
     
-    if (path.match(/\/file\/stubs\/[^/]+\/edit$/)) {
+    if (path.match(/\/fol\/stubs\/[^/]+\/edit$/)) {
       return {
         title: 'Edit File Stub',
         subtitle: 'Modify an existing file stub'
@@ -209,9 +216,9 @@ const App: React.FC = () => {
         <Route path="/soap" element={<SoapDashboard />} />
         <Route path="/tibco" element={<TibcoDashboard />} />
         <Route path="/kafka" element={<KafkaDashboard />} />
-        <Route path="/file" element={<FileDashboard />} />
         <Route path="/activemq" element={<ActiveMQDashboard />} />
         <Route path="/ibmmq" element={<IBMMQDashboard />} />
+        <Route path="/fol" element={<FolDashboard />} />
         <Route path="/tibco/stubs/create" element={<TibcoStubForm />} />
         <Route path="/tibco/stubs/:id/edit" element={<TibcoStubForm isEdit={true} />} />
         <Route path="/rest/stubs/new" element={<StubForm />} />
@@ -220,12 +227,12 @@ const App: React.FC = () => {
         <Route path="/soap/stubs/:id/edit" element={<SoapStubForm isEdit={true} />} />
         <Route path="/kafka/stubs/create" element={<CreateKafkaStub />} />
         <Route path="/kafka/stubs/:id/edit" element={<EditKafkaStub />} />
-        <Route path="/file/stubs/create" element={<CreateFileStub />} />
-        <Route path="/file/stubs/:id/edit" element={<EditFileStub />} />
         <Route path="/activemq/stubs/create" element={<CreateActiveMQStub />} />
         <Route path="/activemq/stubs/:id/edit" element={<EditActiveMQStub />} />
         <Route path="/ibmmq/stubs/create" element={<CreateIBMMQStub />} />
         <Route path="/ibmmq/stubs/:id/edit" element={<EditIBMMQStub />} />
+        <Route path="/fol/stubs/create" element={<CreateFolStub />} />
+        <Route path="/fol/stubs/:id/edit" element={<EditFolStub />} />
       </Routes>
     </MainLayout>
   );

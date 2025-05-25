@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import config from '../config/configLoader';
 
 export interface MessageHeader {
   name: string;
@@ -30,7 +31,7 @@ export interface UpdateIBMMQStubStatusRequest {
 
 export const ibmMqApi = createApi({
   reducerPath: 'ibmMqApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
   tagTypes: ['IBMMQStub'],
   endpoints: (builder) => ({
     getIBMMQStubs: builder.query<IBMMQStub[], void>({

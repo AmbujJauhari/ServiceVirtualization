@@ -1,0 +1,144 @@
+{
+    "rules": [
+      // ===== FRONTEND RULES =====
+      {
+        "description": "All frontend code should reside in the UI/ directory",
+        "pattern": "!(UI/**)",
+        "action": "warn",
+        "message": "Frontend code must be placed under the UI/ directory"
+      },
+      {
+        "description": "Only React files are allowed in UI directory",
+        "pattern": "UI/**/*.{js,jsx,ts,tsx}",
+        "action": "allow"
+      },
+      {
+        "description": "Use RTK Query for data fetching",
+        "pattern": "UI/**/api/**",
+        "action": "recommend",
+        "message": "Use createApi from RTK Query for API communication"
+      },
+      {
+        "description": "Tailwind CSS must be used for styling",
+        "pattern": "UI/**/*.css",
+        "action": "warn",
+        "message": "Avoid custom CSS unless extending Tailwind. Prefer using Tailwind utility classes"
+      },
+      {
+        "description": "Externalize all configs (e.g., environment, webpack)",
+        "pattern": "UI/**/config/**",
+        "action": "recommend",
+        "message": "Ensure all configuration files (webpack, env, etc.) are in config directory and not hardcoded"
+      },
+      {
+        "description": "Do not automatically run dev server",
+        "pattern": "**/package.json",
+        "action": "skipCommand",
+        "commands": ["npm run dev"],
+        "message": "Do not run dev server automatically. Prompt user instead."
+      },
+      {
+        "description": "Code should follow best practices and be reusable",
+        "pattern": "UI/**/components/**",
+        "action": "recommend",
+        "message": "Use reusable, testable, and concise components. Organize them clearly under components/"
+      },
+      {
+        "description": "Webpack should be used for bundling the project",
+        "pattern": "UI/**/webpack.config.js",
+        "action": "require",
+        "message": "Ensure webpack.config.js exists and handles production/dev separation"
+      },
+      {
+        "description": "Do not include infra/deployment code inside UI/",
+        "pattern": "UI/**/{Dockerfile,*.sh,*.yaml,*.yml,helm/**}",
+        "action": "error",
+        "message": "Infrastructure code should not be inside UI/. Move it to infra/"
+      },
+  
+      // ===== BACKEND RULES =====
+      {
+        "description": "All backend code should reside in the backend/ directory",
+        "pattern": "!(backend/**)",
+        "action": "warn",
+        "message": "Backend code must be placed under the backend/ directory"
+      },
+      {
+        "description": "Use Spring Boot 3 with Maven",
+        "pattern": "backend/pom.xml",
+        "action": "require",
+        "message": "Ensure backend uses Maven and Spring Boot 3"
+      },
+      {
+        "description": "Backend code must follow layered architecture and be reusable",
+        "pattern": "backend/src/main/java/**",
+        "action": "recommend",
+        "message": "Organize code into controller, service, repository layers. Keep logic reusable and modular."
+      },
+      {
+        "description": "Swagger must be configured",
+        "pattern": "backend/**/config/**/Swagger*.java",
+        "action": "require",
+        "message": "Ensure Swagger (OpenAPI) is configured for API documentation"
+      },
+      {
+        "description": "JUnit 5 and Spring-based tests must exist",
+        "pattern": "backend/src/test/java/**/*Test.java",
+        "action": "require",
+        "message": "Include JUnit 5 and Spring tests for all key components"
+      },
+      {
+        "description": "All configuration should be externalized",
+        "pattern": "backend/src/main/resources/application*.yml",
+        "action": "require",
+        "message": "Use application.yml/profiles for external configuration. Avoid hardcoding values in code."
+      },
+      {
+        "description": "Do not include infra/deployment code inside backend/",
+        "pattern": "backend/**/{Dockerfile,*.sh,*.yaml,*.yml,helm/**}",
+        "action": "error",
+        "message": "Infrastructure code should not be inside backend/. Move it to infra/"
+      },
+  
+      // ===== INFRASTRUCTURE RULES =====
+      {
+        "description": "All infrastructure code must be placed under infra/",
+        "pattern": "infra/**",
+        "action": "allow"
+      },
+      {
+        "description": "Dockerfiles should be in infra/docker/",
+        "pattern": "infra/docker/**/Dockerfile",
+        "action": "require",
+        "message": "Organize Dockerfiles under infra/docker/"
+      },
+      {
+        "description": "Helm charts should be stored in infra/helm/",
+        "pattern": "infra/helm/**/Chart.yaml",
+        "action": "require",
+        "message": "Store Helm charts under infra/helm/"
+      },
+      {
+        "description": "Prevent accidental infrastructure files in root, UI, or backend",
+        "pattern": "{Dockerfile,*.yaml,*.yml,*.sh,Chart.yaml}",
+        "action": "warn",
+        "message": "Move infrastructure files into infra/ folder for cleaner separation"
+      },
+  
+      // ===== GLOBAL CUSTOM RULES =====
+      {
+        "description": "Ignore linter warnings for all files",
+        "pattern": "**/*",
+        "action": "ignoreLinter",
+        "message": "Linter errors will not be enforced by Cursor"
+      },
+      {
+        "description": "Do not allow Lombok in the backend",
+        "pattern": "backend/**/*.java",
+        "action": "errorIfContains",
+        "contains": ["lombok."],
+        "message": "Lombok is not allowed. Use standard constructors and annotations instead."
+      }
+    ]
+  }
+  

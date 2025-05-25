@@ -50,13 +50,35 @@ public class ActiveMQConfig {
     }
     
     /**
-     * JMS template for sending messages to ActiveMQ
+     * JMS template for sending messages to ActiveMQ queues
+     */
+    @Bean(name = "activemqQueueJmsTemplate")
+    public JmsTemplate queueJmsTemplate() {
+        JmsTemplate template = new JmsTemplate();
+        template.setConnectionFactory(activemqConnectionFactory());
+        template.setPubSubDomain(false); // false for queues
+        return template;
+    }
+    
+    /**
+     * JMS template for sending messages to ActiveMQ topics
+     */
+    @Bean(name = "activemqTopicJmsTemplate")
+    public JmsTemplate topicJmsTemplate() {
+        JmsTemplate template = new JmsTemplate();
+        template.setConnectionFactory(activemqConnectionFactory());
+        template.setPubSubDomain(true); // true for topics
+        return template;
+    }
+    
+    /**
+     * JMS template for sending messages to ActiveMQ (legacy - for backward compatibility)
      */
     @Bean(name = "activemqJmsTemplate")
     public JmsTemplate jmsTemplate() {
         JmsTemplate template = new JmsTemplate();
         template.setConnectionFactory(activemqConnectionFactory());
-        template.setPubSubDomain(true); // Set to false for queues, true for topics
+        template.setPubSubDomain(false); // Default to queues
         return template;
     }
 } 

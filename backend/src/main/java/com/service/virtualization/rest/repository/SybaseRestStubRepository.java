@@ -48,7 +48,7 @@ public class SybaseRestStubRepository implements RestStubRepository {
             "SELECT * FROM rest_stubs WHERE JSON_VALUE(stub_data, '$.userId') = ?";
     
     private static final String SELECT_STUBS_BY_SERVICE_PATH = 
-            "SELECT * FROM rest_stubs WHERE JSON_VALUE(stub_data, '$.requestData.path') = ?";
+            "SELECT * FROM rest_stubs WHERE JSON_VALUE(stub_data, '$.requestData.filePath') = ?";
     
     private static final String DELETE_STUB_BY_ID = 
             "DELETE FROM rest_stubs WHERE id = ?";

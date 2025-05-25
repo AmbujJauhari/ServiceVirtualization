@@ -7,6 +7,7 @@ import { recordingConfigApi } from '../api/recordingConfigApi';
 import { tibcoApi } from '../api/tibcoApi';
 import { kafkaApi } from '../api/kafkaApi';
 import { fileApi } from '../api/fileApi';
+import { folApi } from '../api/folApi';
 import { activemqApi } from '../api/activemqApi';
 import { ibmMqApi } from '../api/ibmMqApi';
 import { healthApi } from '../api/healthApi';
@@ -20,6 +21,7 @@ const middleware = [
   tibcoApi.middleware,
   kafkaApi.middleware,
   fileApi.middleware,
+  folApi.middleware,
   activemqApi.middleware,
   ibmMqApi.middleware,
   healthApi.middleware
@@ -34,6 +36,7 @@ export const store = configureStore({
     [tibcoApi.reducerPath]: tibcoApi.reducer,
     [kafkaApi.reducerPath]: kafkaApi.reducer,
     [fileApi.reducerPath]: fileApi.reducer,
+    [folApi.reducerPath]: folApi.reducer,
     [activemqApi.reducerPath]: activemqApi.reducer,
     [ibmMqApi.reducerPath]: ibmMqApi.reducer,
     [healthApi.reducerPath]: healthApi.reducer,

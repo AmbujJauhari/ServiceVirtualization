@@ -140,7 +140,8 @@ const ActiveMQStubList: React.FC = () => {
             <thead>
               <tr>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Destination</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Destination</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Matching</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -162,10 +163,23 @@ const ActiveMQStubList: React.FC = () => {
                       </span>
                       {stub.destinationName}
                     </div>
-                    {stub.selector && (
+                    {stub.messageSelector && (
                       <div className="text-gray-500 text-sm mt-1">
-                        <span className="font-semibold">Selector:</span> {stub.selector}
+                        <span className="font-semibold">Selector:</span> {stub.messageSelector}
                       </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200">
+                    {stub.responseDestination ? (
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 
+                          ${stub.responseType === 'queue' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {stub.responseType}
+                        </span>
+                        {stub.responseDestination}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-sm">Uses JMSReplyTo</span>
                     )}
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">

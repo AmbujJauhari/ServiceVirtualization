@@ -1,12 +1,12 @@
 package com.service.virtualization.dto;
 
 import com.service.virtualization.files.FileEntryDTO;
-import com.service.virtualization.files.FileStubDTO;
+import com.service.virtualization.files.dto.FileStubDTO;
 import com.service.virtualization.rest.model.RestStub;
 import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.files.FileEntry;
-import com.service.virtualization.files.FileStub;
+import com.service.virtualization.files.model.FileStub;
 import com.service.virtualization.rest.dto.RestStubDTO;
 import com.service.virtualization.soap.SoapStubDTO;
 import org.springframework.stereotype.Component;
@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * Utility class for converting between DTOs and domain models
@@ -176,9 +177,12 @@ public class DtoConverter {
             return null;
         }
         
-        List<FileEntryDTO> fileEntryDTOs = fileStub.getFiles() != null
-            ? fileStub.getFiles().stream()
-                .map(DtoConverter::fromFileEntry)
+        List<FileEntryDTO> fileEntryDTOs = fileStub.files() != null
+            ? fileStub.files().stream()
+                .map(file -> new FileEntryDTO(
+                    file.getFilename(), 
+                    file.getContentType(), 
+                    null)) // Don't include file content in list view
                 .collect(Collectors.toList())
             : new ArrayList<>();
             
@@ -188,8 +192,8 @@ public class DtoConverter {
             fileStub.description(),
             fileStub.userId(),
             fileStub.filePath(),
-            fileStub.content(),
-            fileStub.contentType(),
+            null, // No direct content in FileStub record
+            null, // No direct contentType in FileStub record
             fileEntryDTOs,
             fileStub.cronExpression(),
             fileStub.status() != null ? fileStub.status().name() : null,
@@ -206,11 +210,18 @@ public class DtoConverter {
             return null;
         }
         
-        List<FileEntry> fileEntries = fileStubDTO.files() != null
-            ? fileStubDTO.files().stream()
-                .map(DtoConverter::toFileEntry)
-                .collect(Collectors.toList())
-            : new ArrayList<>();
+        List<FileStub.FileResource> fileResources = new ArrayList<>();
+        if (fileStubDTO.files() != null) {
+            for (FileEntryDTO entryDTO : fileStubDTO.files()) {
+                FileStub.FileResource resource = new FileStub.FileResource();
+                resource.setId(UUID.randomUUID().toString());
+                resource.setFilename(entryDTO.filename());
+                resource.setContentType(entryDTO.contentType());
+                resource.setPath(null); // This will be set later when saving the file
+                resource.setCreatedAt(LocalDateTime.now().toString());
+                fileResources.add(resource);
+            }
+        }
             
         return new FileStub(
             fileStubDTO.id(),
@@ -218,13 +229,11 @@ public class DtoConverter {
             fileStubDTO.description(),
             fileStubDTO.userId(),
             fileStubDTO.filePath(),
-            fileStubDTO.content(),
-            fileStubDTO.contentType(),
-            fileEntries,
-            fileStubDTO.cronExpression(),
             fileStubDTO.status() != null
                 ? StubStatus.valueOf(fileStubDTO.status())
                 : StubStatus.INACTIVE,
+            fileStubDTO.cronExpression(),
+            fileResources,
             fileStubDTO.createdAt(),
             fileStubDTO.updatedAt()
         );

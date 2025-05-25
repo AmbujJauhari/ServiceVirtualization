@@ -90,7 +90,7 @@ public class ActiveMQStubService {
      * @return The created stub
      * @throws StubPriorityConflictException if a higher priority stub exists
      */
-    public ActiveMQStub createStub(ActiveMQStub stub) {
+    public ActiveMQStub  createStub(ActiveMQStub stub) {
         // Check for existing stubs with higher priority for the same destination
         validateStubPriority(stub);
         
@@ -204,7 +204,7 @@ public class ActiveMQStubService {
         // Unregister listener if it exists
         destinationManager.unregisterListener(id);
         
-        activeMQStubRepository.deleteById(id);
+        activeMQStubRepository.delete(stub);
         logger.info("Deleted ActiveMQ stub with ID: {}", id);
     }
     

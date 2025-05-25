@@ -134,7 +134,7 @@ public class SoapStubController {
         
         // Ensure ID matches
         if (!id.equals(soapStubDTO.id())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID in path must match ID in body");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID in filePath must match ID in body");
         }
         
         // Convert DTO to domain model

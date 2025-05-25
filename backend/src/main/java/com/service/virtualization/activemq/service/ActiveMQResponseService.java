@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service for handling responses to matched ActiveMQ messages.
@@ -24,8 +25,12 @@ public class ActiveMQResponseService {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQResponseService.class);
 
     @Autowired
-    @Qualifier("activemqJmsTemplate")
-    private JmsTemplate jmsTemplate;
+    @Qualifier("activemqQueueJmsTemplate")
+    private JmsTemplate queueJmsTemplate;
+
+    @Autowired
+    @Qualifier("activemqTopicJmsTemplate")
+    private JmsTemplate topicJmsTemplate;
 
     @Autowired
     private WebhookService webhookService;
@@ -42,11 +47,14 @@ public class ActiveMQResponseService {
     public void processResponse(ActiveMQStub stub, Message message, String messageContent) {
         try {
             String responseDestination = stub.getResponseDestination();
+            String responseDestinationType = stub.getResponseType();
 
             // If no response destination is specified, use the JMSReplyTo if available
             if (responseDestination == null || responseDestination.trim().isEmpty()) {
                 if (message.getJMSReplyTo() != null) {
                     responseDestination = message.getJMSReplyTo().toString();
+                    // Try to determine destination type from JMSReplyTo
+                    responseDestinationType = determineDestinationTypeFromReplyTo(message.getJMSReplyTo().toString());
                 } else {
                     logger.warn("No response destination specified and no JMSReplyTo in message for stub {}",
                             stub.getId());
@@ -56,9 +64,17 @@ public class ActiveMQResponseService {
 
             // Process the response based on type
             final String finalDestination = responseDestination;
+            final String finalDestinationType = responseDestinationType;
             final Map<String, String> headers = extractHeaders(message);
 
-            sendResponse(stub, finalDestination, messageContent, headers);
+            // Handle latency if specified
+            if (stub.getLatency() > 0) {
+                scheduler.schedule(() -> {
+                    sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
+                }, stub.getLatency(), TimeUnit.MILLISECONDS);
+            } else {
+                sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
+            }
         } catch (Exception e) {
             logger.error("Error processing response for stub {}: {}",
                     stub.getId(), e.getMessage(), e);
@@ -70,15 +86,19 @@ public class ActiveMQResponseService {
      *
      * @param stub                   The matched stub
      * @param destination            The destination to send the response to
+     * @param destinationType        The type of destination (queue or topic)
      * @param originalMessageContent The content of the original message
      * @param headers                Headers from the original message
      */
-    private void sendResponse(ActiveMQStub stub, String destination,
+    private void sendResponse(ActiveMQStub stub, String destination, String destinationType,
                               String originalMessageContent, Map<String, String> headers) {
         try {
-            // Determine whether to use a topic or queue
-            boolean isTopic = "topic".equalsIgnoreCase(stub.getResponseDestinationType());
-            jmsTemplate.setPubSubDomain(isTopic);
+            // Determine which JmsTemplate to use based on destination type
+            boolean isTopic = "topic".equalsIgnoreCase(destinationType);
+            JmsTemplate jmsTemplate = isTopic ? topicJmsTemplate : queueJmsTemplate;
+
+            logger.debug("Sending response to {} {} for stub {}", 
+                    isTopic ? "topic" : "queue", destination, stub.getId());
 
             // Check if we should get content from webhook
             String responseContent;
@@ -98,21 +118,52 @@ public class ActiveMQResponseService {
                 TextMessage responseMessage = session.createTextMessage(finalResponseContent);
 
                 // Set correlation ID from original message if available
-                responseMessage.setJMSCorrelationID(UUID.randomUUID().toString());
+                try {
+                    if (headers.containsKey("JMSCorrelationID")) {
+                        responseMessage.setJMSCorrelationID(headers.get("JMSCorrelationID"));
+                    } else if (headers.containsKey("JMSMessageID")) {
+                        responseMessage.setJMSCorrelationID(headers.get("JMSMessageID"));
+                    } else {
+                        responseMessage.setJMSCorrelationID(UUID.randomUUID().toString());
+                    }
+                } catch (JMSException e) {
+                    logger.warn("Error setting correlation ID: {}", e.getMessage());
+                }
 
                 // Add any custom headers from the stub
                 if (stub.getHeaders() != null) {
                     for (Map.Entry<String, String> header : stub.getHeaders().entrySet()) {
-                        responseMessage.setStringProperty(header.getKey(), header.getValue());
+                        try {
+                            responseMessage.setStringProperty(header.getKey(), header.getValue());
+                        } catch (JMSException e) {
+                            logger.warn("Error setting property {}: {}", header.getKey(), e.getMessage());
+                        }
                     }
                 }
 
                 return responseMessage;
             });
 
-            logger.info("Sent response to {} for stub {}", destination, stub.getId());
+            logger.info("Sent response to {} {} for stub {}", 
+                    isTopic ? "topic" : "queue", destination, stub.getId());
         } catch (Exception e) {
             logger.error("Error sending response: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Try to determine destination type from JMSReplyTo string.
+     * This is a best-effort approach as the format may vary.
+     */
+    private String determineDestinationTypeFromReplyTo(String replyTo) {
+        if (replyTo == null) {
+            return "queue"; // Default to queue
+        }
+        
+        if (replyTo.toLowerCase().contains("topic")) {
+            return "topic";
+        } else {
+            return "queue";
         }
     }
 

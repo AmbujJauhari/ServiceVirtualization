@@ -51,10 +51,10 @@ public interface RestStubRepository {
     List<RestStub> findByUserId(String userId);
     
     /**
-     * Find stubs by path
+     * Find stubs by filePath
      * 
-     * @param path the service path to filter by
-     * @return a list of stubs for the specified path
+     * @param path the service filePath to filter by
+     * @return a list of stubs for the specified filePath
      */
     List<RestStub> findByServicePath(String path);
     

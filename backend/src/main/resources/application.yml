@@ -21,8 +21,8 @@ server:
 # Wiremock configuration
 wiremock:
   server:
+    host: localhost
     port: 8081
-    files-path: ./wiremock-files
 
 # Database configuration
 database:
@@ -49,3 +49,50 @@ logging:
     com.service.virtualization: DEBUG
     org.wiremock: INFO
     org.springframework.web: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  health:
+    defaults:
+      enabled: true
+
+# External Service Connection Properties (for health checks)
+# Kafka
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  connection-timeout: ${KAFKA_CONNECTION_TIMEOUT:2000}
+
+# IBM MQ
+ibmmq:
+  host: ${IBMMQ_HOST:localhost}
+  port: ${IBMMQ_PORT:1414}
+  connection-timeout: ${IBMMQ_CONNECTION_TIMEOUT:2000}
+
+# Tibco EMS
+tibco:
+  server: ${TIBCO_SERVER:localhost}
+  port: ${TIBCO_PORT:7222}
+  connection-timeout: ${TIBCO_CONNECTION_TIMEOUT:2000}
+
+# ActiveMQ
+activemq:
+  broker-url: ${ACTIVEMQ_BROKER_URL:tcp://localhost:61616}
+  username: ${ACTIVEMQ_USERNAME:admin}
+  password: ${ACTIVEMQ_PASSWORD:admin}
+  port: ${ACTIVEMQ_PORT:61616}
+  connection-timeout: ${ACTIVEMQ_CONNECTION_TIMEOUT:2000}
+
+# File Service Configuration
+virtualization:
+  files:
+    output.directory: ${FILES_OUTPUT_DIR:./file-output}
+    scheduler:
+      enabled: ${FILES_SCHEDULER_ENABLED:true}
+      poll-rate: ${FILES_SCHEDULER_POLL_RATE:60000}
