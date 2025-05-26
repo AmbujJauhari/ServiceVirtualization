@@ -2,6 +2,7 @@ package com.service.virtualization.tibco.service;
 
 import com.service.virtualization.tibco.model.TibcoDestination;
 import com.service.virtualization.tibco.model.TibcoStub;
+import com.service.virtualization.model.StubStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.jms.*;
@@ -67,48 +68,52 @@ public class TibcoStubListenerService {
      * This should be called when stubs are created, updated, or deleted.
      */
     public synchronized void refreshListeners() {
-        logger.info("Refreshing TIBCO stub listeners");
+        logger.debug("Refreshing TIBCO stub listeners");
         
-        // Get all active stubs
-        List<TibcoStub> activeStubs = tibcoStubService.findAllByStatus("ACTIVE");
-        
-        // Track stubs that need listeners
-        Set<String> currentStubIds = new HashSet<>();
-        
-        // Create or update listeners for active stubs
-        for (TibcoStub stub : activeStubs) {
-            currentStubIds.add(stub.getId());
+        try {
+            // Get all active stubs
+            List<TibcoStub> activeStubs = tibcoStubService.findAllByStatus(StubStatus.ACTIVE);
             
-            // Check if listener already exists
-            if (activeListeners.containsKey(stub.getId())) {
-                StubListener existingListener = activeListeners.get(stub.getId());
-                // If stub has changed, close the existing listener and create a new one
-                if (existingListener.isStubChanged(stub)) {
-                    logger.info("Stub {} has changed, recreating listener", stub.getId());
-                    existingListener.close();
+            // Track stubs that need listeners
+            Set<String> currentStubIds = new HashSet<>();
+            
+            // Create or update listeners for active stubs
+            for (TibcoStub stub : activeStubs) {
+                currentStubIds.add(stub.getId());
+                
+                // Check if listener already exists
+                if (activeListeners.containsKey(stub.getId())) {
+                    StubListener existingListener = activeListeners.get(stub.getId());
+                    // If stub has changed, close the existing listener and create a new one
+                    if (existingListener.isStubChanged(stub)) {
+                        logger.info("Stub {} has changed, recreating listener", stub.getId());
+                        existingListener.close();
+                        createListener(stub);
+                    }
+                } else {
+                    // Create new listener
                     createListener(stub);
                 }
-            } else {
-                // Create new listener
-                createListener(stub);
             }
-        }
-        
-        // Remove listeners for deleted or inactive stubs
-        List<String> listenersToRemove = new ArrayList<>();
-        for (String stubId : activeListeners.keySet()) {
-            if (!currentStubIds.contains(stubId)) {
-                listenersToRemove.add(stubId);
+            
+            // Remove listeners for deleted or inactive stubs
+            List<String> listenersToRemove = new ArrayList<>();
+            for (String stubId : activeListeners.keySet()) {
+                if (!currentStubIds.contains(stubId)) {
+                    listenersToRemove.add(stubId);
+                }
             }
+            
+            for (String stubId : listenersToRemove) {
+                logger.info("Removing listener for stub {}", stubId);
+                StubListener listener = activeListeners.remove(stubId);
+                listener.close();
+            }
+            
+            logger.info("TIBCO stub listeners refreshed: {} active listeners", activeListeners.size());
+        } catch (Exception e) {
+            logger.error("Error refreshing TIBCO stub listeners: {}", e.getMessage(), e);
         }
-        
-        for (String stubId : listenersToRemove) {
-            logger.info("Removing listener for stub {}", stubId);
-            StubListener listener = activeListeners.remove(stubId);
-            listener.close();
-        }
-        
-        logger.info("TIBCO stub listeners refreshed: {} active listeners", activeListeners.size());
     }
     
     /**
@@ -219,14 +224,10 @@ public class TibcoStubListenerService {
             try {
                 logger.debug("Received message for stub {}: {}", stub.getId(), stub.getName());
                 
-                // Check if body match criteria exist and need to be validated
-                if (stub.getBodyMatchCriteria() != null && !stub.getBodyMatchCriteria().isEmpty()) {
-                    // Extract message body
-                    String messageBody = extractMessageBody(message);
-                    if (messageBody == null || !matchesBodyCriteria(messageBody)) {
-                        logger.debug("Message body doesn't match criteria for stub {}", stub.getId());
-                        return; // Skip this message as it doesn't match body criteria
-                    }
+                // Check content matching using standardized approach
+                if (!matchesContent(message)) {
+                    logger.debug("Message content doesn't match criteria for stub {}", stub.getId());
+                    return; // Skip this message as it doesn't match content criteria
                 }
                 
                 // Message matches, process it
@@ -238,6 +239,69 @@ public class TibcoStubListenerService {
                 }
             } catch (Exception e) {
                 logger.error("Error processing message for stub {}: {}", stub.getId(), e.getMessage(), e);
+            }
+        }
+        
+        /**
+         * Checks if the message content matches the stub's content matching criteria.
+         * Uses both standardized content matching and legacy body match criteria for backward compatibility.
+         */
+        private boolean matchesContent(Message message) throws JMSException {
+            // First check standardized content matching
+            if (stub.getContentMatchType() != null && stub.getContentMatchType() != TibcoStub.ContentMatchType.NONE) {
+                String messageBody = extractMessageBody(message);
+                if (messageBody == null) {
+                    return false;
+                }
+                
+                if (!matchesStandardizedContent(messageBody)) {
+                    return false;
+                }
+            }
+            
+            // Then check legacy body match criteria for backward compatibility
+            if (stub.getBodyMatchCriteria() != null && !stub.getBodyMatchCriteria().isEmpty()) {
+                String messageBody = extractMessageBody(message);
+                if (messageBody == null || !matchesBodyCriteria(messageBody)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        /**
+         * Checks if the message body matches the standardized content pattern.
+         */
+        private boolean matchesStandardizedContent(String messageBody) {
+            if (stub.getContentPattern() == null || stub.getContentPattern().trim().isEmpty()) {
+                return true; // No pattern means match all
+            }
+            
+            String pattern = stub.getContentPattern();
+            boolean caseSensitive = stub.isCaseSensitive();
+            
+            // Apply case sensitivity
+            String content = caseSensitive ? messageBody : messageBody.toLowerCase();
+            String searchPattern = caseSensitive ? pattern : pattern.toLowerCase();
+            
+            switch (stub.getContentMatchType()) {
+                case CONTAINS:
+                    return content.contains(searchPattern);
+                case EXACT:
+                    return content.equals(searchPattern);
+                case REGEX:
+                    try {
+                        Pattern regexPattern = caseSensitive ? 
+                            Pattern.compile(pattern) : 
+                            Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+                        return regexPattern.matcher(messageBody).matches();
+                    } catch (Exception e) {
+                        logger.warn("Invalid regex pattern '{}' for stub {}: {}", pattern, stub.getId(), e.getMessage());
+                        return false;
+                    }
+                default:
+                    return true;
             }
         }
         

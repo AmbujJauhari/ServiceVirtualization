@@ -45,7 +45,8 @@ public class DtoConverter {
                 restStub.updatedAt(),
                 restStub.wiremockMappingId(),
                 restStub.matchConditions(),
-                restStub.response()
+                restStub.response(),
+                restStub.webhookUrl()
         );
     }
 
@@ -74,7 +75,8 @@ public class DtoConverter {
                 dto.updatedAt() != null ? dto.updatedAt() : LocalDateTime.now(),
                 dto.wiremockMappingId(),
                 dto.matchConditions() != null ? dto.matchConditions() : new HashMap<>(),
-                dto.response() != null ? dto.response() : new HashMap<>()
+                dto.response() != null ? dto.response() : new HashMap<>(),
+                dto.webhookUrl()
         );
     }
     

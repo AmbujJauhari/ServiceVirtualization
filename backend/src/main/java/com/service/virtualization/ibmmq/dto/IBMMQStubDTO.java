@@ -1,6 +1,8 @@
 package com.service.virtualization.ibmmq.dto;
 
+import com.service.virtualization.ibmmq.model.IBMMQStub;
 import com.service.virtualization.model.MessageHeader;
+import com.service.virtualization.model.StubStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,11 +18,18 @@ public record IBMMQStubDTO(
     String queueManager,
     String queueName,
     String selector,
+    
+    // Standardized content matching configuration
+    IBMMQStub.ContentMatchType contentMatchType,
+    String contentPattern,
+    Boolean caseSensitive,
+    Integer priority,
+    
     String responseContent,
     String responseType,
     Integer latency,
     List<MessageHeader> headers,
-    String status,
+    StubStatus status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
@@ -28,6 +37,8 @@ public record IBMMQStubDTO(
      * Default constructor with empty values
      */
     public IBMMQStubDTO() {
-        this(null, null, null, null, null, null, null, null, null, 0, List.of(), "INACTIVE", null, null);
+        this(null, null, null, null, null, null, null, 
+             IBMMQStub.ContentMatchType.NONE, null, false, 0, 
+             null, null, 0, List.of(), StubStatus.INACTIVE, null, null);
     }
 } 

@@ -47,64 +47,48 @@ const protocols = [
     name: 'REST',
     description: 'REST API virtualization',
     isEnabled: true,
-    recordingCount: 15,
-    stubCount: 28,
   },
   {
     id: 'soap',
     name: 'SOAP',
     description: 'SOAP service virtualization',
     isEnabled: true,
-    recordingCount: 7,
-    stubCount: 12,
   },
   {
     id: 'tibco',
     name: 'TIBCO',
     description: 'TIBCO EMS messaging virtualization',
     isEnabled: true,
-    recordingCount: 5,
-    stubCount: 10,
   },
   {
     id: 'ibmmq',
     name: 'IBM MQ',
     description: 'IBM MQ messaging virtualization',
     isEnabled: true,
-    recordingCount: 3,
-    stubCount: 8,
   },
   {
     id: 'kafka',
     name: 'Kafka',
     description: 'Kafka messaging virtualization',
     isEnabled: true,
-    recordingCount: 4,
-    stubCount: 9,
   },
   {
     id: 'file',
     name: 'File Service',
     description: 'File-based service virtualization',
     isEnabled: true,
-    recordingCount: 0,
-    stubCount: 5,
   },
   {
     id: 'activemq',
     name: 'ActiveMQ',
     description: 'ActiveMQ messaging virtualization',
     isEnabled: true,
-    recordingCount: 0,
-    stubCount: 0,
   },
   {
     id: 'fol',
     name: 'File Management',
     description: 'File-based service virtualization with scheduling capabilities',
     isEnabled: true,
-    recordingCount: 0,
-    stubCount: 0,
   }
 ];
 
@@ -128,11 +112,6 @@ const Dashboard: React.FC = () => {
               </div>
               
               <p className="text-gray-600 mb-4">{protocol.description}</p>
-              
-              <div className="flex justify-between text-sm text-gray-500 mb-4">
-                <span>{protocol.recordingCount} Recordings</span>
-                <span>{protocol.stubCount} Stubs</span>
-              </div>
               
               {protocol.id === 'rest' && (
                 <Link to="/rest" className="block text-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md transition duration-150 ease-in-out">

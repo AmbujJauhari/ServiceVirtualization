@@ -40,7 +40,6 @@ public class StubInitializer implements ApplicationListener<ApplicationReadyEven
             
             logger.info("Found {} active stubs to initialize", activeStubs.size());
             
-            // Use AtomicInteger to track progress
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger errorCount = new AtomicInteger(0);
             

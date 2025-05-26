@@ -23,7 +23,8 @@ public record RestStub(
         String wiremockMappingId,
 
         Map<String, Object> matchConditions,
-        Map<String, Object> response
+        Map<String, Object> response,
+        String webhookUrl
 ) {
     public RestStub() {
         this(
@@ -39,7 +40,8 @@ public record RestStub(
                 LocalDateTime.now(),
                 null,
                 new HashMap<>(),
-                new HashMap<>()
+                new HashMap<>(),
+                null
         );
     }
 
@@ -69,6 +71,7 @@ public record RestStub(
         if (response == null) {
             response = new HashMap<>();
         }
+        // webhookUrl can be null (no webhook)
     }
     /**
      * Create a new Stub with the updated request data
@@ -76,7 +79,7 @@ public record RestStub(
     public RestStub withMatchingConditions(Map<String, Object> matchConditions) {
         return new RestStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, response
+                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, response, webhookUrl
         );
     }
 
@@ -86,7 +89,7 @@ public record RestStub(
     public RestStub withResponse(Map<String, Object> newResponse) {
         return new RestStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, newResponse
+                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, newResponse, webhookUrl
         );
 
     }
@@ -97,7 +100,7 @@ public record RestStub(
     public RestStub withStatus(StubStatus newStatus) {
         return new RestStub(
                 id, name, description, userId, behindProxy, protocol, tags, newStatus,
-                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, response
+                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, response, webhookUrl
         );
     }
 
@@ -107,7 +110,17 @@ public record RestStub(
     public RestStub withWiremockMappingId(String newWiremockMappingId) {
         return new RestStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), newWiremockMappingId, matchConditions, response
+                createdAt, LocalDateTime.now(), newWiremockMappingId, matchConditions, response, webhookUrl
+        );
+    }
+
+    /**
+     * Create a new Stub with the updated webhook URL
+     */
+    public RestStub withWebhookUrl(String newWebhookUrl) {
+        return new RestStub(
+                id, name, description, userId, behindProxy, protocol, tags, status,
+                createdAt, LocalDateTime.now(), wiremockMappingId, matchConditions, response, newWebhookUrl
         );
     }
 
@@ -121,6 +134,14 @@ public record RestStub(
                 && userId != null && !userId.trim().isEmpty()
                 && !matchConditions.isEmpty()
                 && !response.isEmpty();
+    }
+
+    /**
+     * Check if this stub has webhook configured
+     * @return true if webhook URL is configured and not empty
+     */
+    public boolean hasWebhook() {
+        return webhookUrl != null && !webhookUrl.trim().isEmpty();
     }
 
     /**

@@ -72,6 +72,14 @@ public class IBMMQStubService {
                     existingStub.setQueueManager(ibmMQStub.getQueueManager());
                     existingStub.setQueueName(ibmMQStub.getQueueName());
                     existingStub.setSelector(ibmMQStub.getSelector());
+                    
+                    // Update standardized content matching fields
+                    existingStub.setContentMatchType(ibmMQStub.getContentMatchType() != null ? 
+                        ibmMQStub.getContentMatchType() : IBMMQStub.ContentMatchType.NONE);
+                    existingStub.setContentPattern(ibmMQStub.getContentPattern());
+                    existingStub.setCaseSensitive(ibmMQStub.isCaseSensitive());
+                    existingStub.setPriority(ibmMQStub.getPriority());
+                    
                     existingStub.setResponseContent(ibmMQStub.getResponseContent());
                     existingStub.setResponseType(ibmMQStub.getResponseType());
                     existingStub.setLatency(ibmMQStub.getLatency());

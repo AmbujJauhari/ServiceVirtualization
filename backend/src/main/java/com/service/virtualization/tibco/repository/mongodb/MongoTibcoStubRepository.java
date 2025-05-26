@@ -2,11 +2,14 @@ package com.service.virtualization.tibco.repository.mongodb;
 
 import com.service.virtualization.tibco.model.TibcoStub;
 import com.service.virtualization.tibco.repository.TibcoStubRepository;
+import com.service.virtualization.model.StubStatus;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.context.annotation.Profile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +19,7 @@ import java.util.Optional;
 public class MongoTibcoStubRepository implements TibcoStubRepository {
     private static final String COLLECTION_NAME = "tibco_stubs";
     private final MongoTemplate mongoTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(MongoTibcoStubRepository.class);
 
     public MongoTibcoStubRepository(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
@@ -37,7 +41,8 @@ public class MongoTibcoStubRepository implements TibcoStubRepository {
     }
 
     @Override
-    public List<TibcoStub> findByStatus(String status) {
+    public List<TibcoStub> findByStatus(StubStatus status) {
+        logger.debug("Finding TIBCO stubs by status: {}", status);
         Query query = new Query(Criteria.where("status").is(status));
         return mongoTemplate.find(query, TibcoStub.class, COLLECTION_NAME);
     }

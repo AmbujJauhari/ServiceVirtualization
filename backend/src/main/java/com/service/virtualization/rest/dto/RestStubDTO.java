@@ -20,7 +20,8 @@ public record RestStubDTO(
     LocalDateTime updatedAt,
     String wiremockMappingId,
     Map<String, Object> matchConditions,
-    Map<String, Object> response
+    Map<String, Object> response,
+    String webhookUrl
 
 ) {
 

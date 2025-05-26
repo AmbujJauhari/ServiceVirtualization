@@ -3,6 +3,8 @@ package com.service.virtualization.tibco.repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.service.virtualization.tibco.model.TibcoStub;
+import com.service.virtualization.tibco.model.TibcoDestination;
+import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -15,6 +17,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 /**
  * Sybase implementation of the TibcoStubRepository interface.
@@ -93,8 +100,8 @@ public class SybaseTibcoStubRepository implements TibcoStubRepository {
     }
 
     @Override
-    public List<TibcoStub> findByStatus(String status) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_STATUS, getRowMapper(), status);
+    public List<TibcoStub> findByStatus(StubStatus status) {
+        return jdbcTemplate.query(SELECT_STUBS_BY_STATUS, getRowMapper(), status.name());
     }
 
     @Override

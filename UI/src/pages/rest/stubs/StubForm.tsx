@@ -90,6 +90,10 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
           const callback = response.callback;
           callbackUrl = callback.url || '';
           callbackMethod = callback.method || 'POST';
+        } else if ((existingStub as any).webhookUrl) {
+          // Check for top-level webhookUrl field (new format)
+          callbackUrl = (existingStub as any).webhookUrl;
+          setResponseType('callback');
         }
         
         // Map existing data to form structure
@@ -286,7 +290,7 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
     }
     
     // Construct the stub data object
-    return {
+    const stubData = {
       name: formData.name,
       description: formData.description,
       protocol: 'HTTP', // Hardcoded for REST stubs
@@ -296,6 +300,13 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
       matchConditions,
       response
     };
+    
+    // Extract webhook URL for backend compatibility
+    if (responseType === 'callback' && formData.callbackUrl) {
+      (stubData as any).webhookUrl = formData.callbackUrl;
+    }
+    
+    return stubData;
   };
 
   // Handle form submission
@@ -554,7 +565,7 @@ const StubForm: React.FC<StubFormProps> = ({ isEdit = false }) => {
                     >
                       <option value="exact">Exact</option>
                       <option value="regex">Regex</option>
-                      <option value="glob">Glob</option>
+                      <option value="urlPath">urlPath</option>
                     </select>
                   </div>
                 </div>

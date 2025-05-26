@@ -2,40 +2,53 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import config from '../config/configLoader';
 
 // Types
+export enum ContentMatchType {
+  NONE = 'NONE',
+  CONTAINS = 'CONTAINS',
+  EXACT = 'EXACT',
+  REGEX = 'REGEX'
+}
+
+export enum StubStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE'
+}
+
 export interface TibcoDestination {
-  name: string;
   type: 'TOPIC' | 'QUEUE';
+  name: string;
 }
 
 export interface TibcoStub {
-  id: string;
+  id?: string;
   name: string;
   description?: string;
   userId?: string;
-  destinationType?: 'TOPIC' | 'QUEUE';
-  destinationName?: string;
-  requestDestination?: {
-    type: 'TOPIC' | 'QUEUE';
-    name: string;
-  };
-  responseDestination?: {
-    type: 'TOPIC' | 'QUEUE';
-    name: string;
-  };
-  tags: string[];
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  matchConditions: Record<string, any>;
-  bodyMatchCriteria?: Array<{
-    type: 'xpath' | 'jsonpath';
-    expression: string;
-    value: string;
-    operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'regex';
-  }>;
-  response: Record<string, any>;
+  requestDestination: TibcoDestination;
+  responseDestination: TibcoDestination;
+  messageSelector?: string;
+  
+  // Legacy body match criteria (kept for backward compatibility)
+  bodyMatchCriteria?: BodyMatchCriteria[];
+  
+  // Standardized content matching configuration
+  contentMatchType?: ContentMatchType;
+  contentPattern?: string;
+  caseSensitive?: boolean;
+  
+  // Priority for stub matching
+  priority?: number;
+  
+  responseType?: string; // DIRECT or CALLBACK
+  responseContent?: string;
   responseHeaders?: Record<string, string>;
-  callbackConfig?: Record<string, any>;
+  
+  // Response latency in milliseconds
+  latency?: number;
+  
+  status?: StubStatus;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TibcoSchedule {
@@ -47,6 +60,13 @@ export interface TibcoSchedule {
   message: string;
   properties: Record<string, string>;
   createdAt: string;
+}
+
+export interface BodyMatchCriteria {
+  type: 'xpath' | 'jsonpath';
+  expression: string;
+  value: string;
+  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'regex';
 }
 
 // Request types

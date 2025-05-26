@@ -274,11 +274,18 @@ public class IBMMQStubController {
         entity.setQueueManager(dto.queueManager());
         entity.setQueueName(dto.queueName());
         entity.setSelector(dto.selector());
+        
+        // Standardized content matching fields
+        entity.setContentMatchType(dto.contentMatchType() != null ? dto.contentMatchType() : IBMMQStub.ContentMatchType.NONE);
+        entity.setContentPattern(dto.contentPattern());
+        entity.setCaseSensitive(dto.caseSensitive() != null ? dto.caseSensitive() : false);
+        entity.setPriority(dto.priority() != null ? dto.priority() : 0);
+        
         entity.setResponseContent(dto.responseContent());
         entity.setResponseType(dto.responseType());
         entity.setLatency(dto.latency());
         entity.setHeaders(dto.headers());
-        entity.setStatus(StubStatus.valueOf(dto.status()));
+        entity.setStatus(dto.status() != null ? dto.status() : StubStatus.INACTIVE);
 
         // Handle dates - use DTO dates if present, otherwise use current time
         LocalDateTime now = LocalDateTime.now();
@@ -300,11 +307,18 @@ public class IBMMQStubController {
                 entity.getQueueManager(),
                 entity.getQueueName(),
                 entity.getSelector(),
-                entity.getResponseType(),
+                
+                // Standardized content matching fields
+                entity.getContentMatchType(),
+                entity.getContentPattern(),
+                entity.isCaseSensitive(),
+                entity.getPriority(),
+                
                 entity.getResponseContent(),
+                entity.getResponseType(),
                 entity.getLatency(),
                 entity.getHeaders(),
-                entity.getStatus().name(),
+                entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

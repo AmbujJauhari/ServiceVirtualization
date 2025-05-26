@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGetTibcoStubsQuery, useUpdateTibcoStubStatusMutation, useDeleteTibcoStubMutation } from '../../../api/tibcoApi';
+import { 
+  useGetTibcoStubsQuery, 
+  useUpdateTibcoStubStatusMutation, 
+  useDeleteTibcoStubMutation,
+  ContentMatchType 
+} from '../../../api/tibcoApi';
 
 const TibcoStubList: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +14,20 @@ const TibcoStubList: React.FC = () => {
   const { data: stubs, isLoading, refetch } = useGetTibcoStubsQuery();
   const [updateStatus] = useUpdateTibcoStubStatusMutation();
   const [deleteStub] = useDeleteTibcoStubMutation();
+
+  const getContentMatchTypeLabel = (matchType?: ContentMatchType) => {
+    switch (matchType) {
+      case ContentMatchType.CONTAINS:
+        return 'Contains';
+      case ContentMatchType.EXACT:
+        return 'Exact';
+      case ContentMatchType.REGEX:
+        return 'Regex';
+      case ContentMatchType.NONE:
+      default:
+        return 'None';
+    }
+  };
 
   const handleStatusToggle = async (id: string, currentStatus: string) => {
     try {
@@ -37,18 +56,17 @@ const TibcoStubList: React.FC = () => {
 
   const filteredStubs = stubs?.filter(
     (stub) => {
-      // Get destination info from either the old or new format
-      const destinationName = stub.destinationName || 
-        stub.requestDestination?.name || 
-        '';
-      const destinationType = stub.destinationType || 
-        stub.requestDestination?.type || 
-        '';
+      // Get destination info from the request destination
+      const destinationName = stub.requestDestination?.name || '';
+      const destinationType = stub.requestDestination?.type || '';
+      const contentPattern = stub.contentPattern?.toLowerCase() || '';
+      const lowercaseFilter = filter.toLowerCase();
         
-      return stub.name.toLowerCase().includes(filter.toLowerCase()) ||
-        (stub.description && stub.description.toLowerCase().includes(filter.toLowerCase())) ||
-        destinationName.toLowerCase().includes(filter.toLowerCase()) ||
-        destinationType.toLowerCase().includes(filter.toLowerCase());
+      return stub.name.toLowerCase().includes(lowercaseFilter) ||
+        (stub.description && stub.description.toLowerCase().includes(lowercaseFilter)) ||
+        destinationName.toLowerCase().includes(lowercaseFilter) ||
+        destinationType.toLowerCase().includes(lowercaseFilter) ||
+        contentPattern.includes(lowercaseFilter);
     }
   );
 
@@ -94,7 +112,7 @@ const TibcoStubList: React.FC = () => {
                   Description
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tags
+                  Content Matching
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -111,7 +129,7 @@ const TibcoStubList: React.FC = () => {
                           type="checkbox"
                           className="sr-only peer"
                           checked={stub.status === 'ACTIVE'}
-                          onChange={() => handleStatusToggle(stub.id, stub.status)}
+                          onChange={() => handleStatusToggle(stub.id!, stub.status!)}
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                       </label>
@@ -123,13 +141,13 @@ const TibcoStubList: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        (stub.destinationType || stub.requestDestination?.type) === 'TOPIC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                        stub.requestDestination?.type === 'TOPIC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {stub.destinationType || stub.requestDestination?.type}
+                        {stub.requestDestination?.type}
                       </span>
                       <span className="ml-2 text-sm text-gray-500">
-                        {stub.destinationName || stub.requestDestination?.name || ''}
-                        {stub.responseDestination && stub.responseDestination.name !== (stub.destinationName || stub.requestDestination?.name || '') && 
+                        {stub.requestDestination?.name || ''}
+                        {stub.responseDestination && stub.responseDestination.name !== stub.requestDestination?.name && 
                           ` → ${stub.responseDestination.name}`}
                       </span>
                     </div>
@@ -139,14 +157,26 @@ const TibcoStubList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
-                      {stub.tags && stub.tags.length > 0 ? (
-                        stub.tags.map((tag, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            {tag}
+                      {stub.contentMatchType && stub.contentMatchType !== ContentMatchType.NONE ? (
+                        <div className="flex flex-col">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            stub.contentMatchType === ContentMatchType.CONTAINS ? 'bg-blue-100 text-blue-800' :
+                            stub.contentMatchType === ContentMatchType.EXACT ? 'bg-indigo-100 text-indigo-800' :
+                            'bg-purple-100 text-purple-800'
+                          }`}>
+                            {getContentMatchTypeLabel(stub.contentMatchType)}
                           </span>
-                        ))
+                          {stub.contentPattern && (
+                            <div className="mt-1">
+                              <span className="text-xs text-gray-500 font-mono">{stub.contentPattern.length > 30 ?
+                                `${stub.contentPattern.substring(0, 30)}...` :
+                                stub.contentPattern}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-sm text-gray-400">-</span>
+                        <span className="text-sm text-gray-400">No content matching</span>
                       )}
                     </div>
                   </td>
@@ -158,7 +188,7 @@ const TibcoStubList: React.FC = () => {
                       Edit
                     </Link>
                     <button
-                      onClick={() => handleDelete(stub.id)}
+                      onClick={() => handleDelete(stub.id!)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
@@ -170,7 +200,8 @@ const TibcoStubList: React.FC = () => {
           </table>
         </div>
       ) : (
-        <div className="text-center p-6 bg-gray-50 rounded-lg">
+        <div className="text-center p-4 text-gray-500">
+          {stubs?.length === 0 ? 'No stubs created yet.' : 'No stubs match your filter.'}
         </div>
       )}
     </div>

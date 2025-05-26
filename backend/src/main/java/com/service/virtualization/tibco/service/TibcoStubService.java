@@ -2,6 +2,7 @@ package com.service.virtualization.tibco.service;
 
 import com.service.virtualization.tibco.model.TibcoStub;
 import com.service.virtualization.tibco.repository.TibcoStubRepository;
+import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -57,7 +58,7 @@ public class TibcoStubService {
         return tibcoStubRepository.findAll();
     }
 
-    public List<TibcoStub> getStubsByStatus(String status) {
+    public List<TibcoStub> getStubsByStatus(StubStatus status) {
         logger.debug("Getting TIBCO stubs with status: {}", status);
         return tibcoStubRepository.findByStatus(status);
     }
@@ -81,7 +82,7 @@ public class TibcoStubService {
         }
 
         TibcoStub stub = stubOptional.get();
-        stub.setStatus("ACTIVE");
+        stub.setStatus(StubStatus.ACTIVE);
 
         return tibcoStubRepository.save(stub);
     }
@@ -95,12 +96,12 @@ public class TibcoStubService {
         }
 
         TibcoStub stub = stubOptional.get();
-        stub.setStatus("INACTIVE");
+        stub.setStatus(StubStatus.INACTIVE);
 
         return tibcoStubRepository.save(stub);
     }
 
-    public List<TibcoStub> findAllByStatus(String status) {
+    public List<TibcoStub> findAllByStatus(StubStatus status) {
         logger.debug("Finding all TIBCO stubs with status: {}", status);
         return tibcoStubRepository.findByStatus(status);
     }

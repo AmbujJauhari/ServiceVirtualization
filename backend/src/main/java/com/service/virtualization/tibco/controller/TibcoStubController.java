@@ -5,6 +5,7 @@ import com.service.virtualization.tibco.model.TibcoDestination;
 import com.service.virtualization.tibco.model.TibcoStub;
 import com.service.virtualization.tibco.service.TibcoStubListenerService;
 import com.service.virtualization.tibco.service.TibcoStubService;
+import com.service.virtualization.model.StubStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -157,12 +158,18 @@ public class TibcoStubController {
             @Parameter(description = "Status (ACTIVE or INACTIVE)") @PathVariable String status) {
         logger.debug("Getting TIBCO stubs with status: {}", status);
         
-        List<TibcoStub> stubs = tibcoStubService.getStubsByStatus(status);
-        List<TibcoStubDTO> stubDTOs = stubs.stream()
-                .map(this::fromTibcoStub)
-                .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(stubDTOs);
+        try {
+            StubStatus stubStatus = StubStatus.valueOf(status.toUpperCase());
+            List<TibcoStub> stubs = tibcoStubService.getStubsByStatus(stubStatus);
+            List<TibcoStubDTO> stubDTOs = stubs.stream()
+                    .map(this::fromTibcoStub)
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(stubDTOs);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid status value: {}", status);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/user/{userId}")
@@ -304,11 +311,21 @@ public class TibcoStubController {
         tibcoStub.setRequestDestination(requestDestination);
         tibcoStub.setResponseDestination(responseDestination);
         tibcoStub.setMessageSelector(dto.messageSelector());
+        
+        // Legacy body match criteria
         tibcoStub.setBodyMatchCriteria(bodyMatchCriteriaList);
+        
+        // Standardized content matching configuration
+        tibcoStub.setContentMatchType(dto.contentMatchType() != null ? dto.contentMatchType() : TibcoStub.ContentMatchType.NONE);
+        tibcoStub.setContentPattern(dto.contentPattern());
+        tibcoStub.setCaseSensitive(dto.caseSensitive() != null ? dto.caseSensitive() : false);
+        tibcoStub.setPriority(dto.priority() != null ? dto.priority() : 0);
+        
         tibcoStub.setResponseType(dto.responseType());
         tibcoStub.setResponseContent(dto.responseContent());
         tibcoStub.setResponseHeaders(dto.responseHeaders());
-        tibcoStub.setStatus(dto.status());
+        tibcoStub.setLatency(dto.latency() != null ? dto.latency() : 0);
+        tibcoStub.setStatus(dto.status() != null ? dto.status() : StubStatus.ACTIVE);
         tibcoStub.setCreatedAt(dto.createdAt());
         tibcoStub.setUpdatedAt(dto.updatedAt());
         
@@ -355,9 +372,14 @@ public class TibcoStubController {
                 responseDestinationDTO,
                 tibcoStub.getMessageSelector(),
                 bodyMatchCriteriaDTOList,
+                tibcoStub.getContentMatchType(),
+                tibcoStub.getContentPattern(),
+                tibcoStub.isCaseSensitive(),
+                tibcoStub.getPriority(),
                 tibcoStub.getResponseType(),
                 tibcoStub.getResponseContent(),
                 tibcoStub.getResponseHeaders(),
+                tibcoStub.getLatency(),
                 tibcoStub.getStatus(),
                 tibcoStub.getCreatedAt(),
                 tibcoStub.getUpdatedAt()

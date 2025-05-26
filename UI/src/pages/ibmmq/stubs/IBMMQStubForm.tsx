@@ -5,8 +5,11 @@ import {
   useCreateIBMMQStubMutation, 
   useUpdateIBMMQStubMutation,
   IBMMQStub,
-  MessageHeader
+  MessageHeader,
+  ContentMatchType,
+  StubStatus
 } from '../../../api/ibmMqApi';
+import TextEditor from '../../../components/common/TextEditor';
 
 /**
  * Form for creating and editing IBM MQ stubs
@@ -31,11 +34,18 @@ const IBMMQStubForm: React.FC = () => {
   const [queueManager, setQueueManager] = useState('');
   const [queueName, setQueueName] = useState('');
   const [selector, setSelector] = useState('');
+  
+  // Standardized content matching configuration
+  const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
+  const [contentPattern, setContentPattern] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [priority, setPriority] = useState(0);
+  
   const [responseType, setResponseType] = useState('text');
   const [responseContent, setResponseContent] = useState('');
   const [latency, setLatency] = useState(0);
   const [headers, setHeaders] = useState<MessageHeader[]>([]);
-  const [status, setStatus] = useState(true);
+  const [status, setStatus] = useState<StubStatus>(StubStatus.ACTIVE);
 
   // New header form fields
   const [newHeaderName, setNewHeaderName] = useState('');
@@ -50,11 +60,18 @@ const IBMMQStubForm: React.FC = () => {
       setQueueManager(existingStub.queueManager || '');
       setQueueName(existingStub.queueName || '');
       setSelector(existingStub.selector || '');
+      
+      // Load standardized content matching configuration
+      setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
+      setContentPattern(existingStub.contentPattern || '');
+      setCaseSensitive(existingStub.caseSensitive !== undefined ? existingStub.caseSensitive : false);
+      setPriority(existingStub.priority || 0);
+      
       setResponseType(existingStub.responseType || 'text');
       setResponseContent(existingStub.responseContent || '');
       setLatency(existingStub.latency || 0);
       setHeaders(existingStub.headers || []);
-      setStatus(existingStub.status ?? true);
+      setStatus(existingStub.status || StubStatus.ACTIVE);
     }
   }, [existingStub]);
 
@@ -86,6 +103,13 @@ const IBMMQStubForm: React.FC = () => {
       queueManager,
       queueName,
       selector,
+      
+      // Standardized content matching configuration
+      contentMatchType,
+      contentPattern,
+      caseSensitive,
+      priority,
+      
       responseType,
       responseContent,
       latency,
@@ -199,6 +223,82 @@ const IBMMQStubForm: React.FC = () => {
               <p className="text-sm text-gray-500 mt-1">
                 Selector expression to filter which messages this stub responds to.
               </p>
+            </div>
+          </div>
+
+          {/* Content Matching Configuration */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Content Matching</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="contentMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                  Match Type
+                </label>
+                <select
+                  id="contentMatchType"
+                  value={contentMatchType}
+                  onChange={(e) => setContentMatchType(e.target.value as ContentMatchType)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value={ContentMatchType.NONE}>No content matching</option>
+                  <option value={ContentMatchType.CONTAINS}>Message contains pattern</option>
+                  <option value={ContentMatchType.EXACT}>Message exactly matches pattern</option>
+                  <option value={ContentMatchType.REGEX}>Message matches regex pattern</option>
+                </select>
+              </div>
+
+              {contentMatchType !== ContentMatchType.NONE && (
+                <>
+                  <div>
+                    <label htmlFor="contentPattern" className="block text-sm font-medium text-gray-700 mb-1">
+                      Content Pattern
+                    </label>
+                    <TextEditor
+                      value={contentPattern}
+                      onChange={setContentPattern}
+                      height="200px"
+                      language="text"
+                      placeholder="Enter the content pattern to match..."
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {contentMatchType === ContentMatchType.CONTAINS && 'Messages containing this text will match'}
+                      {contentMatchType === ContentMatchType.EXACT && 'Messages with exactly this content will match'}
+                      {contentMatchType === ContentMatchType.REGEX && 'Messages matching this regular expression will match'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="caseSensitive"
+                      checked={caseSensitive}
+                      onChange={(e) => setCaseSensitive(e.target.checked)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="caseSensitive" className="ml-2 block text-sm text-gray-700">
+                      Case sensitive matching
+                    </label>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                  Priority
+                </label>
+                <input
+                  type="number"
+                  id="priority"
+                  value={priority}
+                  onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+                  min="0"
+                  max="100"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Higher priority stubs will be matched first (0-100, default: 0)
+                </p>
+              </div>
             </div>
           </div>
 
@@ -353,17 +453,22 @@ const IBMMQStubForm: React.FC = () => {
           {/* Status */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Status</h2>
-            <div className="flex items-center">
-              <input
-                id="status"
-                type="checkbox"
-                checked={status}
-                onChange={(e) => setStatus(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label className="ml-2 block text-gray-700" htmlFor="status">
-                Activate stub immediately
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                Stub Status
               </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as StubStatus)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value={StubStatus.ACTIVE}>Active</option>
+                <option value={StubStatus.INACTIVE}>Inactive</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Active stubs will process incoming messages, inactive stubs will be ignored
+              </p>
             </div>
           </div>
 

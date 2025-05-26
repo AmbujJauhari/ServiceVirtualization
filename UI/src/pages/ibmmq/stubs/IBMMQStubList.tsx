@@ -4,7 +4,9 @@ import {
   useGetIBMMQStubsQuery, 
   useUpdateIBMMQStubStatusMutation, 
   useDeleteIBMMQStubMutation,
-  IBMMQStub
+  IBMMQStub,
+  ContentMatchType,
+  StubStatus
 } from '../../../api/ibmMqApi';
 
 /**
@@ -16,13 +18,42 @@ const IBMMQStubList: React.FC = () => {
   const [updateStatus] = useUpdateIBMMQStubStatusMutation();
   const [deleteStub] = useDeleteIBMMQStubMutation();
 
+  const getContentMatchTypeLabel = (matchType?: ContentMatchType) => {
+    switch (matchType) {
+      case ContentMatchType.CONTAINS:
+        return 'Contains';
+      case ContentMatchType.EXACT:
+        return 'Exact';
+      case ContentMatchType.REGEX:
+        return 'Regex';
+      case ContentMatchType.NONE:
+      default:
+        return 'None';
+    }
+  };
+
+  const getContentMatchTypeBadgeColor = (matchType?: ContentMatchType) => {
+    switch (matchType) {
+      case ContentMatchType.CONTAINS:
+        return 'bg-blue-100 text-blue-800';
+      case ContentMatchType.EXACT:
+        return 'bg-green-100 text-green-800';
+      case ContentMatchType.REGEX:
+        return 'bg-purple-100 text-purple-800';
+      case ContentMatchType.NONE:
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const handleStatusToggle = async (stub: IBMMQStub) => {
     if (!stub.id) return;
     
     try {
+      const newStatus = stub.status === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE;
       await updateStatus({
         id: stub.id,
-        status: !stub.status
+        status: newStatus
       });
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -47,11 +78,13 @@ const IBMMQStubList: React.FC = () => {
     const description = stub.description?.toLowerCase() || '';
     const queueManager = stub.queueManager?.toLowerCase() || '';
     const queueName = stub.queueName?.toLowerCase() || '';
+    const contentPattern = stub.contentPattern?.toLowerCase() || '';
     
     return name.includes(lowercaseFilter) ||
            description.includes(lowercaseFilter) ||
            queueManager.includes(lowercaseFilter) ||
-           queueName.includes(lowercaseFilter);
+           queueName.includes(lowercaseFilter) ||
+           contentPattern.includes(lowercaseFilter);
   });
 
   if (isLoading) {
@@ -75,7 +108,7 @@ const IBMMQStubList: React.FC = () => {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Filter stubs..."
+          placeholder="Filter stubs by name, description, queue, or content pattern..."
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -93,6 +126,8 @@ const IBMMQStubList: React.FC = () => {
               <tr>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queue Information</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Matching</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -118,15 +153,40 @@ const IBMMQStubList: React.FC = () => {
                     )}
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">
+                    <div className="flex flex-col space-y-1">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getContentMatchTypeBadgeColor(stub.contentMatchType)}`}>
+                        {getContentMatchTypeLabel(stub.contentMatchType)}
+                      </span>
+                      {stub.contentPattern && stub.contentMatchType !== ContentMatchType.NONE && (
+                        <div className="text-xs text-gray-600 max-w-xs">
+                          <span className="font-medium">Pattern:</span>{' '}
+                          <span className="font-mono bg-gray-100 px-1 rounded">
+                            {stub.contentPattern.length > 30 
+                              ? `${stub.contentPattern.substring(0, 30)}...` 
+                              : stub.contentPattern}
+                          </span>
+                          {stub.caseSensitive && (
+                            <span className="ml-1 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
+                              Case Sensitive
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200">
+                    <span className="text-sm font-medium">{stub.priority || 0}</span>
+                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200">
                     <button
                       onClick={() => stub.id && handleStatusToggle(stub)}
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        stub.status
+                        stub.status === StubStatus.ACTIVE
                           ? 'bg-green-100 text-green-800 hover:bg-green-200'
                           : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                       }`}
                     >
-                      {stub.status ? 'Active' : 'Inactive'}
+                      {stub.status === StubStatus.ACTIVE ? 'Active' : 'Inactive'}
                     </button>
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">

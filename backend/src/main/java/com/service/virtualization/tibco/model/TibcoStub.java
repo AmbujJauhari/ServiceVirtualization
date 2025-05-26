@@ -1,5 +1,6 @@
 package com.service.virtualization.tibco.model;
 
+import com.service.virtualization.model.StubStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +12,17 @@ import java.util.Objects;
  * Model class representing a TIBCO EMS stub.
  */
 public class TibcoStub {
+    
+    /**
+     * Enum defining the types of content matching available.
+     */
+    public enum ContentMatchType {
+        NONE,       // No content matching
+        CONTAINS,   // Message content contains the pattern
+        EXACT,      // Message content exactly matches the pattern
+        REGEX       // Message content matches the regex pattern
+    }
+    
     private String id;
     private String name;
     private String description;
@@ -18,13 +30,27 @@ public class TibcoStub {
     private TibcoDestination requestDestination;
     private TibcoDestination responseDestination;
     private String messageSelector;
+    
+    // Legacy body match criteria (kept for backward compatibility)
     private List<BodyMatchCriteria> bodyMatchCriteria;
+    
+    // Standardized content matching configuration
+    private ContentMatchType contentMatchType = ContentMatchType.NONE;
+    private String contentPattern;
+    private boolean caseSensitive = false;
+    
+    // Priority for stub matching (higher number = higher priority)
+    private int priority = 0;
+    
     private String responseType; // 'direct' or 'callback'
     private String responseContent;
     private Map<String, String> responseHeaders;
-    private String status;
+    private StubStatus status = StubStatus.ACTIVE;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // Response latency in milliseconds
+    private long latency;
 
     public TibcoStub() {
         this.responseHeaders = new HashMap<>();
@@ -33,7 +59,7 @@ public class TibcoStub {
 
     public TibcoStub(String id, String name, String description, String userId, TibcoDestination requestDestination, TibcoDestination responseDestination,
                     String messageSelector, String responseType, String responseContent, Map<String, String> responseHeaders, Integer latency,
-                    String status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                    StubStatus status, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -47,6 +73,7 @@ public class TibcoStub {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.latency = latency != null ? latency : 0;
     }
 
     // Getters and Setters
@@ -130,11 +157,11 @@ public class TibcoStub {
         this.responseHeaders = responseHeaders != null ? responseHeaders : new HashMap<>();
     }
 
-    public String getStatus() {
+    public StubStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(StubStatus status) {
         this.status = status;
     }
 
@@ -160,6 +187,50 @@ public class TibcoStub {
 
     public void setBodyMatchCriteria(List<BodyMatchCriteria> bodyMatchCriteria) {
         this.bodyMatchCriteria = bodyMatchCriteria != null ? bodyMatchCriteria : new ArrayList<>();
+    }
+
+    public ContentMatchType getContentMatchType() {
+        return contentMatchType;
+    }
+
+    public void setContentMatchType(ContentMatchType contentMatchType) {
+        this.contentMatchType = contentMatchType;
+    }
+
+    public String getContentPattern() {
+        return contentPattern;
+    }
+
+    public void setContentPattern(String contentPattern) {
+        this.contentPattern = contentPattern;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public long getLatency() {
+        return latency;
+    }
+
+    public void setLatency(long latency) {
+        this.latency = latency;
+    }
+
+    public boolean isActive() {
+        return status == StubStatus.ACTIVE;
     }
 
     @Override

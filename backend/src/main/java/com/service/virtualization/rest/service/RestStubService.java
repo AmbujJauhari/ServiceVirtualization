@@ -2,7 +2,10 @@ package com.service.virtualization.rest.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.service.virtualization.rest.model.RestStub;
+import com.service.virtualization.rest.dto.RestStubDTO;
 import com.service.virtualization.rest.repository.RestStubRepository;
+import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.dto.DtoConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of StubService that manages stubs using WireMock and database storage
@@ -25,13 +29,16 @@ public class RestStubService {
     private final RestStubRepository restStubRepository;
     private final RestTemplate restTemplate;
     private final String wiremockBaseUrl;
+    private final WireMockAdminService wireMockAdminService;
 
     public RestStubService(RestStubRepository restStubRepository,
                            @Value("${wiremock.server.host}") String wiremockHost,
-                           @Value("${wiremock.server.port}") int wiremockPort) {
+                           @Value("${wiremock.server.port}") int wiremockPort,
+                           WireMockAdminService wireMockAdminService) {
         this.restStubRepository = restStubRepository;
         this.restTemplate = new RestTemplate();
         this.wiremockBaseUrl = String.format("http://%s:%d", wiremockHost, wiremockPort);
+        this.wireMockAdminService = wireMockAdminService;
     }
 
     public RestStub createStub(RestStub stub) {
@@ -57,11 +64,17 @@ public class RestStubService {
                 LocalDateTime.now(),
                 id, // Use the same ID for WireMock mapping
                 stub.matchConditions(),
-                stub.response()
+                stub.response(),
+                stub.webhookUrl()  // Include webhook URL
         );
 
-        // Register stub with remote WireMock
-        registerWithWireMock(stub);
+        // Register stub with remote WireMock only if it's active
+        if (stub.status() == StubStatus.ACTIVE) {
+            logger.info("Registering new active stub {} with WireMock", stub.id());
+            registerWithWireMock(stub);
+        } else {
+            logger.info("Creating inactive stub {}, skipping WireMock registration", stub.id());
+        }
 
         // Save to repository
         return restStubRepository.save(stub);
@@ -71,10 +84,12 @@ public class RestStubService {
         logger.info("Updating stub: {}", stub.name());
 
         // Verify stub exists
-        Optional<RestStub> existingStub = findStubById(stub.id());
-        if (existingStub.isEmpty()) {
+        Optional<RestStub> existingStubOpt = findStubById(stub.id());
+        if (existingStubOpt.isEmpty()) {
             throw new IllegalArgumentException("Stub not found with ID: " + stub.id());
         }
+        
+        RestStub existingStub = existingStubOpt.get();
 
         // Create updated stub with current timestamp
         stub = new RestStub(
@@ -90,12 +105,12 @@ public class RestStubService {
                 LocalDateTime.now(),
                 stub.id(), // Use the same ID for WireMock mapping
                 stub.matchConditions(),
-                stub.response()
+                stub.response(),
+                stub.webhookUrl()  // Include webhook URL
         );
 
-        // Remove existing WireMock mapping and create a new one
-        deleteWireMockMapping(stub.id());
-        registerWithWireMock(stub);
+        // Handle WireMock registration based on status changes
+        handleWireMockRegistration(existingStub, stub);
 
         // Update in repository
         return restStubRepository.save(stub);
@@ -111,6 +126,125 @@ public class RestStubService {
 
     public List<RestStub> findStubsByUserId(String userId) {
         return restStubRepository.findByUserId(userId);
+    }
+
+    /**
+     * Find all stubs and check their registration status with WireMock
+     * 
+     * @return List of RestStubDTO with registration status checked
+     */
+    public List<RestStubDTO> findAllStubsWithRegistrationStatus() {
+        logger.debug("Finding all stubs with WireMock registration status");
+        
+        // Get all stubs from repository
+        List<RestStub> stubs = restStubRepository.findAll();
+        
+        if (stubs.isEmpty()) {
+            logger.debug("No stubs found in repository");
+            return Collections.emptyList();
+        }
+        
+        // Get registered stub IDs from WireMock
+        Set<String> registeredStubIds = wireMockAdminService.getRegisteredStubIds();
+        
+        // Convert stubs to DTOs and update status based on registration
+        List<RestStubDTO> stubDTOs = stubs.stream()
+                .map(stub -> {
+                    RestStubDTO dto = DtoConverter.fromRestStub(stub);
+                    
+                    // Check if stub is registered in WireMock
+                    if (!registeredStubIds.contains(stub.id())) {
+                        // Create new DTO with updated status
+                        dto = new RestStubDTO(
+                                dto.id(),
+                                dto.name(),
+                                dto.description(),
+                                dto.userId(),
+                                dto.behindProxy(),
+                                dto.protocol(),
+                                dto.tags(),
+                                StubStatus.STUB_NOT_REGISTERED.name(), // Update status
+                                dto.createdAt(),
+                                dto.updatedAt(),
+                                dto.wiremockMappingId(),
+                                dto.matchConditions(),
+                                dto.response(),
+                                dto.webhookUrl()  // Include webhook URL
+                        );
+                    }
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        
+        long notRegisteredCount = stubDTOs.stream()
+                .mapToLong(dto -> StubStatus.STUB_NOT_REGISTERED.name().equals(dto.status()) ? 1 : 0)
+                .sum();
+        
+        logger.info("Found {} stubs, {} not registered with WireMock", 
+                stubDTOs.size(), notRegisteredCount);
+        
+        return stubDTOs;
+    }
+
+    /**
+     * Find stubs by user ID and check their registration status with WireMock
+     * 
+     * @param userId the user ID to filter by
+     * @return List of RestStubDTO with registration status checked
+     */
+    public List<RestStubDTO> findStubsByUserIdWithRegistrationStatus(String userId) {
+        logger.debug("Finding stubs for user {} with WireMock registration status", userId);
+        
+        // Get stubs by user ID from repository
+        List<RestStub> stubs = restStubRepository.findByUserId(userId);
+        
+        if (stubs.isEmpty()) {
+            logger.debug("No stubs found for user {}", userId);
+            return Collections.emptyList();
+        }
+        
+        // Get registered stub IDs from WireMock
+        Set<String> registeredStubIds = wireMockAdminService.getRegisteredStubIds();
+        
+        // Convert stubs to DTOs and update status based on registration
+        List<RestStubDTO> stubDTOs = stubs.stream()
+                .map(stub -> {
+                    RestStubDTO dto = DtoConverter.fromRestStub(stub);
+                    
+                    // Check if stub is registered in WireMock
+                    if (!registeredStubIds.contains(stub.id())) {
+                        // Create new DTO with updated status
+                        dto = new RestStubDTO(
+                                dto.id(),
+                                dto.name(),
+                                dto.description(),
+                                dto.userId(),
+                                dto.behindProxy(),
+                                dto.protocol(),
+                                dto.tags(),
+                                StubStatus.STUB_NOT_REGISTERED.name(), // Update status
+                                dto.createdAt(),
+                                dto.updatedAt(),
+                                dto.wiremockMappingId(),
+                                dto.matchConditions(),
+                                dto.response(),
+                                dto.webhookUrl()  // Include webhook URL
+                        );
+                    }
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        
+        long notRegisteredCount = stubDTOs.stream()
+                .mapToLong(dto -> StubStatus.STUB_NOT_REGISTERED.name().equals(dto.status()) ? 1 : 0)
+                .sum();
+        
+        logger.info("Found {} stubs for user {}, {} not registered with WireMock", 
+                stubDTOs.size(), userId, notRegisteredCount);
+        
+        return stubDTOs;
     }
 
     public void deleteStub(String id) {
@@ -157,13 +291,13 @@ public class RestStubService {
                 case "exact":
                     request.put("url", url);
                     break;
-            case "regex":
+                case "regex":
                     request.put("urlPattern", url);
-                break;
-                case "glob":
+                    break;
+                case "urlPath":
                     request.put("urlPath", url);
-                break;
-        }
+                    break;
+            }
 
             // Add method matching
             request.put("method", method);
@@ -172,9 +306,9 @@ public class RestStubService {
             List<Map<String, Object>> headers = (List<Map<String, Object>>) matchConditions.getOrDefault("headers", Collections.emptyList());
             if (!headers.isEmpty()) {
                 Map<String, Object> headersPattern = new HashMap<>();
-            for (Map<String, Object> header : headers) {
-                String name = (String) header.get("name");
-                String value = (String) header.get("value");
+                for (Map<String, Object> header : headers) {
+                    String name = (String) header.get("name");
+                    String value = (String) header.get("value");
                     String matchType = (String) header.getOrDefault("matchType", "exact");
 
                     Map<String, Object> headerPattern = new HashMap<>();
@@ -283,6 +417,20 @@ public class RestStubService {
             stubMapping.put("priority", priority);
             stubMapping.put("request", request);
             stubMapping.put("response", response);
+            
+            // Add webhook transformer if webhook URL is configured
+            if (stub.hasWebhook()) {
+                logger.info("Adding webhook transformer for stub {} with URL: {}", stub.id(), stub.webhookUrl());
+                
+                // Create transformer parameters
+                Map<String, Object> transformerParams = new HashMap<>();
+                transformerParams.put("webhookUrl", stub.webhookUrl());
+                transformerParams.put("stubId", stub.id());
+                
+                // Add the transformer to the response with correct WireMock format
+                response.put("transformers", Collections.singletonList("webhook-response-transformer"));
+                response.put("transformerParameters", transformerParams);
+            }
 
             // Log the final request payload
             try {
@@ -311,6 +459,40 @@ public class RestStubService {
         } catch (Exception e) {
             logger.error("Failed to register stub with WireMock", e);
             throw new RuntimeException("Failed to register stub with WireMock", e);
+        }
+    }
+
+    /**
+     * Handle WireMock registration/deregistration based on status changes
+     */
+    private void handleWireMockRegistration(RestStub existingStub, RestStub updatedStub) {
+        boolean wasActive = existingStub.status() == StubStatus.ACTIVE;
+        boolean isActive = updatedStub.status() == StubStatus.ACTIVE;
+        
+        logger.debug("Handling WireMock registration for stub {}: was {} -> now {}", 
+                updatedStub.id(), existingStub.status(), updatedStub.status());
+        
+        if (wasActive && !isActive) {
+            // Stub was active, now inactive - deregister from WireMock
+            logger.info("Deregistering stub {} from WireMock (status changed from {} to {})", 
+                    updatedStub.id(), existingStub.status(), updatedStub.status());
+            deleteWireMockMapping(updatedStub.id());
+            
+        } else if (!wasActive && isActive) {
+            // Stub was inactive, now active - register with WireMock
+            logger.info("Registering stub {} with WireMock (status changed from {} to {})", 
+                    updatedStub.id(), existingStub.status(), updatedStub.status());
+            registerWithWireMock(updatedStub);
+            
+        } else if (isActive) {
+            // Stub remains active - update registration (delete and re-register)
+            logger.info("Updating WireMock registration for active stub {}", updatedStub.id());
+            deleteWireMockMapping(updatedStub.id());
+            registerWithWireMock(updatedStub);
+            
+        } else {
+            // Stub remains inactive - no WireMock action needed
+            logger.debug("Stub {} remains inactive, no WireMock action needed", updatedStub.id());
         }
     }
 } 

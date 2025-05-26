@@ -13,6 +13,7 @@ export interface Stub {
   updatedAt: string;
   matchConditions: Record<string, any>;
   response: Record<string, any>;
+  webhookUrl?: string;
 }
 
 export const stubApi = createApi({
@@ -59,6 +60,14 @@ export const stubApi = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Stub', id }],
     }),
+    updateStubStatus: builder.mutation<Stub, { id: string; status: string }>({
+      query: ({ id, status }) => ({
+        url: `/rest/stubs/${id}/status`,
+        method: 'PATCH',
+        params: { status },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Stub', id }],
+    }),
     getStubsByTag: builder.query<Stub[], string>({
       query: (tag) => `/rest/stubs/tag/${tag}`,
       providesTags: ['Stub'],
@@ -73,5 +82,6 @@ export const {
   useUpdateStubMutation,
   useDeleteStubMutation,
   useUpdateActiveStatusMutation,
+  useUpdateStubStatusMutation,
   useGetStubsByTagQuery,
 } = stubApi; 

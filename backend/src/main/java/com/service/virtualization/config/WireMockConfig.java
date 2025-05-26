@@ -10,12 +10,15 @@ import java.security.KeyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.service.virtualization.wiremock.WebhookResponseTransformer;
+import com.service.virtualization.rest.service.RestWebhookService;
 
 import jakarta.annotation.PreDestroy;
 
@@ -27,7 +30,7 @@ public class WireMockConfig {
     
     private static final Logger logger = LoggerFactory.getLogger(WireMockConfig.class);
 
-    @Value("${wiremock.port:8090}")
+    @Value("${wiremock.server.port:8081}")
     private int port;
     
     @Value("${wiremock.https-port:8443}")
@@ -48,24 +51,33 @@ public class WireMockConfig {
     @Value("${wiremock.keystore-type:JKS}")
     private String keystoreType;
     
+    @Autowired
+    private RestWebhookService restWebhookService;
+    
     private WireMockServer wireMockServer;
     
     /**
-     * Creates and configures a WireMockServer
+     * Creates and configures a WireMockServer with webhook support
      */
     @Bean(destroyMethod = "stop")
     public WireMockServer wireMockServer() {
+        logger.info("Starting embedded WireMock server on port {}", port);
+        
         // Create directory if it doesn't exist
         File fileStoreDir = new File(rootDir);
         if (!fileStoreDir.exists()) {
             fileStoreDir.mkdirs();
         }
         
-        // Configure WireMock
+        // Create webhook transformer with injected service
+        WebhookResponseTransformer webhookTransformer = new WebhookResponseTransformer(restWebhookService);
+        
+        // Configure WireMock with webhook transformer
         WireMockConfiguration config = WireMockConfiguration.options()
                 .port(port)
-                .withRootDirectory(rootDir);
-                // .disableRequestJournal() // Uncomment to disable request journal if needed
+                .withRootDirectory(rootDir)
+                .extensions(webhookTransformer)  // Add webhook transformer
+                .notifier(new ConsoleNotifier(true));  // Enable verbose logging
         
         // Configure HTTPS if keystore is available
         if (keystorePath != null && keystorePassword != null) {
@@ -95,19 +107,21 @@ public class WireMockConfig {
             }
         }
         
-        // Configure stub persistence based on settings
-        if (!autoPersistStubs) {
-            // Add a console notifier for better logging
-            config.notifier(new ConsoleNotifier(true));
-            
-            // We'll handle recordings manually via our API
-            // WireMock doesn't have a direct option to disable auto-creation
-            // of stubs from recordings, but we control the recording process
-        }
-        
         WireMockServer server = new WireMockServer(config);
-        server.start();
-        logger.info("WireMock server started on HTTP port {} and HTTPS port {}", port, httpsPort);
+        this.wireMockServer = server;
+        
+        try {
+            server.start();
+            logger.info("Embedded WireMock server started successfully on HTTP port {} and HTTPS port {}", 
+                       port, httpsPort);
+            
+            // Set the static webhook service for the transformer
+            WebhookResponseTransformer.setStaticWebhookService(restWebhookService);
+            
+        } catch (Exception e) {
+            logger.error("Failed to start WireMock server", e);
+            throw new RuntimeException("Failed to start WireMock server", e);
+        }
         
         return server;
     }
@@ -115,7 +129,9 @@ public class WireMockConfig {
     @PreDestroy
     public void stopWireMockServer() {
         if (wireMockServer != null && wireMockServer.isRunning()) {
+            logger.info("Stopping WireMock server...");
             wireMockServer.stop();
+            logger.info("WireMock server stopped");
         }
     }
 

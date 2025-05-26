@@ -7,6 +7,18 @@ export interface MessageHeader {
   type: string;
 }
 
+export enum ContentMatchType {
+  NONE = 'NONE',
+  CONTAINS = 'CONTAINS',
+  EXACT = 'EXACT',
+  REGEX = 'REGEX'
+}
+
+export enum StubStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE'
+}
+
 export interface IBMMQStub {
   id?: string;
   name: string;
@@ -15,18 +27,25 @@ export interface IBMMQStub {
   queueManager: string;
   queueName: string;
   selector?: string;
+  
+  // Standardized content matching configuration
+  contentMatchType?: ContentMatchType;
+  contentPattern?: string;
+  caseSensitive?: boolean;
+  priority?: number;
+  
   responseContent?: string;
   responseType?: string;
   latency?: number;
   headers?: MessageHeader[];
-  status?: boolean;
+  status?: StubStatus;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface UpdateIBMMQStubStatusRequest {
   id: string;
-  status: boolean;
+  status: StubStatus;
 }
 
 export const ibmMqApi = createApi({
@@ -76,7 +95,7 @@ export const ibmMqApi = createApi({
       query: ({ id, status }) => ({
         url: `/ibmmq/stubs/${id}/status`,
         method: 'PATCH',
-        body: { status },
+        body: { status: status },
       }),
       invalidatesTags: ['IBMMQStub'],
     }),

@@ -1,6 +1,7 @@
 package com.service.virtualization.tibco.repository;
 
 import com.service.virtualization.tibco.model.TibcoStub;
+import com.service.virtualization.model.StubStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public interface TibcoStubRepository {
      * @param status The status to filter by
      * @return A list of TIBCO stubs with the specified status
      */
-    List<TibcoStub> findByStatus(String status);
+    List<TibcoStub> findByStatus(StubStatus status);
 
     /**
      * Find TIBCO stubs by user ID.

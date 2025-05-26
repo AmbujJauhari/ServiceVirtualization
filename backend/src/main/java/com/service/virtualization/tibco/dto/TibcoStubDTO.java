@@ -1,5 +1,7 @@
 package com.service.virtualization.tibco.dto;
 
+import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.tibco.model.TibcoStub;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +17,26 @@ public record TibcoStubDTO(
     TibcoDestinationDTO requestDestination,
     TibcoDestinationDTO responseDestination,
     String messageSelector,
+    
+    // Legacy body match criteria (kept for backward compatibility)
     List<BodyMatchCriteriaDTO> bodyMatchCriteria,
+    
+    // Standardized content matching configuration
+    TibcoStub.ContentMatchType contentMatchType,
+    String contentPattern,
+    Boolean caseSensitive,
+    
+    // Priority for stub matching
+    Integer priority,
+    
     String responseType,  // DIRECT or CALLBACK
     String responseContent,
     Map<String, String> responseHeaders,
-    String status,
+    
+    // Response latency in milliseconds
+    Long latency,
+    
+    StubStatus status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {

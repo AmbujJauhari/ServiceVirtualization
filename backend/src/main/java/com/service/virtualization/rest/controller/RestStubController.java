@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.service.virtualization.dto.DtoConverter.fromRestStub;
 import static com.service.virtualization.dto.DtoConverter.toRestStub;
@@ -22,7 +21,7 @@ import static com.service.virtualization.dto.DtoConverter.toRestStub;
  * REST controller for stub operations
  */
 @RestController
-@RequestMapping("/rest/stubs")
+@RequestMapping("/api/rest/stubs")
 public class RestStubController {
     
     private static final Logger logger = LoggerFactory.getLogger(RestStubController.class);
@@ -39,9 +38,7 @@ public class RestStubController {
     @GetMapping
     public ResponseEntity<List<RestStubDTO>> getAllStubs() {
         logger.debug("Getting all stubs");
-        List<RestStubDTO> restStubDTOS = restStubService.findAllStubs().stream()
-                .map(DtoConverter::fromRestStub)
-                .collect(Collectors.toList());
+        List<RestStubDTO> restStubDTOS = restStubService.findAllStubsWithRegistrationStatus();
         return ResponseEntity.ok(restStubDTOS);
     }
     
@@ -63,9 +60,7 @@ public class RestStubController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<RestStubDTO>> getStubsByUserId(@PathVariable String userId) {
         logger.debug("Getting stubs for user: {}", userId);
-        List<RestStubDTO> restStubDTOS = restStubService.findStubsByUserId(userId).stream()
-                .map(DtoConverter::fromRestStub)
-                .collect(Collectors.toList());
+        List<RestStubDTO> restStubDTOS = restStubService.findStubsByUserIdWithRegistrationStatus(userId);
         return ResponseEntity.ok(restStubDTOS);
     }
     

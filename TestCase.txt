@@ -1,0 +1,10 @@
+Rest - 
+
+1. Stubbed response
+    a. Contains
+    b. Exact Match
+
+Test for GET, POST, PUT, DELETE
+Query Params, RequestBody
+
+2. Webhook URL

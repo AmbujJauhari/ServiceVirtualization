@@ -5,10 +5,15 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
 @Configuration
+@EnableJms
 public class IBMMQConfig {
 
     @Value("${activemq.broker-url:tcp://localhost:61616}")
@@ -48,5 +53,15 @@ public class IBMMQConfig {
         template.setConnectionFactory(ibmmqConnectionFactory());
         template.setPubSubDomain(false); // Default to queues
         return template;
+    }
+
+    @Bean(name = "ibmmqListenerContainerFactory")
+    public JmsListenerContainerFactory<DefaultMessageListenerContainer> ibmmqListenerContainerFactory() {
+        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(ibmmqConnectionFactory());
+        factory.setPubSubDomain(false); // Default to queues
+        factory.setConcurrency("1-10"); // Set concurrency for message processing
+        factory.setSessionAcknowledgeMode(jakarta.jms.Session.AUTO_ACKNOWLEDGE);
+        return factory;
     }
 }

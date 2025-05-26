@@ -17,7 +17,7 @@ import java.io.IOException;
 /**
  * Controller to handle proxy and API pass-through requests
  */
-@RestController
+//@RestController
 public class ProxyController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyController.class);
@@ -41,17 +41,17 @@ public class ProxyController {
      * @param request the incoming request
      * @throws IOException if an error occurs
      */
-    @RequestMapping(value = "${rest.api-path}/**", method = {RequestMethod.GET, RequestMethod.POST,
-            RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.HEAD,
+    @RequestMapping(value = "${rest.api-path}/**", method = {
+            RequestMethod.GET, RequestMethod.POST,
+            RequestMethod.PUT, RequestMethod.DELETE,
+            RequestMethod.PATCH, RequestMethod.HEAD,
             RequestMethod.OPTIONS})
-    public ResponseEntity<?> handleApiRequest(
-            HttpServletRequest request) throws IOException {
+    public ResponseEntity<?> handleApiRequest(HttpServletRequest request) throws IOException {
 
         // Extract the filePath variables after the api-path
         String path = extractPathFromPattern(request);
 
         // Handle OPTIONS requests for CORS preflight
-
         logger.info("API request received for filePath: {}", path);
 
         // Process the request (recording will be handled based on filePath configuration)

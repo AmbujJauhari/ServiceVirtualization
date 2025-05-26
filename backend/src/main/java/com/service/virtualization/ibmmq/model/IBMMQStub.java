@@ -17,6 +17,16 @@ import java.util.Objects;
 public class IBMMQStub {
 
     /**
+     * Enum defining the types of content matching available.
+     */
+    public enum ContentMatchType {
+        NONE,       // No content matching
+        CONTAINS,   // Message content contains the pattern
+        EXACT,      // Message content exactly matches the pattern
+        REGEX       // Message content matches the regex pattern
+    }
+
+    /**
      * Unique identifier for the stub
      */
     @Id
@@ -51,6 +61,27 @@ public class IBMMQStub {
      * JMS selector for filtering messages
      */
     private String selector;
+    
+    // Standardized content matching configuration
+    /**
+     * Type of content matching to perform
+     */
+    private ContentMatchType contentMatchType = ContentMatchType.NONE;
+    
+    /**
+     * Pattern to match against message content
+     */
+    private String contentPattern;
+    
+    /**
+     * Whether content matching should be case sensitive
+     */
+    private boolean caseSensitive = false;
+    
+    /**
+     * Priority for stub matching (higher number = higher priority)
+     */
+    private int priority = 0;
     
     /**
      * Content of the response message
@@ -94,6 +125,9 @@ public class IBMMQStub {
         this.headers = new ArrayList<>();
         this.latency = 0;
         this.status = StubStatus.INACTIVE;
+        this.contentMatchType = ContentMatchType.NONE;
+        this.caseSensitive = false;
+        this.priority = 0;
     }
     
     /**
@@ -163,6 +197,38 @@ public class IBMMQStub {
 
     public void setSelector(String selector) {
         this.selector = selector;
+    }
+
+    public ContentMatchType getContentMatchType() {
+        return contentMatchType;
+    }
+
+    public void setContentMatchType(ContentMatchType contentMatchType) {
+        this.contentMatchType = contentMatchType;
+    }
+
+    public String getContentPattern() {
+        return contentPattern;
+    }
+
+    public void setContentPattern(String contentPattern) {
+        this.contentPattern = contentPattern;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public String getResponseContent() {
@@ -246,6 +312,14 @@ public class IBMMQStub {
         return this.headers.removeIf(h -> Objects.equals(h.getName(), headerName));
     }
     
+    /**
+     * Check if this stub is active
+     * @return true if status is ACTIVE
+     */
+    public boolean isActive() {
+        return status == StubStatus.ACTIVE;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -271,6 +345,8 @@ public class IBMMQStub {
                 ", name='" + name + '\'' +
                 ", queueManager='" + queueManager + '\'' +
                 ", queueName='" + queueName + '\'' +
+                ", contentMatchType=" + contentMatchType +
+                ", priority=" + priority +
                 ", status=" + status +
                 '}';
     }
