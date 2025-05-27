@@ -1,11 +1,10 @@
 package com.service.virtualization.soap;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Data Transfer Object for SOAP stub operations
+ * DTO for SOAP service stub with simplified fields
  */
 public record SoapStubDTO(
         String id,
@@ -16,14 +15,13 @@ public record SoapStubDTO(
         String protocol,
         List<String> tags,
         String status,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        String createdAt,
+        String updatedAt,
         
-        // SOAP specific fields
-        String wsdlUrl,
-        String serviceName,
-        String portName,
-        String operationName,
+        // SOAP specific fields (simplified)
+        String url,
+        String soapAction,
+        String webhookUrl,
         
         Map<String, Object> matchConditions,
         Map<String, Object> response

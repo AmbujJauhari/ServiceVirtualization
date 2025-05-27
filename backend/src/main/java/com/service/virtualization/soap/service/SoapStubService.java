@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service interface for SOAP stub operations
+ * Service interface for SOAP stub operations (simplified)
  */
 public interface SoapStubService {
     
@@ -66,20 +66,12 @@ public interface SoapStubService {
     List<SoapStub> findStubsByStatus(StubStatus status);
     
     /**
-     * Find SOAP stubs by service name
+     * Find SOAP stubs by URL pattern
      * 
-     * @param serviceName the service name to filter by
-     * @return a list of SOAP stubs for the specified service name
+     * @param urlPattern the URL pattern to filter by
+     * @return a list of SOAP stubs matching the URL pattern
      */
-    List<SoapStub> findStubsByServiceName(String serviceName);
-    
-    /**
-     * Find SOAP stubs by operation name
-     * 
-     * @param operationName the operation name to filter by
-     * @return a list of SOAP stubs for the specified operation
-     */
-    List<SoapStub> findStubsByOperationName(String operationName);
+    List<SoapStub> findStubsByUrl(String urlPattern);
     
     /**
      * Update the status of a SOAP stub

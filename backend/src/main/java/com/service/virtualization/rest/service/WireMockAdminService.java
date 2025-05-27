@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -77,6 +79,24 @@ public class WireMockAdminService {
             logger.error("Unexpected error while fetching WireMock mappings: {}", e.getMessage(), e);
             return Collections.emptySet();
         }
+    }
+
+    public void deleteWireMockMapping(String id) {
+        try {
+            restTemplate.delete(wiremockBaseUrl + "/__admin/mappings/" + id);
+        } catch (Exception e) {
+            logger.warn("Failed to delete WireMock mapping for stub: {}", id, e);
+        }
+    }
+
+    public ResponseEntity<String> postWiremockMappings(HttpEntity<Map<String, Object>> entity) {
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                wiremockBaseUrl + "/__admin/mappings",
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
+        return responseEntity;
     }
 
     /**

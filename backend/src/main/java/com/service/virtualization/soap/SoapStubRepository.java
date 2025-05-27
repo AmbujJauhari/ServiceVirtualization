@@ -50,20 +50,12 @@ public interface SoapStubRepository {
     List<SoapStub> findByUserId(String userId);
     
     /**
-     * Find SOAP stubs by service name
+     * Find SOAP stubs by URL pattern
      * 
-     * @param serviceName the service name to filter by
-     * @return a list of stubs for the specified service name
+     * @param urlPattern the URL pattern to filter by
+     * @return a list of stubs matching the URL pattern
      */
-    List<SoapStub> findByServiceName(String serviceName);
-    
-    /**
-     * Find SOAP stubs by operation name
-     * 
-     * @param operationName the operation name to filter by
-     * @return a list of stubs for the specified operation name
-     */
-    List<SoapStub> findByOperationName(String operationName);
+    List<SoapStub> findByUrlContaining(String urlPattern);
     
     /**
      * Delete a SOAP stub by its ID

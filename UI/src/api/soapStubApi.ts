@@ -10,10 +10,9 @@ interface SoapStub {
   protocol: string;
   tags: string[];
   status: string;
-  wsdlUrl?: string;
-  serviceName: string;
-  portName?: string;
-  operationName: string;
+  url: string;
+  soapAction?: string;
+  webhookUrl?: string;
   matchConditions: Record<string, any>;
   response: Record<string, any>;
   createdAt?: string;
@@ -59,19 +58,16 @@ export const soapStubApi = createApi({
       }),
       invalidatesTags: ['SoapStub'],
     }),
-    updateSoapStubStatus: builder.mutation<SoapStub, { id: string; active: boolean }>({
-      query: ({ id, active }) => ({
-        url: `/soap/stubs/${id}/active?active=${active}`,
+    updateSoapStubStatus: builder.mutation<SoapStub, { id: string; status: string }>({
+      query: ({ id, status }) => ({
+        url: `/soap/stubs/${id}/status`,
         method: 'PATCH',
+        params: { status },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'SoapStub', id }],
     }),
-    getSoapStubsByService: builder.query<SoapStub[], string>({
-      query: (serviceName) => `/soap/stubs/service/${serviceName}`,
-      providesTags: ['SoapStub'],
-    }),
-    getSoapStubsByOperation: builder.query<SoapStub[], string>({
-      query: (operationName) => `/soap/stubs/operation/${operationName}`,
+    getSoapStubsByUrl: builder.query<SoapStub[], string>({
+      query: (urlPattern) => `/soap/stubs/url?urlPattern=${encodeURIComponent(urlPattern)}`,
       providesTags: ['SoapStub'],
     }),
   }),
@@ -84,6 +80,5 @@ export const {
   useUpdateSoapStubMutation,
   useDeleteSoapStubMutation,
   useUpdateSoapStubStatusMutation,
-  useGetSoapStubsByServiceQuery,
-  useGetSoapStubsByOperationQuery,
+  useGetSoapStubsByUrlQuery,
 } = soapStubApi; 

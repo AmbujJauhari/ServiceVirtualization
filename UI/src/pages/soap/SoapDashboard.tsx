@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import SoapStubList from './stubs/SoapStubList';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import StubList from './stubs/StubList';
 
 const SoapDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'stubs'>('stubs');
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Breadcrumb */}
       <div className="mb-8">
         <div className="flex items-center mb-6">
           <Link to="/" className="text-primary-600 hover:text-primary-700 mr-4">
@@ -18,24 +16,8 @@ const SoapDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {/* Tabs Navigation */}
-        <div className="flex border-b border-gray-200">
-          <button
-            className={`px-6 py-3 text-sm font-medium ${
-              activeTab === 'stubs'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-            onClick={() => setActiveTab('stubs')}
-          >
-            Stubs
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'stubs' && <SoapStubList />}
-      </div>
+      {/* Main Content */}
+      <StubList />
     </div>
   );
 };

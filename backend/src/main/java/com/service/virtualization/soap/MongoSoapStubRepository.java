@@ -42,10 +42,9 @@ public class MongoSoapStubRepository implements SoapStubRepository {
                 LocalDateTime.now(),
                 LocalDateTime.now(),
                 stub.wiremockMappingId(),
-                stub.wsdlUrl(),
-                stub.serviceName(),
-                stub.portName(),
-                stub.operationName(),
+                stub.url(),
+                stub.soapAction(),
+                stub.webhookUrl(),
                 stub.matchConditions(),
                 stub.response()
             );
@@ -76,18 +75,6 @@ public class MongoSoapStubRepository implements SoapStubRepository {
     }
 
     @Override
-    public List<SoapStub> findByServiceName(String serviceName) {
-        Query query = new Query(Criteria.where("serviceName").is(serviceName));
-        return mongoTemplate.find(query, SoapStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public List<SoapStub> findByOperationName(String operationName) {
-        Query query = new Query(Criteria.where("operationName").is(operationName));
-        return mongoTemplate.find(query, SoapStub.class, COLLECTION_NAME);
-    }
-
-    @Override
     public void deleteById(String id) {
         Query query = new Query(Criteria.where("_id").is(id));
         mongoTemplate.remove(query, SoapStub.class, COLLECTION_NAME);
@@ -104,5 +91,11 @@ public class MongoSoapStubRepository implements SoapStubRepository {
     public boolean existsById(String id) {
         Query query = new Query(Criteria.where("_id").is(id));
         return mongoTemplate.exists(query, SoapStub.class, COLLECTION_NAME);
+    }
+
+    @Override
+    public List<SoapStub> findByUrlContaining(String urlPattern) {
+        Query query = new Query(Criteria.where("url").regex(urlPattern, "i"));
+        return mongoTemplate.find(query, SoapStub.class, COLLECTION_NAME);
     }
 } 

@@ -46,11 +46,8 @@ public class SybaseSoapStubRepository implements SoapStubRepository {
     private static final String SELECT_STUBS_BY_USER_ID = 
             "SELECT * FROM soap_stubs WHERE JSON_VALUE(stub_data, '$.userId') = ?";
     
-    private static final String SELECT_STUBS_BY_SERVICE_NAME = 
-            "SELECT * FROM soap_stubs WHERE JSON_VALUE(stub_data, '$.serviceName') = ?";
-    
-    private static final String SELECT_STUBS_BY_OPERATION_NAME = 
-            "SELECT * FROM soap_stubs WHERE JSON_VALUE(stub_data, '$.operationName') = ?";
+    private static final String SELECT_STUBS_BY_URL = 
+            "SELECT * FROM soap_stubs WHERE JSON_VALUE(stub_data, '$.url') LIKE ?";
     
     private static final String DELETE_STUB_BY_ID = 
             "DELETE FROM soap_stubs WHERE id = ?";
@@ -119,13 +116,8 @@ public class SybaseSoapStubRepository implements SoapStubRepository {
     }
     
     @Override
-    public List<SoapStub> findByServiceName(String serviceName) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_SERVICE_NAME, this::mapRowToStub, serviceName);
-    }
-    
-    @Override
-    public List<SoapStub> findByOperationName(String operationName) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_OPERATION_NAME, this::mapRowToStub, operationName);
+    public List<SoapStub> findByUrlContaining(String urlPattern) {
+        return jdbcTemplate.query(SELECT_STUBS_BY_URL, this::mapRowToStub, "%" + urlPattern + "%");
     }
     
     @Override
@@ -182,10 +174,9 @@ public class SybaseSoapStubRepository implements SoapStubRepository {
             stub.createdAt(),
             stub.updatedAt(),
             stub.wiremockMappingId(),
-            stub.wsdlUrl(),
-            stub.serviceName(),
-            stub.portName(),
-            stub.operationName(),
+            stub.url(),
+            stub.soapAction(),
+            stub.webhookUrl(),
             stub.matchConditions(),
             stub.response()
         );

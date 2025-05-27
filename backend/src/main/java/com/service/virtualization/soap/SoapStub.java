@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Model for SOAP service stub with SOAP-specific attributes
+ * Simplified SOAP service stub model - treats SOAP as HTTP POST with XML
  */
 public record SoapStub(
         String id,
@@ -22,14 +22,13 @@ public record SoapStub(
         LocalDateTime updatedAt,
         String wiremockMappingId,
         
-        // SOAP specific fields
-        String wsdlUrl,
-        String serviceName,
-        String portName,
-        String operationName,
+        // SOAP specific fields (simplified)
+        String url,              // SOAP endpoint URL
+        String soapAction,       // Optional SOAPAction header
+        String webhookUrl,       // Webhook URL for responses
         
-        Map<String, Object> matchConditions,
-        Map<String, Object> response
+        Map<String, Object> matchConditions,  // Contains XML body matching
+        Map<String, Object> response          // Contains XML response
 ) {
     public SoapStub() {
         this(
@@ -43,7 +42,6 @@ public record SoapStub(
                 StubStatus.INACTIVE,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
-                null,
                 null,
                 null,
                 null,
@@ -87,8 +85,8 @@ public record SoapStub(
     public SoapStub withMatchingConditions(Map<String, Object> matchConditions) {
         return new SoapStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), wiremockMappingId, wsdlUrl, serviceName, 
-                portName, operationName, matchConditions, response
+                createdAt, LocalDateTime.now(), wiremockMappingId, url, soapAction, 
+                webhookUrl, matchConditions, response
         );
     }
 
@@ -98,8 +96,8 @@ public record SoapStub(
     public SoapStub withResponse(Map<String, Object> newResponse) {
         return new SoapStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), wiremockMappingId, wsdlUrl, serviceName,
-                portName, operationName, matchConditions, newResponse
+                createdAt, LocalDateTime.now(), wiremockMappingId, url, soapAction,
+                webhookUrl, matchConditions, newResponse
         );
     }
 
@@ -109,20 +107,27 @@ public record SoapStub(
     public SoapStub withStatus(StubStatus newStatus) {
         return new SoapStub(
                 id, name, description, userId, behindProxy, protocol, tags, newStatus,
-                createdAt, LocalDateTime.now(), wiremockMappingId, wsdlUrl, serviceName,
-                portName, operationName, matchConditions, response
+                createdAt, LocalDateTime.now(), wiremockMappingId, url, soapAction,
+                webhookUrl, matchConditions, response
         );
     }
 
     /**
-     * Create a new Stub with updated WSDL information
+     * Create a new Stub with updated URL and SOAP action
      */
-    public SoapStub withWsdlInfo(String newWsdlUrl, String newServiceName, String newPortName, String newOperationName) {
+    public SoapStub withUrlAndAction(String newUrl, String newSoapAction) {
         return new SoapStub(
                 id, name, description, userId, behindProxy, protocol, tags, status,
-                createdAt, LocalDateTime.now(), wiremockMappingId, newWsdlUrl, newServiceName,
-                newPortName, newOperationName, matchConditions, response
+                createdAt, LocalDateTime.now(), wiremockMappingId, newUrl, newSoapAction,
+                webhookUrl, matchConditions, response
         );
+    }
+
+    /**
+     * Check if this stub has a webhook configured
+     */
+    public boolean hasWebhook() {
+        return webhookUrl != null && !webhookUrl.trim().isEmpty();
     }
 
     /**
@@ -132,6 +137,7 @@ public record SoapStub(
     public boolean isValid() {
         return name != null && !name.trim().isEmpty()
                 && protocol != null
+                && url != null && !url.trim().isEmpty()
                 && !matchConditions.isEmpty()
                 && !response.isEmpty();
     }

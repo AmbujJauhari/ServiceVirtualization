@@ -8,6 +8,7 @@ const RestDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      
       <div className="mb-8">
         <div className="flex items-center mb-6">
           <Link to="/" className="text-primary-600 hover:text-primary-700 mr-4">
@@ -18,24 +19,7 @@ const RestDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {/* Tabs Navigation */}
-        <div className="flex border-b border-gray-200">
-          <button
-            className={`px-6 py-3 text-sm font-medium ${
-              activeTab === 'stubs'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-            onClick={() => setActiveTab('stubs')}
-          >
-            Stubs
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'stubs' && <StubList />}
-      </div>
+        <StubList />
     </div>
   );
 };

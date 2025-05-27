@@ -23,25 +23,23 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
   
   // Form state
   const [activeSection, setActiveSection] = useState<'request' | 'response'>('request');
+  const [responseType, setResponseType] = useState<'static' | 'callback'>('static');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     tags: [] as string[],
     status: 'ACTIVE',
     behindProxy: false,
-    wsdlUrl: '',
-    serviceName: '',
-    portName: '',
-    operationName: '',
-    // Match conditions
-    requestXPathFilters: [{ xpath: '', value: '', matchType: 'exact' }],
-    requestNamespaces: [{ prefix: '', uri: '' }],
+    url: '',
+    soapAction: '',
+    // Request matching
     requestBody: '',
     requestBodyMatchType: 'contains',
     // Response
     responseStatus: 200,
     responseBody: '',
-    responseFault: false
+    // Webhook
+    callbackUrl: ''
   });
   
   // State for managing tag input
@@ -53,9 +51,24 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
   useEffect(() => {
     if (isEdit && existingStub) {
       try {
-        // Extract data from existing stub to populate form
         const matchConditions = existingStub.matchConditions || {};
         const response = existingStub.response || {};
+        
+        // Check if this is a callback response
+        const isCallbackResponse = response.callback && response.callback.url;
+        
+        // Extract callback data if present
+        let callbackUrl = '';
+        
+        if (isCallbackResponse && response.callback) {
+          const callback = response.callback;
+          callbackUrl = callback.url || '';
+          setResponseType('callback');
+        } else if (existingStub.webhookUrl) {
+          // Check for top-level webhookUrl field (new format)
+          callbackUrl = existingStub.webhookUrl;
+          setResponseType('callback');
+        }
         
         setFormData({
           name: existingStub.name || '',
@@ -63,28 +76,13 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
           tags: existingStub.tags || [],
           status: existingStub.status || 'ACTIVE',
           behindProxy: existingStub.behindProxy || false,
-          wsdlUrl: existingStub.wsdlUrl || '',
-          serviceName: existingStub.serviceName || '',
-          portName: existingStub.portName || '',
-          operationName: existingStub.operationName || '',
-          requestXPathFilters: (matchConditions.xpathFilters || []).length > 0 
-            ? matchConditions.xpathFilters.map((f: any) => ({
-                xpath: f.path || '',
-                value: f.value || '',
-                matchType: f.matchType || 'exact'
-              }))
-            : [{ xpath: '', value: '', matchType: 'exact' }],
-          requestNamespaces: (matchConditions.namespaces || []).length > 0
-            ? matchConditions.namespaces.map((n: any) => ({
-                prefix: n.prefix || '',
-                uri: n.uri || ''
-              }))
-            : [{ prefix: '', uri: '' }],
+          url: existingStub.url || '',
+          soapAction: existingStub.soapAction || '',
           requestBody: matchConditions.body || '',
           requestBodyMatchType: matchConditions.bodyMatchType || 'contains',
           responseStatus: response.status || 200,
           responseBody: response.body || '',
-          responseFault: response.fault || false
+          callbackUrl: callbackUrl
         });
       } catch (error) {
         console.error('Error loading stub data:', error);
@@ -134,61 +132,10 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
     });
   };
 
-  // Add/remove array items
-  const addArrayItem = (field: 'requestXPathFilters' | 'requestNamespaces') => {
-    const item = field === 'requestXPathFilters' 
-      ? { xpath: '', value: '', matchType: 'exact' }
-      : { prefix: '', uri: '' };
-    
-    setFormData({
-      ...formData,
-      [field]: [...formData[field], item]
-    });
-  };
-
-  const removeArrayItem = (field: 'requestXPathFilters' | 'requestNamespaces', index: number) => {
-    if (formData[field].length <= 1) return; // Keep at least one item
-    
-    setFormData({
-      ...formData,
-      [field]: formData[field].filter((_, i) => i !== index)
-    });
-  };
-
-  // Handle array item changes
-  const handleArrayItemChange = (
-    field: 'requestXPathFilters' | 'requestNamespaces',
-    index: number,
-    key: string,
-    value: string
-  ) => {
-    const newArray = [...formData[field]];
-    newArray[index] = { ...newArray[index], [key]: value };
-    
-    setFormData({
-      ...formData,
-      [field]: newArray
-    });
-  };
-
   // Format form data for API submission
   const formatStubData = () => {
-    // Filter out empty xpath filters and namespaces
-    const validXPathFilters = formData.requestXPathFilters.filter(f => f.xpath.trim() !== '');
-    const validNamespaces = formData.requestNamespaces.filter(n => n.prefix.trim() !== '' && n.uri.trim() !== '');
-    
     // Format match conditions
-    const matchConditions: Record<string, any> = {
-      xpathFilters: validXPathFilters.map(f => ({
-        path: f.xpath,
-        value: f.value,
-        matchType: f.matchType
-      })),
-      namespaces: validNamespaces.map(n => ({
-        prefix: n.prefix,
-        uri: n.uri
-      }))
-    };
+    const matchConditions: Record<string, any> = {};
     
     // Add body matching if provided
     if (formData.requestBody.trim()) {
@@ -198,199 +145,170 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
     
     // Format response data
     const response: Record<string, any> = {
-      status: formData.responseStatus,
-      body: formData.responseBody,
-      contentType: 'application/xml',
-      fault: formData.responseFault
+      status: formData.responseStatus
     };
-
-    // Create the full stub data
-    return {
-      id: isEdit ? id : undefined,
+    
+    // Add response body
+    if (formData.responseBody.trim()) {
+      response.body = formData.responseBody;
+    }
+    
+    // Add callback configuration if callback type is selected
+    if (responseType === 'callback' && formData.callbackUrl.trim()) {
+      response.callback = {
+        url: formData.callbackUrl,
+        method: 'POST'
+      };
+    }
+    
+    // Construct the stub data object
+    const stubData = {
       name: formData.name,
       description: formData.description,
+      protocol: 'SOAP', // Hardcoded for SOAP stubs
       tags: formData.tags,
-      status: formData.status,
       behindProxy: formData.behindProxy,
-      protocol: 'SOAP',
-      wsdlUrl: formData.wsdlUrl,
-      serviceName: formData.serviceName,
-      portName: formData.portName,
-      operationName: formData.operationName,
+      status: formData.status,
+      url: formData.url,
+      soapAction: formData.soapAction || undefined,
       matchConditions,
       response
     };
+    
+    // Extract webhook URL for backend compatibility
+    if (responseType === 'callback' && formData.callbackUrl) {
+      (stubData as any).webhookUrl = formData.callbackUrl;
+    }
+    
+    return stubData;
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
-    if (!formData.name.trim()) {
-      setFormError('Stub name is required');
-      return;
-    }
-    
-    if (!formData.serviceName.trim()) {
-      setFormError('Service name is required');
-      return;
-    }
-    
-    if (!formData.operationName.trim()) {
-      setFormError('Operation name is required');
-      return;
-    }
-    
+    setFormError(null);
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      setFormError(null);
-      
+      // Validate required fields
+      if (!formData.name.trim()) {
+        throw new Error('Name is required');
+      }
+      if (!formData.url.trim()) {
+        throw new Error('URL is required');
+      }
+
       const stubData = formatStubData();
-      
-      if (isEdit) {
-        await updateStub(stubData).unwrap();
+
+      if (isEdit && id) {
+        // Update existing stub
+        await updateStub({ id, ...stubData }).unwrap();
       } else {
+        // Create new stub
         await createStub(stubData).unwrap();
       }
-      
-      // Navigate back to stubs list
+
+      // Navigate back to stub list
       navigate('/soap');
     } catch (error: any) {
-      console.error('Error submitting stub:', error);
-      setFormError(error.data?.message || 'An error occurred while saving the stub');
+      console.error('Error saving stub:', error);
+      setFormError(error.message || 'Failed to save stub. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Loading state
-  if (isEdit && isLoadingStub) {
+  if (isLoadingStub) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Back link */}
-      <Link to="/soap" className="text-primary-600 hover:text-primary-700 flex items-center mb-6">
-        <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to SOAP Stubs
-      </Link>
-
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white shadow-lg rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">
-            {isEdit ? 'Edit' : 'Create'} SOAP Stub
-          </h2>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEdit ? 'Edit SOAP Stub' : 'Create SOAP Stub'}
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Create a SOAP service stub with XML request/response matching
+          </p>
         </div>
 
-        {/* Form error */}
-        {formError && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 mx-6 mt-4">
-            <p>{formError}</p>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="p-6">
+          {formError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600">{formError}</p>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="px-6 py-4">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
-            <button
-              type="button"
-              className={`py-2 px-4 font-medium text-sm focus:outline-none ${
-                activeSection === 'request'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveSection('request')}
-            >
-              Request Matching
-            </button>
-            <button
-              type="button"
-              className={`py-2 px-4 font-medium text-sm focus:outline-none ${
-                activeSection === 'response'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveSection('response')}
-            >
-              Response
-            </button>
-          </div>
-
-          {/* Basic Info (Always visible) */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Basic Information</h3>
+          {/* Basic Information */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name <span className="text-red-500">*</span>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Name *
                 </label>
                 <input
                   type="text"
+                  id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
                 <select
+                  id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Inactive</option>
                 </select>
               </div>
             </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+
+            <div className="mt-4">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
+                id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags
-              </label>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+
+            {/* Tags */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <div className="flex flex-wrap gap-2 mb-2">
                 {formData.tags.map(tag => (
-                  <span 
-                    key={tag} 
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                  >
+                  <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center">
                     {tag}
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
-                      className="ml-1.5 inline-flex text-blue-400 hover:text-blue-600 focus:outline-none"
+                      className="ml-1 text-blue-600 hover:text-blue-800"
                     >
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      ×
                     </button>
                   </span>
                 ))}
@@ -401,343 +319,235 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
                   value={tagInput}
                   onChange={handleTagInputChange}
                   onKeyDown={handleTagKeyDown}
-                  placeholder="Add a tag"
-                  className="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Add a tag..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 border-l-0 rounded-r-md hover:bg-gray-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
                 >
                   Add
                 </button>
               </div>
             </div>
-            
-            <div className="mb-4">
-              <div className="flex items-center">
+
+            <div className="mt-4">
+              <label className="flex items-center">
                 <input
                   type="checkbox"
-                  id="behindProxy"
                   name="behindProxy"
                   checked={formData.behindProxy}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="mr-2"
                 />
-                <label htmlFor="behindProxy" className="ml-2 block text-sm text-gray-700">
-                  Behind Proxy
-                </label>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Check this if the service is accessed through a proxy server
-              </p>
+                <span className="text-sm text-gray-700">Behind Proxy</span>
+              </label>
             </div>
           </div>
 
-          {/* SOAP Service Info (Always visible) */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">SOAP Service Information</h3>
+          {/* SOAP Configuration */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">SOAP Configuration</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  WSDL URL
+                <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+                  SOAP Endpoint URL *
                 </label>
                 <input
                   type="text"
-                  name="wsdlUrl"
-                  value={formData.wsdlUrl}
+                  id="url"
+                  name="url"
+                  value={formData.url}
                   onChange={handleInputChange}
-                  placeholder="https://example.com/service.wsdl"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Service Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="serviceName"
-                  value={formData.serviceName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="/soap/service"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">The URL path for the SOAP service</p>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Port Name
+                <label htmlFor="soapAction" className="block text-sm font-medium text-gray-700 mb-1">
+                  SOAPAction Header
                 </label>
                 <input
                   type="text"
-                  name="portName"
-                  value={formData.portName}
+                  id="soapAction"
+                  name="soapAction"
+                  value={formData.soapAction}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="urn:example:operation"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Operation Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="operationName"
-                  value={formData.operationName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  required
-                />
+                <p className="text-xs text-gray-500 mt-1">Optional SOAPAction header value</p>
               </div>
             </div>
           </div>
 
-          {/* Request Matching Section */}
-          {activeSection === 'request' && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Request Matching</h3>
-              
-              {/* XPath Filters */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    XPath Filters
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => addArrayItem('requestXPathFilters')}
-                    className="text-primary-600 hover:text-primary-700 text-sm font-medium focus:outline-none"
-                  >
-                    + Add Filter
-                  </button>
-                </div>
-                
-                {formData.requestXPathFilters.map((filter, index) => (
-                  <div key={index} className="flex flex-col md:flex-row gap-2 mb-2 p-2 border border-gray-200 rounded-md">
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">XPath</label>
-                      <input
-                        type="text"
-                        value={filter.xpath}
-                        onChange={(e) => handleArrayItemChange('requestXPathFilters', index, 'xpath', e.target.value)}
-                        placeholder="//soap:Envelope/soap:Body/ns:GetWeather"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">Value</label>
-                      <input
-                        type="text"
-                        value={filter.value}
-                        onChange={(e) => handleArrayItemChange('requestXPathFilters', index, 'value', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-xs text-gray-500 mb-1">Match Type</label>
-                      <select
-                        value={filter.matchType}
-                        onChange={(e) => handleArrayItemChange('requestXPathFilters', index, 'matchType', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="exact">Exact</option>
-                        <option value="contains">Contains</option>
-                        <option value="regex">Regex</option>
-                      </select>
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem('requestXPathFilters', index)}
-                        className="px-2 py-2 text-red-500 hover:text-red-700 focus:outline-none"
-                        title="Remove"
-                      >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* XML Namespaces */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    XML Namespaces
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => addArrayItem('requestNamespaces')}
-                    className="text-primary-600 hover:text-primary-700 text-sm font-medium focus:outline-none"
-                  >
-                    + Add Namespace
-                  </button>
-                </div>
-                
-                {formData.requestNamespaces.map((namespace, index) => (
-                  <div key={index} className="flex flex-col md:flex-row gap-2 mb-2 p-2 border border-gray-200 rounded-md">
-                    <div className="w-32">
-                      <label className="block text-xs text-gray-500 mb-1">Prefix</label>
-                      <input
-                        type="text"
-                        value={namespace.prefix}
-                        onChange={(e) => handleArrayItemChange('requestNamespaces', index, 'prefix', e.target.value)}
-                        placeholder="soap"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">URI</label>
-                      <input
-                        type="text"
-                        value={namespace.uri}
-                        onChange={(e) => handleArrayItemChange('requestNamespaces', index, 'uri', e.target.value)}
-                        placeholder="http://schemas.xmlsoap.org/soap/envelope/"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem('requestNamespaces', index)}
-                        className="px-2 py-2 text-red-500 hover:text-red-700 focus:outline-none"
-                        title="Remove"
-                      >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Request Body */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Request Body Sample
+          {/* Request/Response Sections */}
+          <div className="mb-8">
+            <div className="flex border-b border-gray-200 mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveSection('request')}
+                className={`px-4 py-2 font-medium text-sm ${
+                  activeSection === 'request'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Request Matching
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSection('response')}
+                className={`px-4 py-2 font-medium text-sm ${
+                  activeSection === 'response'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Response Configuration
+              </button>
+            </div>
+
+            {activeSection === 'request' && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="requestBodyMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                    Body Match Type
                   </label>
                   <select
+                    id="requestBodyMatchType"
                     name="requestBodyMatchType"
                     value={formData.requestBodyMatchType}
                     onChange={handleInputChange}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="contains">Contains</option>
-                    <option value="exact">Exact Match</option>
-                    <option value="regex">Regex</option>
+                    <option value="equals">Equals</option>
+                    <option value="matches">Regex Match</option>
                   </select>
                 </div>
-                <textarea
-                  name="requestBody"
-                  value={formData.requestBody}
-                  onChange={handleInputChange}
-                  rows={8}
-                  placeholder="<soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'>\n  <soap:Body>\n    <ns:GetWeather xmlns:ns='http://example.com'>\n      <ns:location>New York</ns:location>\n    </ns:GetWeather>\n  </soap:Body>\n</soap:Envelope>"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  XML request body to match against. You can use this along with XPath filters or as a standalone matcher.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {/* Response Section */}
-          {activeSection === 'response' && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Response Configuration</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Response Status
+                  <label htmlFor="requestBody" className="block text-sm font-medium text-gray-700 mb-1">
+                    XML Request Body Pattern
                   </label>
-                  <input
-                    type="number"
-                    name="responseStatus"
-                    value={formData.responseStatus}
+                  <textarea
+                    id="requestBody"
+                    name="requestBody"
+                    value={formData.requestBody}
                     onChange={handleInputChange}
-                    min="100"
-                    max="599"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    rows={8}
+                    placeholder="<soap:Envelope>&#10;  <soap:Body>&#10;    <!-- XML content to match -->&#10;  </soap:Body>&#10;</soap:Envelope>"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                   />
+                  <p className="text-xs text-gray-500 mt-1">XML content to match in the request body</p>
                 </div>
-                
-                <div className="flex items-end">
-                  <div className="flex items-center h-10">
+              </div>
+            )}
+
+            {activeSection === 'response' && (
+              <div className="space-y-4">
+                <div className="flex space-x-4 mb-4">
+                  <label className="flex items-center">
                     <input
-                      type="checkbox"
-                      id="responseFault"
-                      name="responseFault"
-                      checked={formData.responseFault}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      type="radio"
+                      name="responseType"
+                      value="static"
+                      checked={responseType === 'static'}
+                      onChange={(e) => setResponseType(e.target.value as 'static' | 'callback')}
+                      className="mr-2"
                     />
-                    <label htmlFor="responseFault" className="ml-2 block text-sm text-gray-700">
-                      Return as SOAP Fault
-                    </label>
-                  </div>
+                    <span className="text-sm text-gray-700">Static Response</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="responseType"
+                      value="callback"
+                      checked={responseType === 'callback'}
+                      onChange={(e) => setResponseType(e.target.value as 'static' | 'callback')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Webhook Response</span>
+                  </label>
                 </div>
+
+                {responseType === 'static' && (
+                  <>
+                    <div>
+                      <label htmlFor="responseStatus" className="block text-sm font-medium text-gray-700 mb-1">
+                        Response Status Code
+                      </label>
+                      <input
+                        type="number"
+                        id="responseStatus"
+                        name="responseStatus"
+                        value={formData.responseStatus}
+                        onChange={handleInputChange}
+                        min="100"
+                        max="599"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="responseBody" className="block text-sm font-medium text-gray-700 mb-1">
+                        XML Response Body
+                      </label>
+                      <textarea
+                        id="responseBody"
+                        name="responseBody"
+                        value={formData.responseBody}
+                        onChange={handleInputChange}
+                        rows={8}
+                        placeholder="<soap:Envelope>&#10;  <soap:Body>&#10;    <!-- XML response content -->&#10;  </soap:Body>&#10;</soap:Envelope>"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">XML content to return as response</p>
+                    </div>
+                  </>
+                )}
+
+                {responseType === 'callback' && (
+                  <div>
+                    <label htmlFor="callbackUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                      Webhook URL
+                    </label>
+                    <input
+                      type="url"
+                      id="callbackUrl"
+                      name="callbackUrl"
+                      value={formData.callbackUrl}
+                      onChange={handleInputChange}
+                      placeholder="http://localhost:8080/test-webhook/soap"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">URL to call for dynamic response generation</p>
+                  </div>
+                )}
               </div>
-              
-              {/* Response Body */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Response Body
-                </label>
-                <textarea
-                  name="responseBody"
-                  value={formData.responseBody}
-                  onChange={handleInputChange}
-                  rows={12}
-                  placeholder={formData.responseFault ? 
-                    "<soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'>\n  <soap:Body>\n    <soap:Fault>\n      <faultcode>soap:Server</faultcode>\n      <faultstring>Internal Server Error</faultstring>\n      <detail>\n        <error>Service unavailable</error>\n      </detail>\n    </soap:Fault>\n  </soap:Body>\n</soap:Envelope>" :
-                    "<soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'>\n  <soap:Body>\n    <ns:GetWeatherResponse xmlns:ns='http://example.com'>\n      <ns:temperature>72</ns:temperature>\n      <ns:conditions>Sunny</ns:conditions>\n    </ns:GetWeatherResponse>\n  </soap:Body>\n</soap:Envelope>"}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  XML response body to return when the request matches. Make sure it follows proper SOAP structure.
-                </p>
-              </div>
-            </div>
-          )}
-          
+            )}
+          </div>
+
           {/* Form Actions */}
-          <div className="flex justify-end space-x-2 border-t border-gray-200 pt-4 mt-6">
+          <div className="flex justify-between pt-6 border-t border-gray-200">
             <Link
-              to="/soap"
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              to="/soap/stubs"
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
             >
               Cancel
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              disabled={isSubmitting || isCreating || isUpdating}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </span>
-              ) : (
-                isEdit ? 'Update Stub' : 'Create Stub'
-              )}
+              {isSubmitting || isCreating || isUpdating ? 'Saving...' : (isEdit ? 'Update Stub' : 'Create Stub')}
             </button>
           </div>
         </form>

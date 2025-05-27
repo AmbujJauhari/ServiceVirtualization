@@ -186,7 +186,6 @@ const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
     <div className={`bg-white shadow-md rounded-lg overflow-hidden ${isEmbedded ? '' : 'mt-8'}`}>
       <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <h2 className="text-xl font-semibold text-gray-800">REST API Stubs</h2>
           <div className="flex space-x-2">
             <input 
               type="text" 
@@ -258,6 +257,9 @@ const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -345,6 +347,9 @@ const StubList: React.FC<StubListProps> = ({ isEmbedded = false }) => {
                         </button>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {stub.createdAt ? new Date(stub.createdAt).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

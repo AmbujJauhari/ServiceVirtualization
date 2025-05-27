@@ -1,354 +1,296 @@
 package com.service.virtualization.soap.service.impl;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.client.MappingBuilder;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.rest.service.WireMockAdminService;
+import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.soap.SoapStubRepository;
 import com.service.virtualization.soap.service.SoapStubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
- * Implementation of the SoapStubService interface
+ * SOAP stub service implementation using WireMock infrastructure
  */
 @Service
 public class SoapStubServiceImpl implements SoapStubService {
 
     private static final Logger logger = LoggerFactory.getLogger(SoapStubServiceImpl.class);
-    
+
+    @Autowired
     private final SoapStubRepository soapStubRepository;
-    private final WireMockServer wireMockServer;
-    
-    public SoapStubServiceImpl(SoapStubRepository soapStubRepository, WireMockServer wireMockServer) {
+
+    @Autowired
+    private final WireMockAdminService wireMockAdminService;
+
+    public SoapStubServiceImpl(SoapStubRepository soapStubRepository, WireMockAdminService wireMockAdminService) {
         this.soapStubRepository = soapStubRepository;
-        this.wireMockServer = wireMockServer;
+        this.wireMockAdminService = wireMockAdminService;
     }
-    
+
+
     @Override
     public SoapStub createStub(SoapStub stub) {
-        // Validate the stub
-        if (!stub.isValid()) {
-            throw new IllegalArgumentException("Invalid SOAP stub data");
-        }
-        
-        // Generate ID if not present
-        String stubId = stub.id() != null ? stub.id() : UUID.randomUUID().toString();
-        
-        // Create a stub with updated timestamps
-        SoapStub newStub = new SoapStub(
-            stubId,
-            stub.name(),
-            stub.description(),
-            stub.userId(),
-            stub.behindProxy(),
-            stub.protocol(),
-            stub.tags(),
-            stub.status(),
-            LocalDateTime.now(),
-            LocalDateTime.now(),
-            null, // WireMock mapping ID will be set after registration
-            stub.wsdlUrl(),
-            stub.serviceName(),
-            stub.portName(),
-            stub.operationName(),
-            stub.matchConditions(),
-            stub.response()
+        logger.info("Creating SOAP stub: {}", stub.name());
+
+        // Create stub with current timestamp
+        stub = new SoapStub(
+                stub.id(),
+                stub.name(),
+                stub.description(),
+                stub.userId(),
+                stub.behindProxy(),
+                stub.protocol(),
+                stub.tags(),
+                stub.status(),
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                null,
+                stub.url(),
+                stub.soapAction(),
+                stub.webhookUrl(),
+                stub.matchConditions(),
+                stub.response()
         );
-        
-        // Register with WireMock if stub is active
-        if (stub.status() == StubStatus.ACTIVE) {
-            String mappingId = registerWithWireMock(newStub);
-            newStub = updateWireMockMappingId(newStub, mappingId);
-        }
-        
+
         // Save to database
-        return soapStubRepository.save(newStub);
+        stub = soapStubRepository.save(stub);
+
+        // Register stub with WireMock only if it's active
+        if (stub.status() == StubStatus.ACTIVE) {
+            logger.info("Registering new active SOAP stub {} with WireMock", stub.id());
+            registerWithWireMock(stub);
+        } else {
+            logger.info("Creating inactive SOAP stub {}, skipping WireMock registration", stub.id());
+        }
+
+        return stub;
     }
-    
+
     @Override
     public SoapStub updateStub(SoapStub stub) {
-        // Check if stub exists
-        if (!soapStubRepository.existsById(stub.id())) {
-            throw new IllegalArgumentException("SOAP stub not found with ID: " + stub.id());
-        }
-        
-        // Get existing stub to preserve creation date
-        Optional<SoapStub> existingStubOpt = soapStubRepository.findById(stub.id());
+        logger.info("Updating SOAP stub: {}", stub.name());
+
+        // Verify stub exists
+        Optional<SoapStub> existingStubOpt = findStubById(stub.id());
         if (existingStubOpt.isEmpty()) {
             throw new IllegalArgumentException("SOAP stub not found with ID: " + stub.id());
         }
-        
+
         SoapStub existingStub = existingStubOpt.get();
-        
-        // Create updated stub
-        SoapStub updatedStub = new SoapStub(
-            stub.id(),
-            stub.name(),
-            stub.description(),
-            stub.userId(),
-            stub.behindProxy(),
-            stub.protocol(),
-            stub.tags(),
-            stub.status(),
-            existingStub.createdAt(),
-            LocalDateTime.now(),
-            existingStub.wiremockMappingId(),
-            stub.wsdlUrl(),
-            stub.serviceName(),
-            stub.portName(),
-            stub.operationName(),
-            stub.matchConditions(),
-            stub.response()
+
+        // Create updated stub with current timestamp
+        stub = new SoapStub(
+                stub.id(),
+                stub.name(),
+                stub.description(),
+                stub.userId(),
+                stub.behindProxy(),
+                stub.protocol(),
+                stub.tags(),
+                stub.status(),
+                existingStub.createdAt(),
+                LocalDateTime.now(),
+                existingStub.wiremockMappingId(),
+                stub.url(),
+                stub.soapAction(),
+                stub.webhookUrl(),
+                stub.matchConditions(),
+                stub.response()
         );
-        
-        // Update WireMock if stub is active
-        if (updatedStub.status() == StubStatus.ACTIVE) {
-            // Remove existing mapping if present
-            if (existingStub.wiremockMappingId() != null) {
-                removeWireMockStub(existingStub.wiremockMappingId());
-            }
-            
-            // Register with WireMock
-            String mappingId = registerWithWireMock(updatedStub);
-            updatedStub = updateWireMockMappingId(updatedStub, mappingId);
-        } else if (existingStub.wiremockMappingId() != null) {
-            // Remove from WireMock if inactive
-            removeWireMockStub(existingStub.wiremockMappingId());
-            updatedStub = updateWireMockMappingId(updatedStub, null);
+
+        // Handle WireMock registration based on status
+        if (existingStub.status() == StubStatus.ACTIVE && stub.status() == StubStatus.INACTIVE) {
+            // Deactivating: remove from WireMock
+            logger.info("Deactivating SOAP stub {}, removing from WireMock", stub.id());
+            deregisterFromWireMock(stub);
+        } else if (existingStub.status() == StubStatus.INACTIVE && stub.status() == StubStatus.ACTIVE) {
+            // Activating: register with WireMock
+            logger.info("Activating SOAP stub {}, registering with WireMock", stub.id());
+            registerWithWireMock(stub);
+        } else if (stub.status() == StubStatus.ACTIVE) {
+            // Active stub being updated: re-register
+            logger.info("Updating active SOAP stub {}, re-registering with WireMock", stub.id());
+            deregisterFromWireMock(stub);
+            registerWithWireMock(stub);
         }
-        
+        // If inactive stub being updated, no WireMock action needed
+
         // Save to database
-        return soapStubRepository.save(updatedStub);
+        return soapStubRepository.save(stub);
     }
-    
+
     @Override
     public void deleteStub(String id) {
-        // Get the stub to check for WireMock mapping
-        Optional<SoapStub> stubOpt = soapStubRepository.findById(id);
+        logger.info("Deleting SOAP stub: {}", id);
+
+        Optional<SoapStub> stubOpt = findStubById(id);
         if (stubOpt.isPresent()) {
             SoapStub stub = stubOpt.get();
-            
+
             // Remove from WireMock if active
-            if (stub.wiremockMappingId() != null) {
-                removeWireMockStub(stub.wiremockMappingId());
+            if (stub.status() == StubStatus.ACTIVE) {
+                deregisterFromWireMock(stub);
             }
-            
-            // Delete from database
+
+            // Remove from database
             soapStubRepository.deleteById(id);
-            logger.info("Deleted SOAP stub with ID: {}", id);
-        } else {
-            logger.warn("Failed to delete SOAP stub: not found with ID: {}", id);
         }
     }
-    
+
     @Override
     public Optional<SoapStub> findStubById(String id) {
         return soapStubRepository.findById(id);
     }
-    
+
     @Override
     public List<SoapStub> findAllStubs() {
         return soapStubRepository.findAll();
     }
-    
+
     @Override
     public List<SoapStub> findStubsByUserId(String userId) {
         return soapStubRepository.findByUserId(userId);
     }
-    
+
     @Override
     public List<SoapStub> findStubsByStatus(StubStatus status) {
         return soapStubRepository.findByStatus(status);
     }
-    
+
     @Override
-    public List<SoapStub> findStubsByServiceName(String serviceName) {
-        return soapStubRepository.findByServiceName(serviceName);
+    public List<SoapStub> findStubsByUrl(String urlPattern) {
+        return soapStubRepository.findByUrlContaining(urlPattern);
     }
-    
-    @Override
-    public List<SoapStub> findStubsByOperationName(String operationName) {
-        return soapStubRepository.findByOperationName(operationName);
-    }
-    
+
     @Override
     public SoapStub updateStubStatus(String id, StubStatus status) {
-        // Find the stub
-        Optional<SoapStub> stubOpt = soapStubRepository.findById(id);
+        logger.info("Updating SOAP stub {} status to {}", id, status);
+
+        Optional<SoapStub> stubOpt = findStubById(id);
         if (stubOpt.isEmpty()) {
             throw new IllegalArgumentException("SOAP stub not found with ID: " + id);
         }
-        
-        SoapStub stub = stubOpt.get();
-        
-        // Skip if status is unchanged
-        if (stub.status() == status) {
-            return stub;
-        }
-        
-        // Create updated stub with new status
-        SoapStub updatedStub = new SoapStub(
-            stub.id(),
-            stub.name(),
-            stub.description(),
-            stub.userId(),
-            stub.behindProxy(),
-            stub.protocol(),
-            stub.tags(),
-            status,
-            stub.createdAt(),
-            LocalDateTime.now(),
-            stub.wiremockMappingId(),
-            stub.wsdlUrl(),
-            stub.serviceName(),
-            stub.portName(),
-            stub.operationName(),
-            stub.matchConditions(),
-            stub.response()
-        );
-        
-        // Update WireMock registration
-        if (status == StubStatus.ACTIVE) {
-            // Register with WireMock if active
-            String mappingId = registerWithWireMock(updatedStub);
-            updatedStub = updateWireMockMappingId(updatedStub, mappingId);
-        } else if (stub.wiremockMappingId() != null) {
-            // Remove from WireMock if inactive
-            removeWireMockStub(stub.wiremockMappingId());
-            updatedStub = updateWireMockMappingId(updatedStub, null);
-        }
-        
-        // Save updated stub
-        return soapStubRepository.save(updatedStub);
+
+        SoapStub existingStub = stubOpt.get();
+        SoapStub updatedStub = existingStub.withStatus(status);
+
+        return updateStub(updatedStub);
     }
-    
-    // Helper methods
-    
+
     /**
-     * Register a SOAP stub with WireMock
+     * Register SOAP stub with WireMock
      */
-    private String registerWithWireMock(SoapStub stub) {
+    private void registerWithWireMock(SoapStub stub) {
         try {
-            // Extract required data from stub
-            Map<String, Object> matchConditions = stub.matchConditions();
-            Map<String, Object> response = stub.response();
-            
-            // Build the WireMock mapping
-            StubMapping mapping = buildWireMockMapping(stub, matchConditions, response);
-            
+            logger.info("Registering SOAP stub {} with WireMock", stub.id());
+
+            Map<String, Object> mapping = new HashMap<>();
+            mapping.put("id", stub.id());
+            mapping.put("priority", 1);
+
+            // SOAP request matching (always POST)
+            Map<String, Object> request = new HashMap<>();
+            request.put("method", "POST");
+            request.put("url", stub.url());
+
+            // Add SOAPAction header matching if provided
+            if (stub.soapAction() != null && !stub.soapAction().trim().isEmpty()) {
+                Map<String, Object> headers = new HashMap<>();
+                headers.put("SOAPAction", Map.of("equalTo", stub.soapAction()));
+                request.put("headers", headers);
+            }
+
+            // Add XML body matching if provided
+            if (stub.matchConditions().containsKey("body")) {
+                String bodyContent = (String) stub.matchConditions().get("body");
+                String bodyMatchType = (String) stub.matchConditions().getOrDefault("bodyMatchType", "Equals");
+                if (bodyContent != null && !bodyContent.trim().isEmpty()) {
+                    Map<String, Object> bodyPattern = new HashMap<>();
+                    switch (bodyMatchType.toLowerCase()) {
+                        case "equals":
+                            bodyPattern.put("equalTo", bodyContent);
+                            break;
+                        case "xpath":
+                            bodyPattern.put("matchesXPath", bodyContent);
+                            break;
+                        case "contains":
+                            bodyPattern.put("contains", bodyContent);
+                            break;
+                        case "regex":
+                            bodyPattern.put("matches", bodyContent);
+                            break;
+                    }
+                    request.put("bodyPatterns", Collections.singletonList(bodyPattern));
+                }
+            }
+
+            mapping.put("request", request);
+
+            // SOAP response
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", stub.response().getOrDefault("status", 200));
+
+            // Set XML content type
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "text/xml; charset=utf-8");
+            response.put("headers", responseHeaders);
+
+            // Add response body
+            if (stub.response().containsKey("body")) {
+                response.put("body", stub.response().get("body"));
+            }
+
+            // Add webhook transformer if webhook URL is configured
+            if (stub.hasWebhook()) {
+                logger.info("Adding webhook transformer for SOAP stub {} with URL: {}", stub.id(), stub.webhookUrl());
+
+                // Create transformer parameters
+                Map<String, Object> transformerParams = new HashMap<>();
+                transformerParams.put("webhookUrl", stub.webhookUrl());
+                transformerParams.put("stubId", stub.id());
+
+                // Add the transformer to the response with correct WireMock format
+                response.put("transformers", Collections.singletonList("webhook-response-transformer"));
+                response.put("transformerParameters", transformerParams);
+            }
+
+            mapping.put("response", response);
+
             // Register with WireMock
-            wireMockServer.addStubMapping(mapping);
-            logger.info("Registered SOAP stub with WireMock: {}", stub.name());
-            
-            return mapping.getId().toString();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(mapping, headers);
+
+            wireMockAdminService.postWiremockMappings(entity);
+            logger.info("Successfully registered SOAP stub {} with WireMock", stub.id());
+
         } catch (Exception e) {
-            logger.error("Failed to register SOAP stub with WireMock: {}", e.getMessage(), e);
-            return null;
+            logger.error("Failed to register SOAP stub {} with WireMock: {}", stub.id(), e.getMessage(), e);
+            throw new RuntimeException("Failed to register SOAP stub with WireMock", e);
         }
     }
-    
+
     /**
-     * Remove a WireMock stub by ID
+     * Deregister SOAP stub from WireMock
      */
-    private void removeWireMockStub(String mappingId) {
+    private void deregisterFromWireMock(SoapStub stub) {
         try {
-            if (mappingId != null) {
-                UUID id = UUID.fromString(mappingId);
-                wireMockServer.removeStubMapping(StubMapping.buildFrom("{\"id\": \"" + id + "\"}"));
-                logger.info("Removed WireMock stub with ID: {}", mappingId);
-            }
+            logger.info("Deregistering SOAP stub {} from WireMock", stub.id());
+
+            wireMockAdminService.deleteWireMockMapping(stub.id());
+            logger.info("Successfully deregistered SOAP stub {} from WireMock", stub.id());
+
         } catch (Exception e) {
-            logger.error("Failed to remove WireMock stub: {}", e.getMessage(), e);
+            logger.error("Failed to deregister SOAP stub {} from WireMock: {}", stub.id(), e.getMessage());
+            // Don't throw exception here as the database operation should still succeed
         }
-    }
-    
-    /**
-     * Build a WireMock mapping for SOAP request/response
-     */
-    private StubMapping buildWireMockMapping(SoapStub stub, Map<String, Object> matchConditions, Map<String, Object> responseData) {
-        // Get service filePath for SOAP endpoint
-        String servicePath = getSoapEndpointPath(stub);
-        
-        // Create SOAP request matcher
-        MappingBuilder requestBuilder = WireMock.post(WireMock.urlPathEqualTo(servicePath))
-            .withHeader("Content-Type", WireMock.containing("text/xml"))
-            .withHeader("SOAPAction", WireMock.containing(stub.operationName()));
-        
-        // Add XML body matcher if provided
-        if (matchConditions.containsKey("body")) {
-            String requestBody = (String) matchConditions.get("body");
-            requestBuilder = requestBuilder.withRequestBody(WireMock.containing(requestBody));
-        }
-        
-        // Create the response
-        ResponseDefinitionBuilder responseBuilder = WireMock.aResponse()
-            .withStatus(getResponseStatus(responseData))
-            .withHeader("Content-Type", "text/xml; charset=utf-8");
-        
-        // Add body if present
-        if (responseData.containsKey("body")) {
-            responseBuilder = responseBuilder.withBody((String) responseData.get("body"));
-        }
-        
-        // Build and return the stub mapping
-        return requestBuilder.willReturn(responseBuilder).build();
-    }
-    
-    /**
-     * Create a new stub with updated WireMock mapping ID
-     */
-    private SoapStub updateWireMockMappingId(SoapStub stub, String mappingId) {
-        return new SoapStub(
-            stub.id(),
-            stub.name(),
-            stub.description(),
-            stub.userId(),
-            stub.behindProxy(),
-            stub.protocol(),
-            stub.tags(),
-            stub.status(),
-            stub.createdAt(),
-            stub.updatedAt(),
-            mappingId,
-            stub.wsdlUrl(),
-            stub.serviceName(),
-            stub.portName(),
-            stub.operationName(),
-            stub.matchConditions(),
-            stub.response()
-        );
-    }
-    
-    /**
-     * Get response status from response data
-     */
-    private int getResponseStatus(Map<String, Object> responseData) {
-        if (responseData.containsKey("status")) {
-            Object status = responseData.get("status");
-            if (status instanceof Integer) {
-                return (Integer) status;
-            } else if (status instanceof String) {
-                return Integer.parseInt((String) status);
-            }
-        }
-        return 200; // Default status for SOAP is 200 OK
-    }
-    
-    /**
-     * Get the SOAP endpoint filePath from stub
-     */
-    private String getSoapEndpointPath(SoapStub stub) {
-        return "/soap/" + stub.serviceName(); // Default convention
     }
 } 

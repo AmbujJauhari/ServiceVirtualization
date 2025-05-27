@@ -3,10 +3,12 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: './src/index.tsx',
+  mode: process.env.NODE_ENV || 'development',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    publicPath: '/'
+    publicPath: '/',
+    clean: true
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
@@ -19,7 +21,12 @@ module.exports = {
       {
         test: /\.(ts|tsx)$/,
         exclude: /node_modules/,
-        use: 'ts-loader'
+        use: {
+          loader: 'ts-loader',
+          options: {
+            transpileOnly: true
+          }
+        }
       },
       {
         test: /\.css$/,
@@ -43,12 +50,19 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './public/index.html'
+      template: path.resolve(__dirname, 'public', 'index.html'),
+      inject: 'body',
+      scriptLoading: 'blocking'
     })
   ],
   devServer: {
+    static: {
+      directory: path.join(__dirname, 'public'),
+    },
     historyApiFallback: true,
     port: 3000,
-    hot: true
-  }
+    hot: true,
+    open: false
+  },
+  devtool: process.env.NODE_ENV === 'production' ? false : 'eval-source-map'
 }; 

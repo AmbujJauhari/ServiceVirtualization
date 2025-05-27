@@ -97,12 +97,11 @@ public class DtoConverter {
                 soapStub.protocol(),
                 soapStub.tags(),
                 soapStub.status().name(),
-                soapStub.createdAt(),
-                soapStub.updatedAt(),
-                soapStub.wsdlUrl(),
-                soapStub.serviceName(),
-                soapStub.portName(),
-                soapStub.operationName(),
+                soapStub.createdAt() != null ? soapStub.createdAt().toString() : null,
+                soapStub.updatedAt() != null ? soapStub.updatedAt().toString() : null,
+                soapStub.url(),
+                soapStub.soapAction(),
+                soapStub.webhookUrl(),
                 soapStub.matchConditions(),
                 soapStub.response()
         );
@@ -129,13 +128,12 @@ public class DtoConverter {
                 dto.protocol(),
                 dto.tags() != null ? dto.tags() : new ArrayList<>(),
                 status,
-                dto.createdAt() != null ? dto.createdAt() : LocalDateTime.now(),
-                dto.updatedAt() != null ? dto.updatedAt() : LocalDateTime.now(),
+                dto.createdAt() != null ? LocalDateTime.parse(dto.createdAt()) : LocalDateTime.now(),
+                dto.updatedAt() != null ? LocalDateTime.parse(dto.updatedAt()) : LocalDateTime.now(),
                 null, // wiremockMappingId
-                dto.wsdlUrl(),
-                dto.serviceName(),
-                dto.portName(),
-                dto.operationName(),
+                dto.url(),
+                dto.soapAction(),
+                dto.webhookUrl(),
                 dto.matchConditions() != null ? dto.matchConditions() : new HashMap<>(),
                 dto.response() != null ? dto.response() : new HashMap<>()
         );

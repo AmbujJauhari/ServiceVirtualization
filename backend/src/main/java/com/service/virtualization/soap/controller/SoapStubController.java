@@ -1,6 +1,7 @@
 package com.service.virtualization.soap.controller;
 
 import com.service.virtualization.dto.DtoConverter;
+import com.service.virtualization.rest.dto.RestStubDTO;
 import com.service.virtualization.soap.SoapStubDTO;
 import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
  * REST controller for SOAP stub operations
  */
 @RestController
-@RequestMapping("/soap/stubs")
+@RequestMapping("/api/soap/stubs")
 public class SoapStubController {
     
     private static final Logger logger = LoggerFactory.getLogger(SoapStubController.class);
@@ -84,24 +85,12 @@ public class SoapStubController {
     }
     
     /**
-     * Get SOAP stubs by service name
+     * Get SOAP stubs by URL pattern
      */
-    @GetMapping("/service/{serviceName}")
-    public ResponseEntity<List<SoapStubDTO>> getStubsByServiceName(@PathVariable String serviceName) {
-        logger.debug("Getting SOAP stubs for service: {}", serviceName);
-        List<SoapStubDTO> soapStubDTOs = soapStubService.findStubsByServiceName(serviceName).stream()
-                .map(DtoConverter::fromSoapStub)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(soapStubDTOs);
-    }
-    
-    /**
-     * Get SOAP stubs by operation name
-     */
-    @GetMapping("/operation/{operationName}")
-    public ResponseEntity<List<SoapStubDTO>> getStubsByOperationName(@PathVariable String operationName) {
-        logger.debug("Getting SOAP stubs for operation: {}", operationName);
-        List<SoapStubDTO> soapStubDTOs = soapStubService.findStubsByOperationName(operationName).stream()
+    @GetMapping("/url")
+    public ResponseEntity<List<SoapStubDTO>> getStubsByUrl(@RequestParam String urlPattern) {
+        logger.debug("Getting SOAP stubs for URL pattern: {}", urlPattern);
+        List<SoapStubDTO> soapStubDTOs = soapStubService.findStubsByUrl(urlPattern).stream()
                 .map(DtoConverter::fromSoapStub)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(soapStubDTOs);
@@ -160,16 +149,12 @@ public class SoapStubController {
     /**
      * Update SOAP stub status
      */
-    @PatchMapping("/{id}/active")
-    public ResponseEntity<SoapStubDTO> updateStubStatus(
-            @PathVariable String id,
-            @RequestParam(name = "active") boolean active) {
-        
-        logger.debug("Updating SOAP stub status to {}: {}", active ? "ACTIVE" : "INACTIVE", id);
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<SoapStubDTO> updateStubStatus(@PathVariable String id, @RequestParam StubStatus status) {
+        logger.debug("Updating status of stub {} to {}", id, status);
         
         // Update the status
-        StubStatus newStatus = active ? StubStatus.ACTIVE : StubStatus.INACTIVE;
-        SoapStub updatedStub = soapStubService.updateStubStatus(id, newStatus);
+        SoapStub updatedStub = soapStubService.updateStubStatus(id, status);
         
         // Convert to DTO and return
         return ResponseEntity.ok(DtoConverter.fromSoapStub(updatedStub));
