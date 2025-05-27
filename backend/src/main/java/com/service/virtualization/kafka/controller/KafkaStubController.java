@@ -77,7 +77,7 @@ public class KafkaStubController {
     public ResponseEntity<KafkaStubDTO> getKafkaStubById(@PathVariable String id) {
         logger.info("Fetching Kafka stub with ID: {}", id);
         
-        Optional<KafkaStub> kafkaStub = kafkaStubService.getStubById(Long.valueOf(id));
+        Optional<KafkaStub> kafkaStub = kafkaStubService.getStubById(id);
         if (kafkaStub.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -102,7 +102,7 @@ public class KafkaStubController {
         }
         
         KafkaStub kafkaStub = kafkaStubMapper.toModel(kafkaStubDTO);
-        KafkaStub updatedStub = kafkaStubService.updateStub(Long.valueOf(id), kafkaStub);
+        KafkaStub updatedStub = kafkaStubService.updateStub(id, kafkaStub);
         
         return ResponseEntity.ok(kafkaStubMapper.toDTO(updatedStub));
     }
@@ -117,7 +117,7 @@ public class KafkaStubController {
     public ResponseEntity<Void> deleteKafkaStub(@PathVariable String id) {
         logger.info("Deleting Kafka stub with ID: {}", id);
         
-        kafkaStubService.deleteStub(Long.valueOf(id));
+        kafkaStubService.deleteStub(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -131,7 +131,7 @@ public class KafkaStubController {
     public ResponseEntity<KafkaStubDTO> toggleKafkaStub(@PathVariable String id) {
         logger.info("Toggling status of Kafka stub with ID: {}", id);
         
-        KafkaStub toggledStub = kafkaStubService.toggleStubStatus(Long.valueOf(id));
+        KafkaStub toggledStub = kafkaStubService.toggleStubStatus(id);
         return ResponseEntity.ok(kafkaStubMapper.toDTO(toggledStub));
     }
 } 

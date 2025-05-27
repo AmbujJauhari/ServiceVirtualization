@@ -6,6 +6,7 @@ import com.service.virtualization.kafka.model.KafkaStub;
 import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @Profile("sybase")
@@ -34,11 +36,8 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     private static final String SELECT_STUB_BY_ID = "SELECT id, stub_data FROM kafka_stubs WHERE id = ?";
     private static final String SELECT_ALL_STUBS = "SELECT id, stub_data FROM kafka_stubs";
     private static final String SELECT_STUBS_BY_USER_ID = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.userId') = ?";
-    private static final String SELECT_STUBS_BY_TOPIC_AND_STATUS = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.topic') = ? AND JSON_VALUE(stub_data, '$.status') = ?";
-    private static final String SELECT_STUBS_BY_STATUS_AND_ACTIVE_FOR_PRODUCER = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.status') = ? AND JSON_VALUE(stub_data, '$.activeForProducer') = ?";
-    private static final String SELECT_STUBS_BY_STATUS_AND_ACTIVE_FOR_CONSUMER = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.status') = ? AND JSON_VALUE(stub_data, '$.activeForConsumer') = ?";
-    private static final String SELECT_ACTIVE_PRODUCER_STUBS_BY_TOPIC = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.topic') = ? AND JSON_VALUE(stub_data, '$.status') = 'active' AND JSON_VALUE(stub_data, '$.activeForProducer') = 'true'";
-    private static final String SELECT_ACTIVE_CONSUMER_STUBS_BY_TOPIC = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.topic') = ? AND JSON_VALUE(stub_data, '$.status') = 'active' AND JSON_VALUE(stub_data, '$.activeForConsumer') = 'true'";
+    private static final String SELECT_STUBS_BY_TOPIC_AND_STATUS = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.requestTopic') = ? AND JSON_VALUE(stub_data, '$.status') = ?";
+    private static final String SELECT_ACTIVE_STUBS_BY_REQUEST_TOPIC = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.requestTopic') = ? AND JSON_VALUE(stub_data, '$.status') = 'ACTIVE'";
     private static final String DELETE_STUB_BY_ID = "DELETE FROM kafka_stubs WHERE id = ?";
     private static final String EXISTS_STUB_BY_ID = "SELECT COUNT(*) FROM kafka_stubs WHERE id = ?";
     
@@ -51,25 +50,29 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     public KafkaStub save(KafkaStub kafkaStub) {
         try {
             if (kafkaStub.getId() == null) {
-                // Create new stub
+                // Create new stub - let database generate ID
                 kafkaStub.setCreatedAt(LocalDateTime.now());
                 kafkaStub.setUpdatedAt(LocalDateTime.now());
                 
-                KeyHolder keyHolder = new GeneratedKeyHolder();
-                
                 String stubJson = objectMapper.writeValueAsString(kafkaStub);
                 
+                // Insert without specifying ID - database will generate it
+                KeyHolder keyHolder = new GeneratedKeyHolder();
                 jdbcTemplate.update(connection -> {
-                    PreparedStatement ps = connection.prepareStatement(INSERT_STUB, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO kafka_stubs (stub_data) VALUES (?)", 
+                        Statement.RETURN_GENERATED_KEYS);
                     ps.setString(1, stubJson);
                     return ps;
                 }, keyHolder);
                 
-                Long id = Objects.requireNonNull(keyHolder.getKey()).longValue();
-                kafkaStub.setId(id);
+                // Get the generated ID from database
+                String generatedId = keyHolder.getKey().toString();
+                kafkaStub.setId(generatedId);
                 
-                // Update the JSON with the newly assigned ID
-                jdbcTemplate.update(UPDATE_STUB, objectMapper.writeValueAsString(kafkaStub), id);
+                // Update the JSON with the generated ID
+                String updatedStubJson = objectMapper.writeValueAsString(kafkaStub);
+                jdbcTemplate.update(UPDATE_STUB, updatedStubJson, generatedId);
                 
                 return kafkaStub;
             } else {
@@ -86,7 +89,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public Optional<KafkaStub> findById(Long id) {
+    public Optional<KafkaStub> findById(String id) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(SELECT_STUB_BY_ID, 
                 (rs, rowNum) -> {
@@ -132,34 +135,6 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public List<KafkaStub> findActiveProducerStubsByTopic(String topic) {
-        return jdbcTemplate.query(SELECT_ACTIVE_PRODUCER_STUBS_BY_TOPIC, 
-            (rs, rowNum) -> {
-                try {
-                    String stubJson = rs.getString("stub_data");
-                    return objectMapper.readValue(stubJson, KafkaStub.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("Error deserializing KafkaStub from JSON", e);
-                    throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
-                }
-            }, topic);
-    }
-
-    @Override
-    public List<KafkaStub> findActiveConsumerStubsByTopic(String topic) {
-        return jdbcTemplate.query(SELECT_ACTIVE_CONSUMER_STUBS_BY_TOPIC, 
-            (rs, rowNum) -> {
-                try {
-                    String stubJson = rs.getString("stub_data");
-                    return objectMapper.readValue(stubJson, KafkaStub.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("Error deserializing KafkaStub from JSON", e);
-                    throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
-                }
-            }, topic);
-    }
-
-    @Override
     public List<KafkaStub> findAllByTopicAndStatus(String topic, String status) {
         return jdbcTemplate.query(SELECT_STUBS_BY_TOPIC_AND_STATUS, 
             (rs, rowNum) -> {
@@ -174,46 +149,18 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public List<KafkaStub> findAllByStatusAndActiveForProducer(String status, Boolean activeForProducer) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_STATUS_AND_ACTIVE_FOR_PRODUCER, 
-            (rs, rowNum) -> {
-                try {
-                    String stubJson = rs.getString("stub_data");
-                    return objectMapper.readValue(stubJson, KafkaStub.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("Error deserializing KafkaStub from JSON", e);
-                    throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
-                }
-            }, status, activeForProducer.toString());
-    }
-
-    @Override
-    public List<KafkaStub> findAllByStatusAndActiveForConsumer(String status, Boolean activeForConsumer) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_STATUS_AND_ACTIVE_FOR_CONSUMER, 
-            (rs, rowNum) -> {
-                try {
-                    String stubJson = rs.getString("stub_data");
-                    return objectMapper.readValue(stubJson, KafkaStub.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("Error deserializing KafkaStub from JSON", e);
-                    throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
-                }
-            }, status, activeForConsumer.toString());
-    }
-
-    @Override
-    public void deleteById(Long id) {
+    public void deleteById(String id) {
         jdbcTemplate.update(DELETE_STUB_BY_ID, id);
     }
 
     @Override
-    public boolean existsById(Long id) {
+    public boolean existsById(String id) {
         Integer count = jdbcTemplate.queryForObject(EXISTS_STUB_BY_ID, Integer.class, id);
         return count != null && count > 0;
     }
 
     @Override
-    public KafkaStub updateStatus(Long id, String status) {
+    public KafkaStub updateStatus(String id, String status) {
         Optional<KafkaStub> stubOpt = findById(id);
         if (stubOpt.isPresent()) {
             KafkaStub stub = stubOpt.get();
@@ -247,7 +194,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
 
     @Override
     public List<KafkaStub> findByTopic(String topic) {
-        String sql = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.topic') = ?";
+        String sql = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.requestTopic') = ?";
         return jdbcTemplate.query(sql, 
             (rs, rowNum) -> {
                 try {
@@ -262,7 +209,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
 
     @Override
     public List<KafkaStub> findByTopicAndStatus(String topic, StubStatus status) {
-        String sql = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.topic') = ? AND JSON_VALUE(stub_data, '$.status') = ?";
+        String sql = "SELECT id, stub_data FROM kafka_stubs WHERE JSON_VALUE(stub_data, '$.requestTopic') = ? AND JSON_VALUE(stub_data, '$.status') = ?";
         return jdbcTemplate.query(sql, 
             (rs, rowNum) -> {
                 try {
@@ -276,12 +223,21 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public Optional<KafkaStub> findById(String id) {
-        return findById(Long.parseLong(id));
+    public void delete(KafkaStub stub) {
+        deleteById(stub.getId());
     }
 
     @Override
-    public void delete(KafkaStub stub) {
-        deleteById(stub.getId());
+    public List<KafkaStub> findActiveStubsByRequestTopic(String topic) {
+        return jdbcTemplate.query(SELECT_ACTIVE_STUBS_BY_REQUEST_TOPIC, 
+            (rs, rowNum) -> {
+                try {
+                    String stubJson = rs.getString("stub_data");
+                    return objectMapper.readValue(stubJson, KafkaStub.class);
+                } catch (JsonProcessingException e) {
+                    logger.error("Error deserializing KafkaStub from JSON", e);
+                    throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
+                }
+            }, topic);
     }
 } 

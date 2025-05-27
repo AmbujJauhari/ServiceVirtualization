@@ -2,6 +2,8 @@ package com.service.virtualization.soap;
 
 import com.service.virtualization.model.Protocol;
 import com.service.virtualization.model.StubStatus;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -9,8 +11,9 @@ import java.util.*;
 /**
  * Simplified SOAP service stub model - treats SOAP as HTTP POST with XML
  */
+@Document(collection = "soap_stubs")
 public record SoapStub(
-        String id,
+        @Id String id,
         String name,
         String description,
         String userId,
@@ -32,7 +35,7 @@ public record SoapStub(
 ) {
     public SoapStub() {
         this(
-                UUID.randomUUID().toString(),
+                null, // Let database auto-generate ID
                 null,
                 null,
                 null,
@@ -55,10 +58,7 @@ public record SoapStub(
      * Canonical constructor with validation
      */
     public SoapStub {
-        // Ensure defaults for null values
-        if (id == null) {
-            id = UUID.randomUUID().toString();
-        }
+        // Ensure defaults for null values (but don't generate ID manually)
         if (protocol == null) {
             protocol = Protocol.SOAP.name();
         }

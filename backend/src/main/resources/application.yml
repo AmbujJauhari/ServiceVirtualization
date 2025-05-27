@@ -96,3 +96,17 @@ virtualization:
     scheduler:
       enabled: ${FILES_SCHEDULER_ENABLED:true}
       poll-rate: ${FILES_SCHEDULER_POLL_RATE:60000}
+
+# Schema Registry Configuration
+schema:
+  registry:
+    url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+    auth:
+      # Auth types: none, basic, apikey, bearer
+      # Use 'none' for non-RBAC Schema Registries (local/development)
+      # Use 'basic' for username/password authentication
+      # Use 'apikey' or 'bearer' for token-based authentication
+      type: ${SCHEMA_REGISTRY_AUTH_TYPE:none}
+      username: ${SCHEMA_REGISTRY_USERNAME:}
+      password: ${SCHEMA_REGISTRY_PASSWORD:}
+      api-key: ${SCHEMA_REGISTRY_API_KEY:}

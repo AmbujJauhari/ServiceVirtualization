@@ -5,8 +5,10 @@ import {
   useCreateKafkaStubMutation, 
   useUpdateKafkaStubMutation,
   KafkaStub,
-  ContentFormat
+  ContentFormat,
+  ContentMatchType
 } from '../../../api/kafkaApi';
+import TextEditor from '../../../components/common/TextEditor';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,23 +56,36 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     { key: '', value: '' }
   ]);
 
-  const [formData, setFormData] = useState<Partial<KafkaStub>>({
+  // Schema Registry state for responses
+  const [availableResponseSchemas, setAvailableResponseSchemas] = useState<any[]>([]);
+  const [responseSchemaVersions, setResponseSchemaVersions] = useState<string[]>([]);
+  const [isLoadingResponseSchemas, setIsLoadingResponseSchemas] = useState(false);
+  const [responseSchemaValidationError, setResponseSchemaValidationError] = useState('');
+
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
-    userId: '',
     requestTopic: '',
-    responseTopic: '',
-    requestContentFormat: 'JSON',
+    requestContentFormat: 'JSON' as ContentFormat,
     requestContentMatcher: '',
-    responseContentFormat: 'JSON',
+    keyMatchType: ContentMatchType.NONE,
     keyPattern: '',
-    valuePattern: '',
-    responseType: 'direct',
+    contentMatchType: ContentMatchType.NONE,
+    contentPattern: '',
+    caseSensitive: false,
+    responseTopic: '',
+    responseContentFormat: 'JSON' as ContentFormat,
+    responseKey: '',
+    responseType: 'direct' as 'direct' | 'callback',
     responseContent: '',
+    // Schema Registry for response validation
+    useResponseSchemaRegistry: false,
+    responseSchemaId: '',
+    responseSchemaSubject: '',
+    responseSchemaVersion: 'latest',
+    latency: undefined as number | undefined,
     callbackUrl: '',
-    callbackHeaders: {},
-    status: 'inactive',
-    tags: []
+    status: 'active'
   });
 
   // Update form when existing stub data is loaded
@@ -92,6 +107,36 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
       }
     }
   }, [existingStub]);
+
+  // Auto-enable response schema registry for Avro content type
+  useEffect(() => {
+    if (formData.responseContentFormat === 'AVRO') {
+      setFormData(prev => ({ ...prev, useResponseSchemaRegistry: true }));
+    }
+  }, [formData.responseContentFormat]);
+
+  // Fetch available response schemas when schema registry is enabled
+  useEffect(() => {
+    if (formData.useResponseSchemaRegistry && availableResponseSchemas.length === 0) {
+      fetchAvailableResponseSchemas();
+    }
+  }, [formData.useResponseSchemaRegistry]);
+
+  // Clear schema validation error when schema selection changes
+  useEffect(() => {
+    setResponseSchemaValidationError('');
+  }, [formData.responseSchemaId, formData.responseSchemaSubject, formData.responseSchemaVersion]);
+
+  // Validate response content when it changes
+  useEffect(() => {
+    if (formData.useResponseSchemaRegistry && formData.responseContent) {
+      const timeoutId = setTimeout(() => {
+        validateResponseContent();
+      }, 500); // Debounce validation
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.responseContent, formData.responseSchemaId, formData.responseSchemaSubject, formData.responseSchemaVersion, formData.useResponseSchemaRegistry]);
 
   // Helper function to get placeholder text based on format
   const getMatcherPlaceholder = (format: ContentFormat): string => {
@@ -168,10 +213,98 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     }));
   };
 
+  // Schema Registry functions for response validation
+  const fetchAvailableResponseSchemas = async () => {
+    setIsLoadingResponseSchemas(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/schemas`);
+      if (response.ok) {
+        const schemas = await response.json();
+        setAvailableResponseSchemas(schemas);
+      } else {
+        console.warn('Failed to fetch schemas:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching schemas:', error);
+    } finally {
+      setIsLoadingResponseSchemas(false);
+    }
+  };
+
+  const fetchResponseSchemaVersions = async (subject: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/schemas/${subject}/versions`);
+      if (response.ok) {
+        const versions = await response.json();
+        setResponseSchemaVersions(versions);
+      } else {
+        console.warn('Failed to fetch schema versions:', response.statusText);
+        setResponseSchemaVersions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching schema versions:', error);
+      setResponseSchemaVersions([]);
+    }
+  };
+
+  const validateResponseContent = async () => {
+    if (!formData.useResponseSchemaRegistry || !formData.responseContent.trim()) {
+      setResponseSchemaValidationError('');
+      return;
+    }
+
+    try {
+      const headers: Record<string, string> = {};
+      
+      if (formData.responseSchemaId) {
+        headers['schema-id'] = formData.responseSchemaId;
+      }
+      if (formData.responseSchemaSubject) {
+        headers['schema-subject'] = formData.responseSchemaSubject;
+        headers['schema-version'] = formData.responseSchemaVersion;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/validate-schema`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: formData.responseContent,
+          headers: headers
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.valid) {
+          setResponseSchemaValidationError('');
+        } else {
+          setResponseSchemaValidationError(result.error || 'Schema validation failed');
+        }
+      } else {
+        setResponseSchemaValidationError('Failed to validate schema');
+      }
+    } catch (error) {
+      console.error('Schema validation error:', error);
+      setResponseSchemaValidationError('Schema validation failed: ' + error.message);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
+
+    // Validate response schema if enabled
+    if (formData.useResponseSchemaRegistry && formData.responseContent) {
+      await validateResponseContent();
+      if (responseSchemaValidationError) {
+        setError('Please fix response schema validation errors before saving.');
+        setSaving(false);
+        return;
+      }
+    }
 
     try {
       if (mode === 'create') {
@@ -301,48 +434,129 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                 </div>
                 
                 <div>
-                  <label htmlFor="keyPattern" className="block text-sm font-medium text-gray-700 mb-1">
-                    Key Pattern
+                  <label htmlFor="keyMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                    Key Match Type
                   </label>
-                  <input
-                    id="keyPattern"
-                    name="keyPattern"
-                    type="text"
-                    value={formData.keyPattern || ''}
-                    onChange={handleInputChange}
+                  <select
+                    id="keyMatchType"
+                    name="keyMatchType"
+                    value={formData.keyMatchType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, keyMatchType: e.target.value as ContentMatchType }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Regular expression to match message keys"
-                  />
+                  >
+                    <option value={ContentMatchType.NONE}>No key matching</option>
+                    <option value={ContentMatchType.EXACT}>Exact match</option>
+                    <option value={ContentMatchType.CONTAINS}>Contains text</option>
+                    <option value={ContentMatchType.REGEX}>Regular expression</option>
+                  </select>
                 </div>
                 
-                <div>
-                  <label htmlFor="valuePattern" className="block text-sm font-medium text-gray-700 mb-1">
-                    Value Pattern
-                  </label>
-                  <input
-                    id="valuePattern"
-                    name="valuePattern"
-                    type="text"
-                    value={formData.valuePattern || ''}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Regular expression to match message content"
-                  />
-                </div>
+                {formData.keyMatchType !== ContentMatchType.NONE && (
+                  <div>
+                    <label htmlFor="keyPattern" className="block text-sm font-medium text-gray-700 mb-1">
+                      Key Pattern
+                    </label>
+                    <input
+                      id="keyPattern"
+                      name="keyPattern"
+                      type="text"
+                      value={formData.keyPattern || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      placeholder={
+                        formData.keyMatchType === ContentMatchType.EXACT ? "user-123" :
+                        formData.keyMatchType === ContentMatchType.CONTAINS ? "user" :
+                        "user-\\d+"
+                      }
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formData.keyMatchType === ContentMatchType.EXACT && 'Messages with exactly this key will match'}
+                      {formData.keyMatchType === ContentMatchType.CONTAINS && 'Messages with keys containing this text will match'}
+                      {formData.keyMatchType === ContentMatchType.REGEX && 'Messages with keys matching this regular expression will match'}
+                    </p>
+                  </div>
+                )}
                 
                 <div>
-                  <label htmlFor="requestContentMatcher" className="block text-sm font-medium text-gray-700 mb-1">
-                    Content Matcher Expression
+                  <label htmlFor="contentMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message Value Match Type
                   </label>
-                  <textarea
-                    id="requestContentMatcher"
-                    name="requestContentMatcher"
-                    value={formData.requestContentMatcher || ''}
-                    onChange={handleInputChange}
-                    rows={3}
+                  <select
+                    id="contentMatchType"
+                    name="contentMatchType"
+                    value={formData.contentMatchType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contentMatchType: e.target.value as ContentMatchType }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder={getMatcherPlaceholder(formData.requestContentFormat as ContentFormat)}
-                  />
+                  >
+                    <option value={ContentMatchType.NONE}>No value matching</option>
+                    <option value={ContentMatchType.EXACT}>Exact match</option>
+                    <option value={ContentMatchType.CONTAINS}>Contains text</option>
+                    <option value={ContentMatchType.REGEX}>Regular expression</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    How to match against the Kafka message value/content (the message payload)
+                  </p>
+                </div>
+                
+                {formData.contentMatchType !== ContentMatchType.NONE && (
+                  <>
+                    <div>
+                      <label htmlFor="contentPattern" className="block text-sm font-medium text-gray-700 mb-1">
+                        Message Value Pattern
+                      </label>
+                      <TextEditor
+                        value={formData.contentPattern || ''}
+                        onChange={(value) => setFormData(prev => ({ ...prev, contentPattern: value }))}
+                        height="150px"
+                        language="text"
+                        placeholder={
+                          formData.contentMatchType === ContentMatchType.EXACT ? "Complete message content to match exactly..." :
+                          formData.contentMatchType === ContentMatchType.CONTAINS ? "Text that should be contained in the message..." :
+                          "Regular expression pattern to match..."
+                        }
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        {formData.contentMatchType === ContentMatchType.EXACT && 'Messages with exactly this content will match'}
+                        {formData.contentMatchType === ContentMatchType.CONTAINS && 'Messages containing this text will match'}
+                        {formData.contentMatchType === ContentMatchType.REGEX && 'Messages matching this regular expression will match'}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="caseSensitive"
+                        checked={formData.caseSensitive}
+                        onChange={(e) => setFormData(prev => ({ ...prev, caseSensitive: e.target.checked }))}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="caseSensitive" className="ml-2 block text-sm text-gray-700">
+                        Case sensitive matching
+                      </label>
+                    </div>
+                  </>
+                )}
+                
+                <div className="border-t pt-4">
+                  <h4 className="text-md font-medium text-gray-700 mb-2">Advanced: Format-Specific Value Matching</h4>
+                  <div>
+                    <label htmlFor="requestContentMatcher" className="block text-sm font-medium text-gray-700 mb-1">
+                      Format-Specific Expression (Optional)
+                    </label>
+                    <textarea
+                      id="requestContentMatcher"
+                      name="requestContentMatcher"
+                      value={formData.requestContentMatcher || ''}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      placeholder={getMatcherPlaceholder(formData.requestContentFormat as ContentFormat)}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Advanced: JSONPath ($.field), XPath (//element), or Avro field expressions. 
+                      This is evaluated in addition to the basic value pattern matching above.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -401,6 +615,24 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                   </div>
                   
                   <div>
+                    <label htmlFor="responseKey" className="block text-sm font-medium text-gray-700 mb-1">
+                      Response Key
+                    </label>
+                    <input
+                      id="responseKey"
+                      name="responseKey"
+                      type="text"
+                      value={formData.responseKey || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Leave empty to auto-generate UUID"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Key for the response message. If empty, a UUID will be auto-generated.
+                    </p>
+                  </div>
+                  
+                  <div>
                     <label htmlFor="responseContentFormat" className="block text-sm font-medium text-gray-700 mb-1">
                       Response Format
                     </label>
@@ -431,6 +663,118 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder={`Enter response content in ${formData.responseContentFormat} format`}
                     />
+                  </div>
+                  
+                  {/* Schema Registry Section for Response */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center mb-2">
+                      <input
+                        type="checkbox"
+                        id="useResponseSchemaRegistry"
+                        checked={formData.useResponseSchemaRegistry}
+                        onChange={(e) => setFormData(prev => ({ ...prev, useResponseSchemaRegistry: e.target.checked }))}
+                        className="mr-2"
+                        disabled={formData.responseContentFormat === 'AVRO'}
+                      />
+                      <label htmlFor="useResponseSchemaRegistry" className="text-sm font-medium text-gray-700">
+                        Use Schema Registry for Response Validation
+                        {formData.responseContentFormat === 'AVRO' && <span className="text-xs text-gray-500 ml-1">(Required for Avro)</span>}
+                      </label>
+                    </div>
+
+                    {formData.useResponseSchemaRegistry && (
+                      <div className="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-4">
+                        {/* Schema Selection */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="responseSchemaSubject" className="block text-sm font-medium text-gray-700 mb-1">
+                              Schema Subject
+                            </label>
+                            <select
+                              id="responseSchemaSubject"
+                              value={formData.responseSchemaSubject}
+                              onChange={(e) => {
+                                setFormData(prev => ({ ...prev, responseSchemaSubject: e.target.value }));
+                                if (e.target.value) {
+                                  fetchResponseSchemaVersions(e.target.value);
+                                }
+                              }}
+                              className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                            >
+                              <option value="">Select a schema subject...</option>
+                              {isLoadingResponseSchemas ? (
+                                <option disabled>Loading schemas...</option>
+                              ) : availableResponseSchemas.length === 0 ? (
+                                <option disabled>No schemas available</option>
+                              ) : (
+                                availableResponseSchemas.map((schema) => (
+                                  <option key={schema.subject} value={schema.subject}>
+                                    {schema.subject}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="responseSchemaVersion" className="block text-sm font-medium text-gray-700 mb-1">
+                              Schema Version
+                            </label>
+                            <select
+                              id="responseSchemaVersion"
+                              value={formData.responseSchemaVersion}
+                              onChange={(e) => setFormData(prev => ({ ...prev, responseSchemaVersion: e.target.value }))}
+                              className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                              disabled={!formData.responseSchemaSubject}
+                            >
+                              <option value="latest">Latest</option>
+                              {responseSchemaVersions.map((version) => (
+                                <option key={version} value={version}>
+                                  Version {version}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Alternative: Direct Schema ID */}
+                        <div className="text-center text-gray-500 text-sm">or</div>
+                        
+                        <div className="w-full md:w-1/2">
+                          <label htmlFor="responseSchemaId" className="block text-sm font-medium text-gray-700 mb-1">
+                            Direct Schema ID (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            id="responseSchemaId"
+                            value={formData.responseSchemaId}
+                            onChange={(e) => {
+                              setFormData(prev => ({ ...prev, responseSchemaId: e.target.value }));
+                              if (e.target.value) {
+                                // Clear subject/version when using direct ID
+                                setFormData(prev => ({ ...prev, responseSchemaSubject: '', responseSchemaVersion: 'latest' }));
+                              }
+                            }}
+                            placeholder="e.g., 123"
+                            className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                          />
+                        </div>
+
+                        {/* Schema Validation Error Display */}
+                        {responseSchemaValidationError && (
+                          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+                            <strong>Response Schema Validation Error:</strong>
+                            <pre className="mt-1 whitespace-pre-wrap">{responseSchemaValidationError}</pre>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-600">
+                          <p>• Select a schema subject and version, or provide a direct schema ID</p>
+                          <p>• Response content will be validated against the selected schema</p>
+                          <p>• Validation occurs automatically as you type</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -497,28 +841,6 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                   </div>
                 </div>
               )}
-            </div>
-            
-            {/* Status Configuration */}
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Status</h3>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Stub Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status || 'inactive'}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
             </div>
           </div>
           

@@ -2,6 +2,8 @@ package com.service.virtualization.rest.model;
 
 import com.service.virtualization.model.Protocol;
 import com.service.virtualization.model.StubStatus;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -9,8 +11,9 @@ import java.util.*;
 /**
  * Data Transfer Object for Stub with nested structure matching frontend expectations
  */
+@Document(collection = "rest_stubs")
 public record RestStub(
-        String id,
+        @Id String id,
         String name,
         String description,
         String userId,
@@ -28,7 +31,7 @@ public record RestStub(
 ) {
     public RestStub() {
         this(
-                UUID.randomUUID().toString(),
+                null, // Let database auto-generate ID
                 null,
                 null,
                 null,
@@ -49,10 +52,7 @@ public record RestStub(
      * Canonical constructor with validation
      */
     public RestStub {
-        // Ensure defaults for null values
-        if (id == null) {
-            id = UUID.randomUUID().toString();
-        }
+        // Ensure defaults for null values (but don't generate ID manually)
         if (protocol == null) {
             protocol = Protocol.getDefault().name();
         }

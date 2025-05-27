@@ -6,10 +6,15 @@ import com.service.virtualization.model.StubStatus;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,16 +104,21 @@ public class SybaseActiveMQStubRepository implements ActiveMQStubRepository {
             String sql = "INSERT INTO " + TABLE_NAME + 
                 " (name, description, user_id, destination_name, destination_type, priority, status, created_at, updated_at)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.update(sql, 
-                stub.getName(),
-                stub.getDescription(),
-                stub.getUserId(),
-                stub.getDestinationName(),
-                stub.getDestinationType(),
-                stub.getPriority(),
-                stub.getStatus().name(),
-                stub.getCreatedAt(),
-                stub.getUpdatedAt());
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, stub.getName());
+                ps.setString(2, stub.getDescription());
+                ps.setString(3, stub.getUserId());
+                ps.setString(4, stub.getDestinationName());
+                ps.setString(5, stub.getDestinationType());
+                ps.setInt(6, stub.getPriority());
+                ps.setString(7, stub.getStatus().name());
+                ps.setTimestamp(8, java.sql.Timestamp.valueOf(stub.getCreatedAt()));
+                ps.setTimestamp(9, java.sql.Timestamp.valueOf(stub.getUpdatedAt()));
+                return ps;
+            }, keyHolder);
+            stub.setId(keyHolder.getKey().toString());
         } else {
             // Update
             String sql = "UPDATE " + TABLE_NAME + 
@@ -122,7 +132,7 @@ public class SybaseActiveMQStubRepository implements ActiveMQStubRepository {
                 stub.getDestinationType(),
                 stub.getPriority(),
                 stub.getStatus().name(),
-                stub.getUpdatedAt(),
+                java.sql.Timestamp.valueOf(stub.getUpdatedAt()),
                 stub.getId());
         }
         return stub;

@@ -24,7 +24,7 @@ public interface KafkaStubRepository {
      * @param id the stub id
      * @return the stub if found
      */
-    Optional<KafkaStub> findById(Long id);
+    Optional<KafkaStub> findById(String id);
     
     /**
      * Find Kafka stubs by user id
@@ -35,20 +35,12 @@ public interface KafkaStubRepository {
     List<KafkaStub> findAllByUserId(String userId);
     
     /**
-     * Find active Kafka stubs for producers by topic
+     * Find active Kafka stubs by request topic
      * 
-     * @param topic the topic
+     * @param topic the request topic
      * @return list of active stubs for the topic
      */
-    List<KafkaStub> findActiveProducerStubsByTopic(String topic);
-    
-    /**
-     * Find active Kafka stubs for consumers by topic
-     * 
-     * @param topic the topic
-     * @return list of active stubs for the topic
-     */
-    List<KafkaStub> findActiveConsumerStubsByTopic(String topic);
+    List<KafkaStub> findActiveStubsByRequestTopic(String topic);
     
     /**
      * Save a Kafka stub (create new or update existing)
@@ -63,7 +55,7 @@ public interface KafkaStubRepository {
      * 
      * @param id the stub id to delete
      */
-    void deleteById(Long id);
+    void deleteById(String id);
     
     /**
      * Update status of a Kafka stub
@@ -72,7 +64,7 @@ public interface KafkaStubRepository {
      * @param status the new status
      * @return the updated stub
      */
-    KafkaStub updateStatus(Long id, String status);
+    KafkaStub updateStatus(String id, String status);
     
     /**
      * Check if a Kafka stub exists by id
@@ -80,7 +72,7 @@ public interface KafkaStubRepository {
      * @param id the stub id
      * @return true if the stub exists
      */
-    boolean existsById(Long id);
+    boolean existsById(String id);
     
     /**
      * Find stubs by topic and status
@@ -90,29 +82,10 @@ public interface KafkaStubRepository {
      * @return list of matching stubs
      */
     List<KafkaStub> findAllByTopicAndStatus(String topic, String status);
-    
-    /**
-     * Find stubs by status and producer flag
-     * 
-     * @param status the status
-     * @param activeForProducer the producer flag
-     * @return list of matching stubs
-     */
-    List<KafkaStub> findAllByStatusAndActiveForProducer(String status, Boolean activeForProducer);
-    
-    /**
-     * Find stubs by status and consumer flag
-     * 
-     * @param status the status
-     * @param activeForConsumer the consumer flag
-     * @return list of matching stubs
-     */
-    List<KafkaStub> findAllByStatusAndActiveForConsumer(String status, Boolean activeForConsumer);
 
     List<KafkaStub> findByUserId(String userId);
     List<KafkaStub> findByUserIdAndStatus(String userId, StubStatus status);
     List<KafkaStub> findByTopic(String topic);
     List<KafkaStub> findByTopicAndStatus(String topic, StubStatus status);
-    Optional<KafkaStub> findById(String id);
     void delete(KafkaStub stub);
 } 

@@ -2,6 +2,7 @@ package com.service.virtualization.kafka;
 
 import com.service.virtualization.kafka.model.KafkaStub;
 import com.service.virtualization.kafka.repository.KafkaStubRepository;
+import com.service.virtualization.kafka.service.KafkaTopicService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,11 @@ public class KafkaStubService {
     private static final Logger logger = LoggerFactory.getLogger(KafkaStubService.class);
 
     private final KafkaStubRepository kafkaStubRepository;
+    private final KafkaTopicService kafkaTopicService;
 
-    public KafkaStubService(KafkaStubRepository kafkaStubRepository) {
+    public KafkaStubService(KafkaStubRepository kafkaStubRepository, KafkaTopicService kafkaTopicService) {
         this.kafkaStubRepository = kafkaStubRepository;
+        this.kafkaTopicService = kafkaTopicService;
     }
 
     public List<KafkaStub> getAllStubs() {
@@ -25,7 +28,7 @@ public class KafkaStubService {
         return kafkaStubRepository.findAll();
     }
 
-    public Optional<KafkaStub> getStubById(Long id) {
+    public Optional<KafkaStub> getStubById(String id) {
         logger.debug("Getting Kafka stub with id: {}", id);
         return kafkaStubRepository.findById(id);
     }
@@ -37,13 +40,23 @@ public class KafkaStubService {
 
     public KafkaStub createStub(KafkaStub kafkaStub) {
         logger.debug("Creating Kafka stub: {}", kafkaStub.getName());
-        kafkaStub.setId(null); // Ensure we're creating a new stub
+        
+        // Auto-create topics if they don't exist
+        try {
+            ensureTopicsExist(kafkaStub);
+        } catch (Exception e) {
+            logger.error("Failed to create topics for stub: {}", kafkaStub.getName(), e);
+            throw new RuntimeException("Failed to create required topics: " + e.getMessage(), e);
+        }
+        
+        kafkaStub.setId(null); // Ensure we're creating a new stub (let database generate ID)
         kafkaStub.setCreatedAt(LocalDateTime.now());
         kafkaStub.setUpdatedAt(LocalDateTime.now());
+        
         return kafkaStubRepository.save(kafkaStub);
     }
 
-    public KafkaStub updateStub(Long id, KafkaStub kafkaStub) {
+    public KafkaStub updateStub(String id, KafkaStub kafkaStub) {
         logger.debug("Updating Kafka stub with id: {}", id);
 
         // Check if stub exists
@@ -51,12 +64,20 @@ public class KafkaStubService {
             throw new RuntimeException("Kafka stub not found with id: " + id);
         }
 
+        // Auto-create topics if they don't exist (in case topics were changed)
+        try {
+            ensureTopicsExist(kafkaStub);
+        } catch (Exception e) {
+            logger.error("Failed to create topics for stub update: {}", kafkaStub.getName(), e);
+            throw new RuntimeException("Failed to create required topics: " + e.getMessage(), e);
+        }
+
         kafkaStub.setId(id);
         kafkaStub.setUpdatedAt(LocalDateTime.now());
         return kafkaStubRepository.save(kafkaStub);
     }
 
-    public void deleteStub(Long id) {
+    public void deleteStub(String id) {
         logger.debug("Deleting Kafka stub with id: {}", id);
 
         // Check if stub exists before deleting
@@ -67,22 +88,17 @@ public class KafkaStubService {
         kafkaStubRepository.deleteById(id);
     }
 
-    public KafkaStub updateStatus(Long id, String status) {
+    public KafkaStub updateStatus(String id, String status) {
         logger.debug("Updating status of Kafka stub with id: {} to {}", id, status);
         return kafkaStubRepository.updateStatus(id, status);
     }
 
-    public List<KafkaStub> getActiveProducerStubsByTopic(String topic) {
-        logger.debug("Getting active producer stubs for topic: {}", topic);
-        return kafkaStubRepository.findActiveProducerStubsByTopic(topic);
+    public List<KafkaStub> getActiveStubsByRequestTopic(String topic) {
+        logger.debug("Getting active stubs for request topic: {}", topic);
+        return kafkaStubRepository.findActiveStubsByRequestTopic(topic);
     }
 
-    public List<KafkaStub> getActiveConsumerStubsByTopic(String topic) {
-        logger.debug("Getting active consumer stubs for topic: {}", topic);
-        return kafkaStubRepository.findActiveConsumerStubsByTopic(topic);
-    }
-
-    public KafkaStub toggleStubStatus(Long id) {
+    public KafkaStub toggleStubStatus(String id) {
         logger.debug("Toggling status of Kafka stub with id: {}", id);
         KafkaStub stub = kafkaStubRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kafka stub not found with id: " + id));
@@ -92,5 +108,31 @@ public class KafkaStubService {
         stub.setUpdatedAt(LocalDateTime.now());
 
         return kafkaStubRepository.save(stub);
+    }
+
+    /**
+     * Ensure that the topics referenced by the stub exist, creating them if necessary
+     *
+     * @param kafkaStub the stub containing topic references
+     */
+    private void ensureTopicsExist(KafkaStub kafkaStub) {
+        logger.debug("Ensuring topics exist for stub: {}", kafkaStub.getName());
+        
+        // Collect unique topic names
+        String requestTopic = kafkaStub.getRequestTopic();
+        String responseTopic = kafkaStub.getResponseTopic();
+        
+        if (requestTopic != null && !requestTopic.trim().isEmpty()) {
+            logger.debug("Ensuring request topic exists: {}", requestTopic);
+            kafkaTopicService.createTopicIfNotExists(requestTopic.trim());
+        }
+        
+        // Only create response topic if it's different from request topic
+        if (responseTopic != null && 
+            !responseTopic.trim().isEmpty() && 
+            !responseTopic.trim().equals(requestTopic)) {
+            logger.debug("Ensuring response topic exists: {}", responseTopic);
+            kafkaTopicService.createTopicIfNotExists(responseTopic.trim());
+        }
     }
 } 

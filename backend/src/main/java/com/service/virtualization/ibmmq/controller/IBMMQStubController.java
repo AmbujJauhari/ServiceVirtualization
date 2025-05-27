@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/ibmmq/stubs")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = {"http://localhost:*", "https://localhost:*"}, allowCredentials = "true")
 public class IBMMQStubController {
 
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubController.class);

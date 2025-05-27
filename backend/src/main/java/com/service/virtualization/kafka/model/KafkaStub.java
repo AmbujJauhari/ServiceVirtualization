@@ -1,45 +1,77 @@
 package com.service.virtualization.kafka.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * Domain model for Kafka stubs
  */
+@Document(collection = "kafka_stubs")
 public class KafkaStub {
-    private Long id;
+    @Id
+    private String id;
     private String name;
     private String description;
     private String userId;
-    private String topic;
+    private String requestTopic;
+    private String responseTopic;
+    
+    // Content formats and matching
+    private String requestContentFormat;
+    private String responseContentFormat;
+    private String requestContentMatcher;
+    
+    // Key matching
+    private String keyMatchType;
     private String keyPattern;
-    private String valuePattern;
-    private Boolean activeForProducer;
-    private Boolean activeForConsumer;
+    
+    // Content/Value matching
+    private String contentMatchType;
+    private String valuePattern; // Legacy field
+    private String contentPattern; // New field name
+    private Boolean caseSensitive;
+    
+    // Response configuration
     private String responseType; // 'direct' or 'callback'
+    private String responseKey;
     private String responseContent;
+    
+    // Schema Registry for response validation (transient/UI-only)
+    private transient Boolean useResponseSchemaRegistry;
+    private transient String responseSchemaId;
+    private transient String responseSchemaSubject;
+    private transient String responseSchemaVersion;
+    
     private Integer latency;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Callback configuration
+    private String callbackUrl;
+    private Map<String, String> callbackHeaders;
+
     public KafkaStub() {
         // Default constructor
     }
 
-    public KafkaStub(Long id, String name, String description, String userId, String topic, String keyPattern,
-                     String valuePattern, Boolean activeForProducer, Boolean activeForConsumer, String responseType,
-                     String responseContent, Integer latency, String status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public KafkaStub(String id, String name, String description, String userId, String requestTopic, String responseTopic, String keyPattern,
+                     String valuePattern, String responseType, String responseKey, String responseContent, Integer latency, String status, 
+                     LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.userId = userId;
-        this.topic = topic;
+        this.requestTopic = requestTopic;
+        this.responseTopic = responseTopic;
         this.keyPattern = keyPattern;
         this.valuePattern = valuePattern;
-        this.activeForProducer = activeForProducer;
-        this.activeForConsumer = activeForConsumer;
         this.responseType = responseType;
+        this.responseKey = responseKey;
         this.responseContent = responseContent;
         this.latency = latency;
         this.status = status;
@@ -47,11 +79,11 @@ public class KafkaStub {
         this.updatedAt = updatedAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -79,12 +111,20 @@ public class KafkaStub {
         this.userId = userId;
     }
 
-    public String getTopic() {
-        return topic;
+    public String getRequestTopic() {
+        return requestTopic;
     }
 
-    public void setTopic(String topic) {
-        this.topic = topic;
+    public void setRequestTopic(String requestTopic) {
+        this.requestTopic = requestTopic;
+    }
+
+    public String getResponseTopic() {
+        return responseTopic;
+    }
+
+    public void setResponseTopic(String responseTopic) {
+        this.responseTopic = responseTopic;
     }
 
     public String getKeyPattern() {
@@ -103,28 +143,20 @@ public class KafkaStub {
         this.valuePattern = valuePattern;
     }
 
-    public Boolean getActiveForProducer() {
-        return activeForProducer;
-    }
-
-    public void setActiveForProducer(Boolean activeForProducer) {
-        this.activeForProducer = activeForProducer;
-    }
-
-    public Boolean getActiveForConsumer() {
-        return activeForConsumer;
-    }
-
-    public void setActiveForConsumer(Boolean activeForConsumer) {
-        this.activeForConsumer = activeForConsumer;
-    }
-
     public String getResponseType() {
         return responseType;
     }
 
     public void setResponseType(String responseType) {
         this.responseType = responseType;
+    }
+
+    public String getResponseKey() {
+        return responseKey;
+    }
+
+    public void setResponseKey(String responseKey) {
+        this.responseKey = responseKey;
     }
 
     public String getResponseContent() {
@@ -167,6 +199,114 @@ public class KafkaStub {
         this.updatedAt = updatedAt;
     }
 
+    public String getCallbackUrl() {
+        return callbackUrl;
+    }
+
+    public void setCallbackUrl(String callbackUrl) {
+        this.callbackUrl = callbackUrl;
+    }
+
+    public Map<String, String> getCallbackHeaders() {
+        return callbackHeaders;
+    }
+
+    public void setCallbackHeaders(Map<String, String> callbackHeaders) {
+        this.callbackHeaders = callbackHeaders;
+    }
+
+    // Content formats and matching
+    public String getRequestContentFormat() {
+        return requestContentFormat;
+    }
+
+    public void setRequestContentFormat(String requestContentFormat) {
+        this.requestContentFormat = requestContentFormat;
+    }
+
+    public String getResponseContentFormat() {
+        return responseContentFormat;
+    }
+
+    public void setResponseContentFormat(String responseContentFormat) {
+        this.responseContentFormat = responseContentFormat;
+    }
+
+    public String getRequestContentMatcher() {
+        return requestContentMatcher;
+    }
+
+    public void setRequestContentMatcher(String requestContentMatcher) {
+        this.requestContentMatcher = requestContentMatcher;
+    }
+
+    // Key matching
+    public String getKeyMatchType() {
+        return keyMatchType;
+    }
+
+    public void setKeyMatchType(String keyMatchType) {
+        this.keyMatchType = keyMatchType;
+    }
+
+    // Content/Value matching
+    public String getContentMatchType() {
+        return contentMatchType;
+    }
+
+    public void setContentMatchType(String contentMatchType) {
+        this.contentMatchType = contentMatchType;
+    }
+
+    public String getContentPattern() {
+        return contentPattern;
+    }
+
+    public void setContentPattern(String contentPattern) {
+        this.contentPattern = contentPattern;
+    }
+
+    public Boolean getCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(Boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
+    // Schema Registry fields (transient/UI-only)
+    public Boolean getUseResponseSchemaRegistry() {
+        return useResponseSchemaRegistry;
+    }
+
+    public void setUseResponseSchemaRegistry(Boolean useResponseSchemaRegistry) {
+        this.useResponseSchemaRegistry = useResponseSchemaRegistry;
+    }
+
+    public String getResponseSchemaId() {
+        return responseSchemaId;
+    }
+
+    public void setResponseSchemaId(String responseSchemaId) {
+        this.responseSchemaId = responseSchemaId;
+    }
+
+    public String getResponseSchemaSubject() {
+        return responseSchemaSubject;
+    }
+
+    public void setResponseSchemaSubject(String responseSchemaSubject) {
+        this.responseSchemaSubject = responseSchemaSubject;
+    }
+
+    public String getResponseSchemaVersion() {
+        return responseSchemaVersion;
+    }
+
+    public void setResponseSchemaVersion(String responseSchemaVersion) {
+        this.responseSchemaVersion = responseSchemaVersion;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -176,43 +316,47 @@ public class KafkaStub {
                 Objects.equals(name, kafkaStub.name) &&
                 Objects.equals(description, kafkaStub.description) &&
                 Objects.equals(userId, kafkaStub.userId) &&
-                Objects.equals(topic, kafkaStub.topic) &&
+                Objects.equals(requestTopic, kafkaStub.requestTopic) &&
+                Objects.equals(responseTopic, kafkaStub.responseTopic) &&
                 Objects.equals(keyPattern, kafkaStub.keyPattern) &&
                 Objects.equals(valuePattern, kafkaStub.valuePattern) &&
-                Objects.equals(activeForProducer, kafkaStub.activeForProducer) &&
-                Objects.equals(activeForConsumer, kafkaStub.activeForConsumer) &&
                 Objects.equals(responseType, kafkaStub.responseType) &&
+                Objects.equals(responseKey, kafkaStub.responseKey) &&
                 Objects.equals(responseContent, kafkaStub.responseContent) &&
                 Objects.equals(latency, kafkaStub.latency) &&
                 Objects.equals(status, kafkaStub.status) &&
                 Objects.equals(createdAt, kafkaStub.createdAt) &&
-                Objects.equals(updatedAt, kafkaStub.updatedAt);
+                Objects.equals(updatedAt, kafkaStub.updatedAt) &&
+                Objects.equals(callbackUrl, kafkaStub.callbackUrl) &&
+                Objects.equals(callbackHeaders, kafkaStub.callbackHeaders);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, userId, topic, keyPattern, valuePattern,
-                activeForProducer, activeForConsumer, responseType, responseContent, latency, status, createdAt, updatedAt);
+        return Objects.hash(id, name, description, userId, requestTopic, responseTopic, keyPattern, valuePattern,
+                responseType, responseKey, responseContent, latency, status, createdAt, updatedAt, callbackUrl, callbackHeaders);
     }
 
     @Override
     public String toString() {
         return "KafkaStub{" +
-                "id=" + id +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", userId='" + userId + '\'' +
-                ", topic='" + topic + '\'' +
+                ", requestTopic='" + requestTopic + '\'' +
+                ", responseTopic='" + responseTopic + '\'' +
                 ", keyPattern='" + keyPattern + '\'' +
                 ", valuePattern='" + valuePattern + '\'' +
-                ", activeForProducer=" + activeForProducer +
-                ", activeForConsumer=" + activeForConsumer +
                 ", responseType='" + responseType + '\'' +
+                ", responseKey='" + responseKey + '\'' +
                 ", responseContent='" + responseContent + '\'' +
                 ", latency=" + latency +
                 ", status='" + status + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", callbackUrl='" + callbackUrl + '\'' +
+                ", callbackHeaders=" + callbackHeaders +
                 '}';
     }
 } 

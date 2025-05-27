@@ -11,16 +11,18 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -37,7 +39,7 @@ public class SybaseTibcoStubRepository implements TibcoStubRepository {
 
     // SQL statements
     private static final String TABLE_NAME = "tibco_stubs";
-    private static final String INSERT_STUB = "INSERT INTO " + TABLE_NAME + " (id, stub_data) VALUES (?, ?)";
+    private static final String INSERT_STUB = "INSERT INTO " + TABLE_NAME + " (stub_data) VALUES (?)";
     private static final String UPDATE_STUB = "UPDATE " + TABLE_NAME + " SET stub_data = ? WHERE id = ?";
     private static final String SELECT_STUB_BY_ID = "SELECT id, stub_data FROM " + TABLE_NAME + " WHERE id = ?";
     private static final String SELECT_ALL_STUBS = "SELECT id, stub_data FROM " + TABLE_NAME;
@@ -55,28 +57,47 @@ public class SybaseTibcoStubRepository implements TibcoStubRepository {
 
     @Override
     public TibcoStub save(TibcoStub tibcoStub) {
-        if (tibcoStub.getId() == null || tibcoStub.getId().isEmpty()) {
-            tibcoStub.setId(UUID.randomUUID().toString());
-        }
-        
-        LocalDateTime now = LocalDateTime.now();
-        if (tibcoStub.getCreatedAt() == null) {
-            tibcoStub.setCreatedAt(now);
-        }
-        tibcoStub.setUpdatedAt(now);
-
         try {
-            String stubJson = objectMapper.writeValueAsString(tibcoStub);
-            
-            if (existsById(tibcoStub.getId())) {
+            if (tibcoStub.getId() == null || tibcoStub.getId().isEmpty()) {
+                // Create new stub - let database generate ID
+                LocalDateTime now = LocalDateTime.now();
+                if (tibcoStub.getCreatedAt() == null) {
+                    tibcoStub.setCreatedAt(now);
+                }
+                tibcoStub.setUpdatedAt(now);
+                
+                String stubJson = objectMapper.writeValueAsString(tibcoStub);
+                
+                // Insert without specifying ID - database will generate it
+                KeyHolder keyHolder = new GeneratedKeyHolder();
+                jdbcTemplate.update(connection -> {
+                    PreparedStatement ps = connection.prepareStatement(
+                        INSERT_STUB, 
+                        Statement.RETURN_GENERATED_KEYS);
+                    ps.setString(1, stubJson);
+                    return ps;
+                }, keyHolder);
+                
+                // Get the generated ID from database
+                String generatedId = keyHolder.getKey().toString();
+                tibcoStub.setId(generatedId);
+                
+                // Update the JSON with the generated ID
+                String updatedStubJson = objectMapper.writeValueAsString(tibcoStub);
+                jdbcTemplate.update(UPDATE_STUB, updatedStubJson, generatedId);
+                
+                logger.debug("Inserted new TIBCO stub with ID: {}", generatedId);
+                return tibcoStub;
+            } else {
+                // Update existing stub
+                LocalDateTime now = LocalDateTime.now();
+                tibcoStub.setUpdatedAt(now);
+
+                String stubJson = objectMapper.writeValueAsString(tibcoStub);
                 jdbcTemplate.update(UPDATE_STUB, stubJson, tibcoStub.getId());
                 logger.debug("Updated TIBCO stub with ID: {}", tibcoStub.getId());
-            } else {
-                jdbcTemplate.update(INSERT_STUB, tibcoStub.getId(), stubJson);
-                logger.debug("Inserted new TIBCO stub with ID: {}", tibcoStub.getId());
+                return tibcoStub;
             }
-            
-            return tibcoStub;
         } catch (JsonProcessingException e) {
             logger.error("Error serializing TIBCO stub to JSON", e);
             throw new RuntimeException("Error serializing TIBCO stub to JSON", e);

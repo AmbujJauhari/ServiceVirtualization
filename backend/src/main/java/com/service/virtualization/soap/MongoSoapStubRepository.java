@@ -28,27 +28,6 @@ public class MongoSoapStubRepository implements SoapStubRepository {
 
     @Override
     public SoapStub save(SoapStub stub) {
-        // Generate ID if not present
-        if (stub.id() == null) {
-            stub = new SoapStub(
-                UUID.randomUUID().toString(),
-                stub.name(),
-                stub.description(),
-                stub.userId(),
-                stub.behindProxy(),
-                stub.protocol(),
-                stub.tags(),
-                stub.status(),
-                LocalDateTime.now(),
-                LocalDateTime.now(),
-                stub.wiremockMappingId(),
-                stub.url(),
-                stub.soapAction(),
-                stub.webhookUrl(),
-                stub.matchConditions(),
-                stub.response()
-            );
-        }
         return mongoTemplate.save(stub, COLLECTION_NAME);
     }
 

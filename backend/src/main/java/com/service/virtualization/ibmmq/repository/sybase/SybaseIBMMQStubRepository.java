@@ -5,11 +5,16 @@ import com.service.virtualization.ibmmq.repository.IBMMQStubRepository;
 import com.service.virtualization.model.StubStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.context.annotation.Profile;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,24 +70,28 @@ public class SybaseIBMMQStubRepository implements IBMMQStubRepository {
     @Override
     public IBMMQStub save(IBMMQStub stub) {
         if (stub.getId() == null) {
-            // Insert
-            String sql = "INSERT INTO " + TABLE_NAME + " (id, name, description, user_id, queue_manager, queue_name, " +
+            // Insert - let database generate ID
+            String sql = "INSERT INTO " + TABLE_NAME + " (name, description, user_id, queue_manager, queue_name, " +
                     "selector, response_content, response_type, latency, status, created_at, updated_at) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.update(sql,
-                    stub.getId(),
-                    stub.getName(),
-                    stub.getDescription(),
-                    stub.getUserId(),
-                    stub.getQueueManager(),
-                    stub.getQueueName(),
-                    stub.getSelector(),
-                    stub.getResponseContent(),
-                    stub.getResponseType(),
-                    stub.getLatency(),
-                    stub.getStatus().name(),
-                    stub.getCreatedAt(),
-                    stub.getUpdatedAt());
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, stub.getName());
+                ps.setString(2, stub.getDescription());
+                ps.setString(3, stub.getUserId());
+                ps.setString(4, stub.getQueueManager());
+                ps.setString(5, stub.getQueueName());
+                ps.setString(6, stub.getSelector());
+                ps.setString(7, stub.getResponseContent());
+                ps.setString(8, stub.getResponseType());
+                ps.setInt(9, stub.getLatency());
+                ps.setString(10, stub.getStatus().name());
+                ps.setTimestamp(11, java.sql.Timestamp.valueOf(stub.getCreatedAt()));
+                ps.setTimestamp(12, java.sql.Timestamp.valueOf(stub.getUpdatedAt()));
+                return ps;
+            }, keyHolder);
+            stub.setId(keyHolder.getKey().toString());
         } else {
             // Update
             String sql = "UPDATE " + TABLE_NAME + " SET name = ?, description = ?, user_id = ?, queue_manager = ?, " +
@@ -99,7 +108,7 @@ public class SybaseIBMMQStubRepository implements IBMMQStubRepository {
                     stub.getResponseType(),
                     stub.getLatency(),
                     stub.getStatus().name(),
-                    stub.getUpdatedAt(),
+                    java.sql.Timestamp.valueOf(stub.getUpdatedAt()),
                     stub.getId());
         }
         return stub;

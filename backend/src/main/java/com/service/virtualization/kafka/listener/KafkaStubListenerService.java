@@ -3,6 +3,7 @@ package com.service.virtualization.kafka.listener;
 import com.service.virtualization.kafka.repository.KafkaStubRepository;
 import com.service.virtualization.kafka.model.KafkaStub;
 import com.service.virtualization.kafka.service.KafkaMessageService;
+import com.service.virtualization.kafka.service.KafkaCallbackService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,15 +32,18 @@ public class KafkaStubListenerService {
     
     private final KafkaStubRepository kafkaStubRepository;
     private final KafkaMessageService kafkaMessageService;
+    private final KafkaCallbackService kafkaCallbackService;
     private final RestTemplate restTemplate;
     private final ScheduledExecutorService scheduler;
     
     @Autowired
     public KafkaStubListenerService(
             KafkaStubRepository kafkaStubRepository,
-            KafkaMessageService kafkaMessageService) {
+            KafkaMessageService kafkaMessageService,
+            KafkaCallbackService kafkaCallbackService) {
         this.kafkaStubRepository = kafkaStubRepository;
         this.kafkaMessageService = kafkaMessageService;
+        this.kafkaCallbackService = kafkaCallbackService;
         this.restTemplate = new RestTemplate();
         this.scheduler = Executors.newScheduledThreadPool(5);
     }
@@ -57,8 +61,8 @@ public class KafkaStubListenerService {
         
         logger.info("Received message on topic: {}, with key: {}", topic, key);
         
-        // Find active consumer stubs for this topic
-        List<KafkaStub> stubs = kafkaStubRepository.findActiveConsumerStubsByTopic(topic);
+        // Find active stubs for this request topic
+        List<KafkaStub> stubs = kafkaStubRepository.findActiveStubsByRequestTopic(topic);
         
         if (stubs.isEmpty()) {
             logger.info("No active stubs found for topic: {}", topic);
@@ -102,9 +106,17 @@ public class KafkaStubListenerService {
                 sendResponse(stub, topic);
             }
         } else if ("callback".equals(stub.getResponseType())) {
-            // For callback type, we would add callback URL handling logic
-            // This part can be implemented based on the application needs
-            logger.info("Callback response type not implemented yet");
+            // Execute HTTP callback which will return response data and publish to Kafka
+            if (stub.getLatency() != null && stub.getLatency() > 0) {
+                // Delayed callback
+                scheduler.schedule(() -> {
+                    kafkaCallbackService.executeCallbackAsync(stub, topic, key, message);
+                }, stub.getLatency(), TimeUnit.MILLISECONDS);
+            } else {
+                // Immediate callback
+                kafkaCallbackService.executeCallbackAsync(stub, topic, key, message);
+            }
+            logger.info("Callback execution initiated for stub: {}", stub.getName());
         }
     }
     
@@ -121,9 +133,14 @@ public class KafkaStubListenerService {
      * Send response message
      */
     private void sendResponse(KafkaStub stub, String requestTopic) {
-        String responseTopic = stub.getTopic(); // Use the stub's configured topic
+        String responseTopic = stub.getResponseTopic();
         
-        // If it's the same as request topic, append "-response" to avoid loops
+        // If no response topic is configured, use request topic with "-response" suffix
+        if (responseTopic == null || responseTopic.trim().isEmpty()) {
+            responseTopic = requestTopic + "-response";
+        }
+        
+        // If response topic is the same as request topic, append "-response" to avoid loops
         if (responseTopic.equals(requestTopic)) {
             responseTopic = requestTopic + "-response";
         }
@@ -131,14 +148,14 @@ public class KafkaStubListenerService {
         // Create empty headers map (could be populated from stub configuration)
         Map<String, String> headers = new HashMap<>();
         
-        // Publish the response message
+        // Publish the response message with responseKey from stub
         kafkaMessageService.publishMessage(
             responseTopic,
-            null, // No key for response
+            stub.getResponseKey(), // Use responseKey from stub instead of null
             stub.getResponseContent(),
             headers
         );
         
-        logger.info("Response sent to topic: {}", responseTopic);
+        logger.info("Response sent to topic: {} with key: {}", responseTopic, stub.getResponseKey());
     }
 } 

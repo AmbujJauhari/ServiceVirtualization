@@ -4,32 +4,30 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     container_name: sv-zookeeper
+    ports:
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-log:/var/lib/zookeeper/log
     restart: unless-stopped
-    networks:
-      - sv-network
 
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     container_name: sv-kafka
-    depends_on:
-      - zookeeper
     ports:
       - "9092:9092"
-      - "29092:29092"
+    depends_on:
+      - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -40,57 +38,21 @@ services:
       - kafka-data:/var/lib/kafka/data
       - ./kafka/config/server.properties:/etc/kafka/server.properties.template
     restart: unless-stopped
-    networks:
-      - sv-network
-      
-  # Initialization container for Kafka topics
-  kafka-init:
-    image: confluentinc/cp-kafka:7.3.2
-    container_name: sv-kafka-init
-    depends_on:
-      - kafka
-    volumes:
-      - ./kafka/config/create-topics.sh:/create-topics.sh
-    command: >
-      bash -c "
-        echo 'Waiting for Kafka to be ready...' &&
-        cub kafka-ready -b kafka:9092 1 60 &&
-        echo 'Creating topics...' &&
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic virtualization.requests --partitions 3 --replication-factor 1 &&
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic virtualization.responses --partitions 3 --replication-factor 1 &&
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic virtualization.errors --partitions 3 --replication-factor 1 &&
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic virtualization.events --partitions 3 --replication-factor 1 &&
-        echo 'Topic setup completed!'
-      "
-    networks:
-      - sv-network
-      
-  # Web-based Kafka management tool
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: sv-kafka-ui
+    ports:
+      - "8082:8080"
     depends_on:
       - kafka
-    ports:
-      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     restart: unless-stopped
-    networks:
-      - sv-network
-
-networks:
-  sv-network:
-    name: service-virtualization-network
-    driver: bridge
-    external: true
 
 volumes:
   zookeeper-data:
-    name: sv-zookeeper-data
   zookeeper-log:
-    name: sv-zookeeper-log
   kafka-data:
-    name: sv-kafka-data 

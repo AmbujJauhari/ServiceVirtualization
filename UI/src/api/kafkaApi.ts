@@ -4,6 +4,13 @@ import config from '../config/configLoader';
 // Types
 export type ContentFormat = 'JSON' | 'XML' | 'AVRO';
 
+export enum ContentMatchType {
+  NONE = 'NONE',
+  CONTAINS = 'CONTAINS',
+  EXACT = 'EXACT',
+  REGEX = 'REGEX'
+}
+
 export interface KafkaStub {
   id: string;
   name: string;
@@ -14,12 +21,21 @@ export interface KafkaStub {
   requestTopic: string;
   requestContentFormat: ContentFormat;
   requestContentMatcher?: string; // JSON path, XPath, or Avro schema for matching content
+  
+  // Key matching (for Kafka message key)
+  keyMatchType?: ContentMatchType;
   keyPattern?: string;
-  valuePattern?: string;
+  
+  // Value/Content matching (for Kafka message value/payload)
+  // Note: In Kafka, "value" and "content" refer to the same thing - the message payload
+  contentMatchType?: ContentMatchType;
+  contentPattern?: string;
+  caseSensitive?: boolean;
   
   // Response configuration
   responseTopic?: string;
   responseContentFormat: ContentFormat;
+  responseKey?: string; // Key for response messages (auto-generated if not provided)
   
   // Response handling
   responseType: 'direct' | 'callback';
@@ -28,7 +44,7 @@ export interface KafkaStub {
   callbackUrl?: string;
   callbackHeaders?: Record<string, string>;
   
-  // Activation setting
+  // Status - simplified approach: only active/inactive
   status: string; // 'active' or 'inactive'
   
   // Metadata
@@ -117,14 +133,9 @@ export const kafkaApi = createApi({
       providesTags: ['KafkaStub']
     }),
     
-    // Producer/Consumer-specific queries
-    getActiveProducerStubs: builder.query<KafkaStub[], void>({
-      query: () => `/kafka/stubs/producer/active`,
-      providesTags: ['KafkaStub']
-    }),
-    
-    getActiveConsumerStubs: builder.query<KafkaStub[], void>({
-      query: () => `/kafka/stubs/consumer/active`,
+    // Active stubs by topic (simplified approach)
+    getActiveStubsByTopic: builder.query<KafkaStub[], string>({
+      query: (topic) => `/kafka/stubs/topic/${topic}/active`,
       providesTags: ['KafkaStub']
     }),
     
@@ -169,8 +180,7 @@ export const {
   useGetStubsByRequestTopicQuery,
   useGetStubsByResponseTopicQuery,
   useGetStubsByContentFormatQuery,
-  useGetActiveProducerStubsQuery,
-  useGetActiveConsumerStubsQuery,
+  useGetActiveStubsByTopicQuery,
   useGetCallbackLogsQuery,
   useRetryCallbackMutation,
   usePublishKafkaMessageMutation,

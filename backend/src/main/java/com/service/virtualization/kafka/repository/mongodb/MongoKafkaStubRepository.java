@@ -29,7 +29,7 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public Optional<KafkaStub> findById(Long id) {
+    public Optional<KafkaStub> findById(String id) {
         return Optional.ofNullable(mongoTemplate.findById(id, KafkaStub.class, COLLECTION_NAME));
     }
 
@@ -40,18 +40,9 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public List<KafkaStub> findActiveProducerStubsByTopic(String topic) {
-        Query query = new Query(Criteria.where("topic").is(topic)
-                .and("status").is(StubStatus.ACTIVE)
-                .and("activeForProducer").is(true));
-        return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public List<KafkaStub> findActiveConsumerStubsByTopic(String topic) {
-        Query query = new Query(Criteria.where("topic").is(topic)
-                .and("status").is(StubStatus.ACTIVE)
-                .and("activeForConsumer").is(true));
+    public List<KafkaStub> findActiveStubsByRequestTopic(String topic) {
+        Query query = new Query(Criteria.where("requestTopic").is(topic)
+                .and("status").is(StubStatus.ACTIVE.name().toLowerCase()));
         return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
     }
 
@@ -61,40 +52,30 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(String id) {
         Query query = new Query(Criteria.where("id").is(id));
         mongoTemplate.remove(query, KafkaStub.class, COLLECTION_NAME);
     }
 
     @Override
-    public KafkaStub updateStatus(Long id, String status) {
-        Query query = new Query(Criteria.where("id").is(id));
-        Update update = new Update().set("status", status);
-        mongoTemplate.updateFirst(query, update, KafkaStub.class, COLLECTION_NAME);
-        return mongoTemplate.findById(id, KafkaStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public boolean existsById(Long id) {
+    public boolean existsById(String id) {
         Query query = new Query(Criteria.where("id").is(id));
         return mongoTemplate.exists(query, KafkaStub.class, COLLECTION_NAME);
     }
 
     @Override
+    public KafkaStub updateStatus(String id, String status) {
+        Query query = new Query(Criteria.where("id").is(id));
+        Update update = new Update().set("status", status).set("updatedAt", java.time.LocalDateTime.now());
+        
+        mongoTemplate.updateFirst(query, update, KafkaStub.class, COLLECTION_NAME);
+        
+        return findById(id).orElseThrow(() -> new RuntimeException("Kafka stub not found with id: " + id));
+    }
+
+    @Override
     public List<KafkaStub> findAllByTopicAndStatus(String topic, String status) {
-        Query query = new Query(Criteria.where("topic").is(topic).and("status").is(status));
-        return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public List<KafkaStub> findAllByStatusAndActiveForProducer(String status, Boolean activeForProducer) {
-        Query query = new Query(Criteria.where("status").is(status).and("activeForProducer").is(activeForProducer));
-        return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public List<KafkaStub> findAllByStatusAndActiveForConsumer(String status, Boolean activeForConsumer) {
-        Query query = new Query(Criteria.where("status").is(status).and("activeForConsumer").is(activeForConsumer));
+        Query query = new Query(Criteria.where("requestTopic").is(topic).and("status").is(status));
         return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
     }
 
@@ -119,11 +100,6 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     public List<KafkaStub> findByTopicAndStatus(String topic, StubStatus status) {
         Query query = new Query(Criteria.where("topic").is(topic).and("status").is(status));
         return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public Optional<KafkaStub> findById(String id) {
-        return findById(Long.parseLong(id));
     }
 
     @Override

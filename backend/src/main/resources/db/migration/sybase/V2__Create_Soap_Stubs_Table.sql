@@ -1,6 +1,6 @@
--- Create SOAP stubs table for Sybase
+-- Create SOAP stubs table with database-generated UUID
 CREATE TABLE soap_stubs (
-    id VARCHAR(36) PRIMARY KEY,
+    id VARCHAR(36) DEFAULT NEWID() PRIMARY KEY,
     stub_data NVARCHAR(MAX) NOT NULL
 );
 

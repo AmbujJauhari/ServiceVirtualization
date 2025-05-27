@@ -22,14 +22,41 @@ public class KafkaStubMapper {
             stub.getName(),
             stub.getDescription(),
             stub.getUserId(),
-            stub.getTopic(),
+            stub.getRequestTopic(),
+            stub.getResponseTopic(),
+            
+            // Content formats and matching
+            stub.getRequestContentFormat(),
+            stub.getResponseContentFormat(),
+            stub.getRequestContentMatcher(),
+            
+            // Key matching
+            stub.getKeyMatchType(),
             stub.getKeyPattern(),
-            stub.getValuePattern(),
-            stub.getActiveForProducer(),
-            stub.getActiveForConsumer(),
+            
+            // Content/Value matching
+            stub.getContentMatchType(),
+            stub.getValuePattern(), // Legacy field
+            stub.getContentPattern(), // New field
+            stub.getCaseSensitive(),
+            
+            // Response configuration
             stub.getResponseType(),
+            stub.getResponseKey(),
             stub.getResponseContent(),
+            
+            // Schema Registry fields
+            stub.getUseResponseSchemaRegistry(),
+            stub.getResponseSchemaId(),
+            stub.getResponseSchemaSubject(),
+            stub.getResponseSchemaVersion(),
+            
             stub.getLatency(),
+            
+            // Callback configuration
+            stub.getCallbackUrl(),
+            stub.getCallbackHeaders(),
+            
             stub.getStatus(),
             stub.getCreatedAt(),
             stub.getUpdatedAt()
@@ -44,18 +71,43 @@ public class KafkaStubMapper {
      */
     public KafkaStub toModel(KafkaStubDTO dto) {
         KafkaStub stub = new KafkaStub();
-        
         stub.setId(dto.id());
         stub.setName(dto.name());
         stub.setDescription(dto.description());
         stub.setUserId(dto.userId());
-        stub.setTopic(dto.topic());
+        stub.setRequestTopic(dto.requestTopic());
+        stub.setResponseTopic(dto.responseTopic());
+        
+        // Content formats and matching
+        stub.setRequestContentFormat(dto.requestContentFormat());
+        stub.setResponseContentFormat(dto.responseContentFormat());
+        stub.setRequestContentMatcher(dto.requestContentMatcher());
+        
+        // Key matching
+        stub.setKeyMatchType(dto.keyMatchType());
         stub.setKeyPattern(dto.keyPattern());
-        stub.setValuePattern(dto.valuePattern());
-        stub.setActiveForProducer(dto.activeForProducer());
-        stub.setActiveForConsumer(dto.activeForConsumer());
+        
+        // Content/Value matching
+        stub.setContentMatchType(dto.contentMatchType());
+        stub.setValuePattern(dto.valuePattern()); // Legacy field
+        stub.setContentPattern(dto.contentPattern()); // New field
+        stub.setCaseSensitive(dto.caseSensitive());
+        
+        // Response configuration
         stub.setResponseType(dto.responseType());
+        stub.setResponseKey(dto.responseKey());
         stub.setResponseContent(dto.responseContent());
+        
+        // Callback configuration
+        stub.setCallbackUrl(dto.callbackUrl());
+        stub.setCallbackHeaders(dto.callbackHeaders());
+        
+        // Schema Registry fields (transient/UI-only)
+        stub.setUseResponseSchemaRegistry(dto.useResponseSchemaRegistry());
+        stub.setResponseSchemaId(dto.responseSchemaId());
+        stub.setResponseSchemaSubject(dto.responseSchemaSubject());
+        stub.setResponseSchemaVersion(dto.responseSchemaVersion());
+        
         stub.setLatency(dto.latency());
         stub.setStatus(dto.status());
         stub.setCreatedAt(dto.createdAt());

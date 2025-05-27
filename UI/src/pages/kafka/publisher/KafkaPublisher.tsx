@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGetKafkaTopicsQuery, usePublishKafkaMessageMutation } from '../../../api/kafkaApi';
 import TextEditor from '../../../components/common/TextEditor';
+import config from '../../../config/configLoader';
 
 interface MessageHeader {
   key: string;
@@ -23,6 +24,16 @@ const KafkaPublisher: React.FC = () => {
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Schema Registry fields
+  const [useSchemaRegistry, setUseSchemaRegistry] = useState(false);
+  const [selectedSchemaId, setSelectedSchemaId] = useState('');
+  const [selectedSchemaSubject, setSelectedSchemaSubject] = useState('');
+  const [selectedSchemaVersion, setSelectedSchemaVersion] = useState('latest');
+  const [availableSchemas, setAvailableSchemas] = useState<any[]>([]);
+  const [schemaVersions, setSchemaVersions] = useState<string[]>([]);
+  const [isLoadingSchemas, setIsLoadingSchemas] = useState(false);
+  const [schemaValidationError, setSchemaValidationError] = useState('');
 
   const { data: topics, isLoading: isLoadingTopics } = useGetKafkaTopicsQuery();
   const [publishMessage, { isLoading: isPublishing }] = usePublishKafkaMessageMutation();
@@ -41,6 +52,25 @@ const KafkaPublisher: React.FC = () => {
     };
   }, [isSuccessful]);
 
+  // Auto-enable schema registry for Avro content type
+  useEffect(() => {
+    if (contentType === 'avro/binary') {
+      setUseSchemaRegistry(true);
+    }
+  }, [contentType]);
+
+  // Fetch available schemas when schema registry is enabled
+  useEffect(() => {
+    if (useSchemaRegistry && availableSchemas.length === 0) {
+      fetchAvailableSchemas();
+    }
+  }, [useSchemaRegistry]);
+
+  // Clear schema validation error when schema selection changes
+  useEffect(() => {
+    setSchemaValidationError('');
+  }, [selectedSchemaId, selectedSchemaSubject, selectedSchemaVersion]);
+
   const addHeader = () => {
     setHeaders([...headers, { key: '', value: '' }]);
   };
@@ -57,6 +87,10 @@ const KafkaPublisher: React.FC = () => {
     setHeaders(updatedHeaders);
   };
 
+  const getEffectiveTopic = () => {
+    return selectedTopic;
+  };
+
   const getFormattedExample = () => {
     switch (contentType) {
       case 'application/json':
@@ -64,7 +98,9 @@ const KafkaPublisher: React.FC = () => {
       case 'application/xml':
         return `<message>\n  <content>Hello Kafka</content>\n  <timestamp>${new Date().toISOString()}</timestamp>\n</message>`;
       case 'avro/binary':
-        return `// Avro data is binary and needs to be encoded properly.\n// This is just a placeholder example.`;
+        return useSchemaRegistry 
+          ? `// Avro message with schema registry\n// Schema will be resolved from registry\n{\n  "field1": "value1",\n  "field2": 123\n}`
+          : `// Avro data is binary and needs to be encoded properly.\n// This is just a placeholder example.`;
       default:
         return 'Hello Kafka!';
     }
@@ -75,8 +111,15 @@ const KafkaPublisher: React.FC = () => {
     setErrorMessage('');
     setIsSuccessful(false);
     
-    if (!selectedTopic || !messageText.trim()) {
-      setErrorMessage('Please select a topic and enter a message.');
+    const effectiveTopic = getEffectiveTopic();
+    if (!effectiveTopic || !messageText.trim()) {
+      setErrorMessage('Please specify a topic and enter a message.');
+      return;
+    }
+
+    // Validate schema registry fields if enabled
+    if (useSchemaRegistry && !selectedSchemaId && !selectedSchemaSubject) {
+      setErrorMessage('Please provide either Schema ID or Schema Subject when using Schema Registry.');
       return;
     }
 
@@ -88,9 +131,20 @@ const KafkaPublisher: React.FC = () => {
       }
     });
 
+    // Add schema registry headers if enabled
+    if (useSchemaRegistry) {
+      if (selectedSchemaId) {
+        headerMap['schema-id'] = selectedSchemaId;
+      }
+      if (selectedSchemaSubject) {
+        headerMap['schema-subject'] = selectedSchemaSubject;
+        headerMap['schema-version'] = selectedSchemaVersion;
+      }
+    }
+
     try {
       await publishMessage({
-        topic: selectedTopic,
+        topic: effectiveTopic,
         key: messageKey || undefined,
         contentType,
         message: messageText,
@@ -98,7 +152,7 @@ const KafkaPublisher: React.FC = () => {
       }).unwrap();
       
       setIsSuccessful(true);
-      setSuccessMessage(`Message successfully published to topic "${selectedTopic}"`);
+      setSuccessMessage(`Message successfully published to topic "${effectiveTopic}"`);
     } catch (error) {
       console.error('Error publishing message:', error);
       setErrorMessage(
@@ -106,6 +160,39 @@ const KafkaPublisher: React.FC = () => {
           ? error.message 
           : 'Failed to publish message. Please try again.'
       );
+    }
+  };
+
+  const fetchAvailableSchemas = async () => {
+    setIsLoadingSchemas(true);
+    try {
+      const response = await fetch(`${config.API_URL}/kafka/schemas`);
+      if (response.ok) {
+        const schemas = await response.json();
+        setAvailableSchemas(schemas);
+      } else {
+        console.warn('Failed to fetch schemas:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching schemas:', error);
+    } finally {
+      setIsLoadingSchemas(false);
+    }
+  };
+
+  const fetchSchemaVersions = async (subject: string) => {
+    try {
+      const response = await fetch(`${config.API_URL}/kafka/schemas/${subject}/versions`);
+      if (response.ok) {
+        const versions = await response.json();
+        setSchemaVersions(versions);
+      } else {
+        console.warn('Failed to fetch schema versions:', response.statusText);
+        setSchemaVersions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching schema versions:', error);
+      setSchemaVersions([]);
     }
   };
 
@@ -133,26 +220,24 @@ const KafkaPublisher: React.FC = () => {
               <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
                 Topic Name
               </label>
-              <select
+              <input
+                type="text"
                 id="topic"
                 value={selectedTopic}
                 onChange={(e) => setSelectedTopic(e.target.value)}
+                placeholder="Enter topic name or select from existing"
+                list="topic-suggestions"
                 className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-              >
-                <option value="">Select a topic</option>
-                {isLoadingTopics ? (
-                  <option disabled>Loading topics...</option>
-                ) : !topics || topics.length === 0 ? (
-                  <option disabled>No topics available</option>
-                ) : (
-                  topics.map((topic) => (
-                    <option key={topic} value={topic}>
-                      {topic}
-                    </option>
-                  ))
-                )}
-              </select>
+              />
+              <datalist id="topic-suggestions">
+                {topics?.map((topic) => (
+                  <option key={topic} value={topic} />
+                ))}
+              </datalist>
+              <p className="text-xs text-gray-500 mt-1">
+                Topic will be created automatically if it doesn't exist
+              </p>
             </div>
             
             <div>
@@ -189,6 +274,120 @@ const KafkaPublisher: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Schema Registry Section */}
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id="useSchemaRegistry"
+                checked={useSchemaRegistry}
+                onChange={(e) => setUseSchemaRegistry(e.target.checked)}
+                className="mr-2"
+                disabled={contentType === 'avro/binary'}
+              />
+              <label htmlFor="useSchemaRegistry" className="text-sm font-medium text-gray-700">
+                Use Schema Registry
+                {contentType === 'avro/binary' && <span className="text-xs text-gray-500 ml-1">(Required for Avro)</span>}
+              </label>
+            </div>
+
+            {useSchemaRegistry && (
+              <div className="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-4">
+                {/* Schema Selection - Using Dropdowns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="selectedSchemaSubject" className="block text-sm font-medium text-gray-700 mb-1">
+                      Schema Subject
+                    </label>
+                    <select
+                      id="selectedSchemaSubject"
+                      value={selectedSchemaSubject}
+                      onChange={(e) => {
+                        setSelectedSchemaSubject(e.target.value);
+                        if (e.target.value) {
+                          // Load versions for selected subject
+                          fetchSchemaVersions(e.target.value);
+                        }
+                      }}
+                      className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select a schema subject...</option>
+                      {isLoadingSchemas ? (
+                        <option disabled>Loading schemas...</option>
+                      ) : availableSchemas.length === 0 ? (
+                        <option disabled>No schemas available</option>
+                      ) : (
+                        availableSchemas.map((schema) => (
+                          <option key={schema.subject} value={schema.subject}>
+                            {schema.subject}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="selectedSchemaVersion" className="block text-sm font-medium text-gray-700 mb-1">
+                      Schema Version
+                    </label>
+                    <select
+                      id="selectedSchemaVersion"
+                      value={selectedSchemaVersion}
+                      onChange={(e) => setSelectedSchemaVersion(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      disabled={!selectedSchemaSubject}
+                    >
+                      <option value="latest">Latest</option>
+                      {schemaVersions.map((version) => (
+                        <option key={version} value={version}>
+                          Version {version}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Alternative: Direct Schema ID */}
+                <div className="text-center text-gray-500 text-sm">or</div>
+                
+                <div className="w-full md:w-1/2">
+                  <label htmlFor="selectedSchemaId" className="block text-sm font-medium text-gray-700 mb-1">
+                    Direct Schema ID (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="selectedSchemaId"
+                    value={selectedSchemaId}
+                    onChange={(e) => {
+                      setSelectedSchemaId(e.target.value);
+                      if (e.target.value) {
+                        // Clear subject/version when using direct ID
+                        setSelectedSchemaSubject('');
+                        setSelectedSchemaVersion('latest');
+                      }
+                    }}
+                    placeholder="e.g., 123"
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Schema Validation Error Display */}
+                {schemaValidationError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+                    <strong>Schema Validation Error:</strong>
+                    <pre className="mt-1 whitespace-pre-wrap">{schemaValidationError}</pre>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-600">
+                  <p>• Select a schema subject and version, or provide a direct schema ID</p>
+                  <p>• Schema Registry headers will be automatically added to the message</p>
+                  <p>• Message will be validated against the selected schema before publishing</p>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="mb-4">
@@ -265,9 +464,9 @@ const KafkaPublisher: React.FC = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={isPublishing || !selectedTopic || !messageText.trim()}
+            disabled={isPublishing || !getEffectiveTopic() || !messageText.trim()}
             className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-              isPublishing || !selectedTopic || !messageText.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              isPublishing || !getEffectiveTopic() || !messageText.trim() ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             {isPublishing ? 'Publishing...' : 'Publish Message'}
