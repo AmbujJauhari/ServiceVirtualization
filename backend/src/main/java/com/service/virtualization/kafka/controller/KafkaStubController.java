@@ -4,6 +4,7 @@ import com.service.virtualization.kafka.KafkaStubService;
 import com.service.virtualization.kafka.dto.KafkaStubDTO;
 import com.service.virtualization.kafka.mapper.KafkaStubMapper;
 import com.service.virtualization.kafka.model.KafkaStub;
+import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +43,10 @@ public class KafkaStubController {
     @PostMapping
     public ResponseEntity<KafkaStubDTO> createKafkaStub(@RequestBody KafkaStubDTO kafkaStubDTO) {
         logger.info("Creating Kafka stub: {}", kafkaStubDTO.name());
-        
+
         KafkaStub kafkaStub = kafkaStubMapper.toModel(kafkaStubDTO);
         KafkaStub createdStub = kafkaStubService.createStub(kafkaStub);
-        
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(kafkaStubMapper.toDTO(createdStub));
     }
@@ -58,12 +59,12 @@ public class KafkaStubController {
     @GetMapping
     public ResponseEntity<List<KafkaStubDTO>> getAllKafkaStubs() {
         logger.info("Fetching all Kafka stubs");
-        
+
         List<KafkaStub> stubs = kafkaStubService.getAllStubs();
         List<KafkaStubDTO> stubDTOs = stubs.stream()
                 .map(kafkaStubMapper::toDTO)
                 .collect(Collectors.toList());
-        
+
         return ResponseEntity.ok(stubDTOs);
     }
 
@@ -76,34 +77,34 @@ public class KafkaStubController {
     @GetMapping("/{id}")
     public ResponseEntity<KafkaStubDTO> getKafkaStubById(@PathVariable String id) {
         logger.info("Fetching Kafka stub with ID: {}", id);
-        
+
         Optional<KafkaStub> kafkaStub = kafkaStubService.getStubById(id);
         if (kafkaStub.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        
+
         return ResponseEntity.ok(kafkaStubMapper.toDTO(kafkaStub.orElse(null)));
     }
 
     /**
      * Update an existing Kafka stub
      *
-     * @param id The ID of the Kafka stub to update
+     * @param id           The ID of the Kafka stub to update
      * @param kafkaStubDTO The updated Kafka stub data
      * @return The updated Kafka stub
      */
     @PutMapping("/{id}")
-    public ResponseEntity<KafkaStubDTO> updateKafkaStub(@PathVariable String id, 
-                                                     @RequestBody KafkaStubDTO kafkaStubDTO) {
+    public ResponseEntity<KafkaStubDTO> updateKafkaStub(@PathVariable String id,
+                                                        @RequestBody KafkaStubDTO kafkaStubDTO) {
         logger.info("Updating Kafka stub with ID: {}", id);
-        
+
         if (!id.equals(kafkaStubDTO.id())) {
             return ResponseEntity.badRequest().build();
         }
-        
+
         KafkaStub kafkaStub = kafkaStubMapper.toModel(kafkaStubDTO);
         KafkaStub updatedStub = kafkaStubService.updateStub(id, kafkaStub);
-        
+
         return ResponseEntity.ok(kafkaStubMapper.toDTO(updatedStub));
     }
 
@@ -116,7 +117,7 @@ public class KafkaStubController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteKafkaStub(@PathVariable String id) {
         logger.info("Deleting Kafka stub with ID: {}", id);
-        
+
         kafkaStubService.deleteStub(id);
         return ResponseEntity.noContent().build();
     }
@@ -130,8 +131,19 @@ public class KafkaStubController {
     @PutMapping("/{id}/toggle")
     public ResponseEntity<KafkaStubDTO> toggleKafkaStub(@PathVariable String id) {
         logger.info("Toggling status of Kafka stub with ID: {}", id);
-        
+
         KafkaStub toggledStub = kafkaStubService.toggleStubStatus(id);
         return ResponseEntity.ok(kafkaStubMapper.toDTO(toggledStub));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<KafkaStubDTO> updateStubStatus(@PathVariable String id, @RequestParam StubStatus status) {
+        logger.debug("Updating status of stub {} to {}", id, status);
+
+        // Update the status
+        KafkaStub updatedStub = kafkaStubService.updateStubStatus(id, status);
+
+        // Convert to DTO and return
+        return ResponseEntity.ok(kafkaStubMapper.toDTO(updatedStub));
     }
 } 

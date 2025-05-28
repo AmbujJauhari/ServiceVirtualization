@@ -49,12 +49,42 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     @Override
     public KafkaStub save(KafkaStub kafkaStub) {
         try {
-            if (kafkaStub.getId() == null) {
+            if (kafkaStub.id() == null) {
                 // Create new stub - let database generate ID
-                kafkaStub.setCreatedAt(LocalDateTime.now());
-                kafkaStub.setUpdatedAt(LocalDateTime.now());
+                LocalDateTime now = LocalDateTime.now();
+                KafkaStub stubWithTimestamps = new KafkaStub(
+                    null, // id will be generated
+                    kafkaStub.name(),
+                    kafkaStub.description(),
+                    kafkaStub.userId(),
+                    kafkaStub.requestTopic(),
+                    kafkaStub.responseTopic(),
+                    kafkaStub.requestContentFormat(),
+                    kafkaStub.responseContentFormat(),
+                    kafkaStub.requestContentMatcher(),
+                    kafkaStub.keyMatchType(),
+                    kafkaStub.keyPattern(),
+                    kafkaStub.contentMatchType(),
+                    kafkaStub.valuePattern(),
+                    kafkaStub.contentPattern(),
+                    kafkaStub.caseSensitive(),
+                    kafkaStub.responseType(),
+                    kafkaStub.responseKey(),
+                    kafkaStub.responseContent(),
+                    kafkaStub.useResponseSchemaRegistry(),
+                    kafkaStub.responseSchemaId(),
+                    kafkaStub.responseSchemaSubject(),
+                    kafkaStub.responseSchemaVersion(),
+                    kafkaStub.latency(),
+                    kafkaStub.status(),
+                    now,
+                    now,
+                    kafkaStub.callbackUrl(),
+                    kafkaStub.callbackHeaders(),
+                    kafkaStub.tags()
+                );
                 
-                String stubJson = objectMapper.writeValueAsString(kafkaStub);
+                String stubJson = objectMapper.writeValueAsString(stubWithTimestamps);
                 
                 // Insert without specifying ID - database will generate it
                 KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -68,19 +98,82 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
                 
                 // Get the generated ID from database
                 String generatedId = keyHolder.getKey().toString();
-                kafkaStub.setId(generatedId);
+                
+                // Create final stub with generated ID
+                KafkaStub finalStub = new KafkaStub(
+                    generatedId,
+                    stubWithTimestamps.name(),
+                    stubWithTimestamps.description(),
+                    stubWithTimestamps.userId(),
+                    stubWithTimestamps.requestTopic(),
+                    stubWithTimestamps.responseTopic(),
+                    stubWithTimestamps.requestContentFormat(),
+                    stubWithTimestamps.responseContentFormat(),
+                    stubWithTimestamps.requestContentMatcher(),
+                    stubWithTimestamps.keyMatchType(),
+                    stubWithTimestamps.keyPattern(),
+                    stubWithTimestamps.contentMatchType(),
+                    stubWithTimestamps.valuePattern(),
+                    stubWithTimestamps.contentPattern(),
+                    stubWithTimestamps.caseSensitive(),
+                    stubWithTimestamps.responseType(),
+                    stubWithTimestamps.responseKey(),
+                    stubWithTimestamps.responseContent(),
+                    stubWithTimestamps.useResponseSchemaRegistry(),
+                    stubWithTimestamps.responseSchemaId(),
+                    stubWithTimestamps.responseSchemaSubject(),
+                    stubWithTimestamps.responseSchemaVersion(),
+                    stubWithTimestamps.latency(),
+                    stubWithTimestamps.status(),
+                    stubWithTimestamps.createdAt(),
+                    stubWithTimestamps.updatedAt(),
+                    stubWithTimestamps.callbackUrl(),
+                    stubWithTimestamps.callbackHeaders(),
+                    stubWithTimestamps.tags()
+                );
                 
                 // Update the JSON with the generated ID
-                String updatedStubJson = objectMapper.writeValueAsString(kafkaStub);
+                String updatedStubJson = objectMapper.writeValueAsString(finalStub);
                 jdbcTemplate.update(UPDATE_STUB, updatedStubJson, generatedId);
                 
-                return kafkaStub;
+                return finalStub;
             } else {
                 // Update existing stub
-                kafkaStub.setUpdatedAt(LocalDateTime.now());
-                String stubJson = objectMapper.writeValueAsString(kafkaStub);
-                jdbcTemplate.update(UPDATE_STUB, stubJson, kafkaStub.getId());
-                return kafkaStub;
+                KafkaStub updatedStub = new KafkaStub(
+                    kafkaStub.id(),
+                    kafkaStub.name(),
+                    kafkaStub.description(),
+                    kafkaStub.userId(),
+                    kafkaStub.requestTopic(),
+                    kafkaStub.responseTopic(),
+                    kafkaStub.requestContentFormat(),
+                    kafkaStub.responseContentFormat(),
+                    kafkaStub.requestContentMatcher(),
+                    kafkaStub.keyMatchType(),
+                    kafkaStub.keyPattern(),
+                    kafkaStub.contentMatchType(),
+                    kafkaStub.valuePattern(),
+                    kafkaStub.contentPattern(),
+                    kafkaStub.caseSensitive(),
+                    kafkaStub.responseType(),
+                    kafkaStub.responseKey(),
+                    kafkaStub.responseContent(),
+                    kafkaStub.useResponseSchemaRegistry(),
+                    kafkaStub.responseSchemaId(),
+                    kafkaStub.responseSchemaSubject(),
+                    kafkaStub.responseSchemaVersion(),
+                    kafkaStub.latency(),
+                    kafkaStub.status(),
+                    kafkaStub.createdAt(),
+                    LocalDateTime.now(),
+                    kafkaStub.callbackUrl(),
+                    kafkaStub.callbackHeaders(),
+                    kafkaStub.tags()
+                );
+                
+                String stubJson = objectMapper.writeValueAsString(updatedStub);
+                jdbcTemplate.update(UPDATE_STUB, stubJson, kafkaStub.id());
+                return updatedStub;
             }
         } catch (JsonProcessingException e) {
             logger.error("Error serializing KafkaStub to JSON", e);
@@ -135,7 +228,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public List<KafkaStub> findAllByTopicAndStatus(String topic, String status) {
+    public List<KafkaStub> findAllByTopicAndStatus(String topic, StubStatus status) {
         return jdbcTemplate.query(SELECT_STUBS_BY_TOPIC_AND_STATUS, 
             (rs, rowNum) -> {
                 try {
@@ -145,7 +238,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
                     logger.error("Error deserializing KafkaStub from JSON", e);
                     throw new RuntimeException("Error deserializing KafkaStub from JSON", e);
                 }
-            }, topic, status);
+            }, topic, status.name());
     }
 
     @Override
@@ -160,13 +253,42 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public KafkaStub updateStatus(String id, String status) {
+    public KafkaStub updateStatus(String id, StubStatus status) {
         Optional<KafkaStub> stubOpt = findById(id);
         if (stubOpt.isPresent()) {
             KafkaStub stub = stubOpt.get();
-            stub.setStatus(status);
-            stub.setUpdatedAt(LocalDateTime.now());
-            return save(stub);
+            KafkaStub updatedStub = new KafkaStub(
+                stub.id(),
+                stub.name(),
+                stub.description(),
+                stub.userId(),
+                stub.requestTopic(),
+                stub.responseTopic(),
+                stub.requestContentFormat(),
+                stub.responseContentFormat(),
+                stub.requestContentMatcher(),
+                stub.keyMatchType(),
+                stub.keyPattern(),
+                stub.contentMatchType(),
+                stub.valuePattern(),
+                stub.contentPattern(),
+                stub.caseSensitive(),
+                stub.responseType(),
+                stub.responseKey(),
+                stub.responseContent(),
+                stub.useResponseSchemaRegistry(),
+                stub.responseSchemaId(),
+                stub.responseSchemaSubject(),
+                stub.responseSchemaVersion(),
+                stub.latency(),
+                status,
+                stub.createdAt(),
+                LocalDateTime.now(),
+                stub.callbackUrl(),
+                stub.callbackHeaders(),
+                stub.tags()
+            );
+            return save(updatedStub);
         } else {
             throw new RuntimeException("Kafka stub not found with id: " + id);
         }
@@ -224,7 +346,7 @@ public class SybaseKafkaStubRepository implements KafkaStubRepository {
 
     @Override
     public void delete(KafkaStub stub) {
-        deleteById(stub.getId());
+        deleteById(stub.id());
     }
 
     @Override

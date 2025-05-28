@@ -42,7 +42,7 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     @Override
     public List<KafkaStub> findActiveStubsByRequestTopic(String topic) {
         Query query = new Query(Criteria.where("requestTopic").is(topic)
-                .and("status").is(StubStatus.ACTIVE.name().toLowerCase()));
+                .and("status").is(StubStatus.ACTIVE));
         return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
     }
 
@@ -64,7 +64,7 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public KafkaStub updateStatus(String id, String status) {
+    public KafkaStub updateStatus(String id, StubStatus status) {
         Query query = new Query(Criteria.where("id").is(id));
         Update update = new Update().set("status", status).set("updatedAt", java.time.LocalDateTime.now());
         
@@ -74,7 +74,7 @@ public class MongoKafkaStubRepository implements KafkaStubRepository {
     }
 
     @Override
-    public List<KafkaStub> findAllByTopicAndStatus(String topic, String status) {
+    public List<KafkaStub> findAllByTopicAndStatus(String topic, StubStatus status) {
         Query query = new Query(Criteria.where("requestTopic").is(topic).and("status").is(status));
         return mongoTemplate.find(query, KafkaStub.class, COLLECTION_NAME);
     }

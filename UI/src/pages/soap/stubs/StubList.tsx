@@ -237,26 +237,22 @@ const StubList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(stub.status)}`}>
-                        {stub.status}
-                      </span>̥
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => handleQuickToggle(stub.id, stub.status)}
                           disabled={togglingIds.has(stub.id)}
-                          className={`px-2 py-1 text-xs font-medium rounded border transition-colors ${stub.status === 'ACTIVE'
-                            ? 'border-red-300 text-red-700 hover:bg-red-50'
-                            : 'border-green-300 text-green-700 hover:bg-green-50'
-                            } ${togglingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title={stub.status === 'ACTIVE' ? 'Mark as Inactive' : 'Mark as Active'}
+                          className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${stub.status === 'active'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                          } ${togglingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {togglingIds.has(stub.id)
-                            ? '...'
-                            : (stub.status === 'ACTIVE' ? 'Deactivate' : 'Activate')
-                          }
+                          <span className={`mr-1.5 inline-block w-2 h-2 rounded-full ${stub.status.toLowerCase() === 'active' ? 'bg-green-500' : 'bg-gray-400'
+                          }`}></span>
+                        {togglingIds.has(stub.id) ? 'Updating...' : stub.status}
+                          
                         </button>
                       </div>
-                    </div>̥
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {stub.createdAt ? new Date(stub.createdAt).toLocaleDateString() : '-'}

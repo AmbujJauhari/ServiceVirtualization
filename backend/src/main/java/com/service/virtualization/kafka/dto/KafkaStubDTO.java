@@ -1,6 +1,8 @@
 package com.service.virtualization.kafka.dto;
 
+import com.service.virtualization.model.StubStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 public record KafkaStubDTO(
@@ -43,7 +45,8 @@ public record KafkaStubDTO(
     String callbackUrl,
     Map<String, String> callbackHeaders,
     
-    String status,
+    StubStatus status,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    List<String> tags
 ) {} 

@@ -11,6 +11,14 @@ export enum ContentMatchType {
   REGEX = 'REGEX'
 }
 
+export enum StubStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  STUB_NOT_REGISTERED = 'STUB_NOT_REGISTERED',
+  ARCHIVED = 'ARCHIVED',
+  DRAFT = 'DRAFT'
+}
+
 export interface KafkaStub {
   id: string;
   name: string;
@@ -44,13 +52,13 @@ export interface KafkaStub {
   callbackUrl?: string;
   callbackHeaders?: Record<string, string>;
   
-  // Status - simplified approach: only active/inactive
-  status: string; // 'active' or 'inactive'
+  // Status - using proper enum
+  status: StubStatus;
   
   // Metadata
   createdAt: string;
   updatedAt: string;
-  tags?: string[];
+  tags: string[];
 }
 
 // Request types for publishing
@@ -107,7 +115,7 @@ export const kafkaApi = createApi({
       invalidatesTags: ['KafkaStub']
     }),
     
-    updateKafkaStubStatus: builder.mutation<KafkaStub, { id: string; status: string }>({
+    updateKafkaStubStatus: builder.mutation<KafkaStub, { id: string; status: StubStatus }>({
       query: ({ id, status }) => ({
         url: `/kafka/stubs/${id}/status`,
         method: 'PATCH',

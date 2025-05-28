@@ -53,10 +53,10 @@ public class KafkaCallbackService {
      * @param requestMessage The original request message
      */
     public void executeCallback(KafkaStub stub, String requestTopic, String requestKey, String requestMessage) {
-        String callbackUrl = stub.getCallbackUrl();
+        String callbackUrl = stub.callbackUrl();
         
         if (callbackUrl == null || callbackUrl.trim().isEmpty()) {
-            logger.warn("No callback URL configured for stub: {}", stub.getName());
+            logger.warn("No callback URL configured for stub: {}", stub.name());
             return;
         }
         
@@ -70,7 +70,7 @@ public class KafkaCallbackService {
             }
             
         } catch (Exception e) {
-            logger.error("💥 Error executing callback for stub '{}': {}", stub.getName(), e.getMessage(), e);
+            logger.error("💥 Error executing callback for stub '{}': {}", stub.name(), e.getMessage(), e);
         }
     }
     
@@ -93,8 +93,8 @@ public class KafkaCallbackService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             
             // Add custom headers from stub configuration
-            if (stub.getCallbackHeaders() != null) {
-                stub.getCallbackHeaders().forEach((key, value) -> {
+            if (stub.callbackHeaders() != null) {
+                stub.callbackHeaders().forEach((key, value) -> {
                     headers.add(key, value);
                 });
             }
@@ -102,8 +102,8 @@ public class KafkaCallbackService {
             // Add metadata headers
             headers.add("X-Kafka-Request-Topic", requestTopic);
             headers.add("X-Kafka-Request-Key", requestKey != null ? requestKey : "");
-            headers.add("X-Stub-Name", stub.getName());
-            headers.add("X-Stub-Id", stub.getId());
+            headers.add("X-Stub-Name", stub.name());
+            headers.add("X-Stub-Id", stub.id());
             
             // Prepare request payload for webhook
             Map<String, Object> requestPayload = createWebhookRequestPayload(stub, requestTopic, requestKey, requestMessage);
@@ -111,7 +111,7 @@ public class KafkaCallbackService {
             // Create HTTP entity
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
             
-            logger.info("🔗 Calling webhook for stub '{}' at URL: {}", stub.getName(), callbackUrl);
+            logger.info("🔗 Calling webhook for stub '{}' at URL: {}", stub.name(), callbackUrl);
             logger.debug("📤 Webhook request payload: {}", requestPayload);
             
             // Call webhook
@@ -123,7 +123,7 @@ public class KafkaCallbackService {
             );
             
             logger.info("✅ Webhook call successful for stub '{}'. Status: {}", 
-                       stub.getName(), response.getStatusCode());
+                       stub.name(), response.getStatusCode());
             logger.debug("📨 Webhook response: {}", response.getBody());
             
             // Parse webhook response
@@ -131,7 +131,7 @@ public class KafkaCallbackService {
             
         } catch (RestClientException e) {
             logger.error("❌ Webhook call failed for stub '{}' to URL: {}. Error: {}", 
-                        stub.getName(), callbackUrl, e.getMessage());
+                        stub.name(), callbackUrl, e.getMessage());
             return null;
         }
     }
@@ -143,8 +143,8 @@ public class KafkaCallbackService {
         Map<String, Object> payload = new HashMap<>();
         
         // Stub information
-        payload.put("stubId", stub.getId());
-        payload.put("stubName", stub.getName());
+        payload.put("stubId", stub.id());
+        payload.put("stubName", stub.name());
         
         // Request information
         Map<String, Object> request = new HashMap<>();
@@ -201,7 +201,7 @@ public class KafkaCallbackService {
             // 3. Auto-generated from request topic (fallback)
             String responseTopic = callbackResponse.getResponseTopic();
             if (responseTopic == null || responseTopic.trim().isEmpty()) {
-                responseTopic = stub.getResponseTopic();
+                responseTopic = stub.responseTopic();
                 if (responseTopic == null || responseTopic.trim().isEmpty()) {
                     responseTopic = requestTopic + "-response";
                 }
@@ -223,15 +223,15 @@ public class KafkaCallbackService {
             // Prepare headers with format information
             Map<String, String> kafkaHeaders = new HashMap<>();
             kafkaHeaders.put("content-format", callbackResponse.getResponseFormat());
-            kafkaHeaders.put("source-stub-id", stub.getId());
-            kafkaHeaders.put("source-stub-name", stub.getName());
+            kafkaHeaders.put("source-stub-id", stub.id());
+            kafkaHeaders.put("source-stub-name", stub.name());
             kafkaHeaders.put("response-type", "callback");
             kafkaHeaders.put("response-source", "webhook");
             
             // Add responseTopic source information
             if (callbackResponse.getResponseTopic() != null && !callbackResponse.getResponseTopic().trim().isEmpty()) {
                 kafkaHeaders.put("response-topic-source", "webhook");
-            } else if (stub.getResponseTopic() != null && !stub.getResponseTopic().trim().isEmpty()) {
+            } else if (stub.responseTopic() != null && !stub.responseTopic().trim().isEmpty()) {
                 kafkaHeaders.put("response-topic-source", "stub");
             } else {
                 kafkaHeaders.put("response-topic-source", "auto-generated");
@@ -265,12 +265,12 @@ public class KafkaCallbackService {
                 try {
                     executeCallback(stub, requestTopic, requestKey, requestMessage);
                     success = true;
-                    logger.info("✅ Callback with retry successful for stub '{}' on attempt {}", stub.getName(), attempt + 1);
+                    logger.info("✅ Callback with retry successful for stub '{}' on attempt {}", stub.name(), attempt + 1);
                 } catch (Exception e) {
                     attempt++;
                     if (attempt <= maxRetries) {
                         logger.warn("🔄 Callback attempt {} failed for stub '{}', retrying... Error: {}", 
-                                   attempt, stub.getName(), e.getMessage());
+                                   attempt, stub.name(), e.getMessage());
                         try {
                             Thread.sleep(1000 * attempt); // Exponential backoff
                         } catch (InterruptedException ie) {
@@ -279,7 +279,7 @@ public class KafkaCallbackService {
                         }
                     } else {
                         logger.error("💀 All callback attempts failed for stub '{}' after {} tries. Last error: {}", 
-                                    stub.getName(), maxRetries, e.getMessage());
+                                    stub.name(), maxRetries, e.getMessage());
                     }
                 }
             }

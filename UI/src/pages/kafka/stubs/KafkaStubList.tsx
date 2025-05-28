@@ -4,13 +4,14 @@ import {
   useGetKafkaStubsQuery,
   useDeleteKafkaStubMutation,
   useUpdateKafkaStubStatusMutation,
-  KafkaStub
+  KafkaStub,
+  StubStatus
 } from '../../../api/kafkaApi';
 
 const KafkaStubList: React.FC = () => {
   const { data: stubs, isLoading, isError, refetch } = useGetKafkaStubsQuery();
   const [deleteStub] = useDeleteKafkaStubMutation();
-  const [updateStatus] = useUpdateKafkaStubStatusMutation();
+  const [updateStubStatus] = useUpdateKafkaStubStatusMutation();
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
@@ -19,7 +20,7 @@ const KafkaStubList: React.FC = () => {
 
   const filteredStubs = stubs?.filter(stub => {
     if (!filter) return true;
-    
+
     const lowerFilter = filter.toLowerCase();
     const name = stub.name?.toLowerCase() || '';
     const description = stub.description?.toLowerCase() || '';
@@ -27,13 +28,14 @@ const KafkaStubList: React.FC = () => {
     const responseTopic = stub.responseTopic?.toLowerCase() || '';
     const keyPattern = stub.keyPattern?.toLowerCase() || '';
     const requestMatcher = stub.requestContentMatcher?.toLowerCase() || '';
-    
+
     return name.includes(lowerFilter) ||
       description.includes(lowerFilter) ||
       requestTopic.includes(lowerFilter) ||
       responseTopic.includes(lowerFilter) ||
       keyPattern.includes(lowerFilter) ||
-      requestMatcher.includes(lowerFilter);
+      requestMatcher.includes(lowerFilter) ||
+      (stub.tags && stub.tags.some(tag => tag.toLowerCase().includes(lowerFilter)));
   });
 
   const handleDelete = async (id: string) => {
@@ -54,11 +56,11 @@ const KafkaStubList: React.FC = () => {
     }
   };
 
-  const handleStatusToggle = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  const handleStatusToggle = async (id: string, currentStatus: StubStatus) => {
+    const newStatus = currentStatus === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE;
     try {
       setTogglingIds(prev => new Set(prev).add(id));
-      await updateStatus({ id, status: newStatus });
+      await updateStubStatus({ id, status: newStatus });
     } catch (err) {
       console.error('Error updating Kafka stub status:', err);
       setError('Failed to update Kafka stub status. Please try again.');
@@ -69,6 +71,29 @@ const KafkaStubList: React.FC = () => {
         return newSet;
       });
     }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: StubStatus) => {
+    try {
+      setTogglingIds(prev => new Set(prev).add(id));
+      await updateStubStatus({ id, status: newStatus });
+      // Refetch to update the list
+      refetch();
+    } catch (error) {
+      console.error("Error updating stub status:", error);
+      setError('Failed to update status. Please try again.');
+    } finally {
+      setTogglingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleQuickToggle = async (id: string, currentStatus: StubStatus) => {
+    const newStatus = currentStatus === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE;
+    await handleStatusChange(id, newStatus);
   };
 
   const handleEditStub = (id: string) => {
@@ -102,8 +127,8 @@ const KafkaStubList: React.FC = () => {
       {error && (
         <div className="p-3 m-4 bg-red-100 text-red-700 rounded">
           {error}
-          <button 
-            onClick={() => setError(null)} 
+          <button
+            onClick={() => setError(null)}
             className="ml-2 text-red-700 hover:text-red-900"
           >
             ✕
@@ -128,6 +153,7 @@ const KafkaStubList: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topics</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formats</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -136,7 +162,7 @@ const KafkaStubList: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredStubs?.map((stub) => {
                 const created = stub.createdAt ? stub.createdAt : 'N/A';
-                
+
                 return (
                   <tr key={stub.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -166,45 +192,57 @@ const KafkaStubList: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        stub.responseType === 'callback' 
-                          ? 'bg-purple-100 text-purple-800' 
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${stub.responseType === 'callback'
+                          ? 'bg-purple-100 text-purple-800'
                           : 'bg-blue-100 text-blue-800'
-                      }`}>
+                        }`}>
                         {stub.responseType === 'callback' ? 'Webhook' : 'Direct'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex flex-wrap gap-1">
+                        {stub.tags && stub.tags.length > 0 ? (
+                          stub.tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 text-xs">No tags</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleStatusToggle(stub.id, stub.status)}
                         disabled={togglingIds.has(stub.id)}
-                        className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${
-                          stub.status === 'active' 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                        className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${stub.status === StubStatus.ACTIVE
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                        } ${togglingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          } ${togglingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <span className={`mr-1.5 inline-block w-2 h-2 rounded-full ${
-                          stub.status === 'active' ? 'bg-green-500' : 'bg-gray-400'
-                        }`}></span>
+                        <span className={`mr-1.5 inline-block w-2 h-2 rounded-full ${stub.status === StubStatus.ACTIVE ? 'bg-green-500' : 'bg-gray-400'
+                          }`}></span>
                         {togglingIds.has(stub.id) ? 'Updating...' : stub.status}
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{created}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
                       <div className="flex justify-end space-x-2">
-                        <button 
+                        <button
                           onClick={() => handleEditStub(stub.id)}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(stub.id)}
                           disabled={deletingIds.has(stub.id)}
-                          className={`text-red-600 hover:text-red-900 ${
-                            deletingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
+                          className={`text-red-600 hover:text-red-900 ${deletingIds.has(stub.id) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                         >
                           {deletingIds.has(stub.id) ? 'Deleting...' : 'Delete'}
                         </button>

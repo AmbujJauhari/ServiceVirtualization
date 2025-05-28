@@ -64,7 +64,7 @@ public interface KafkaStubRepository {
      * @param status the new status
      * @return the updated stub
      */
-    KafkaStub updateStatus(String id, String status);
+    KafkaStub updateStatus(String id, StubStatus status);
     
     /**
      * Check if a Kafka stub exists by id
@@ -81,7 +81,7 @@ public interface KafkaStubRepository {
      * @param status the status
      * @return list of matching stubs
      */
-    List<KafkaStub> findAllByTopicAndStatus(String topic, String status);
+    List<KafkaStub> findAllByTopicAndStatus(String topic, StubStatus status);
 
     List<KafkaStub> findByUserId(String userId);
     List<KafkaStub> findByUserIdAndStatus(String userId, StubStatus status);

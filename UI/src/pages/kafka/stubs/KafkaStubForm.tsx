@@ -62,6 +62,8 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
   const [isLoadingResponseSchemas, setIsLoadingResponseSchemas] = useState(false);
   const [responseSchemaValidationError, setResponseSchemaValidationError] = useState('');
 
+  const [tagInput, setTagInput] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -85,7 +87,8 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     responseSchemaVersion: 'latest',
     latency: undefined as number | undefined,
     callbackUrl: '',
-    status: 'active'
+    status: 'active',
+    tags: [] as string[],
   });
 
   // Update form when existing stub data is loaded
@@ -291,6 +294,38 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     }
   };
 
+  // Add a tag
+  const addTag = () => {
+    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+      setFormData({
+        ...formData,
+        tags: [...formData.tags, tagInput.trim()]
+      });
+      setTagInput('');
+    }
+  };
+
+  // Remove a tag
+  const removeTag = (tagToRemove: string) => {
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter(tag => tag !== tagToRemove)
+    });
+  };
+
+   // Handle tag input
+   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(e.target.value);
+  };
+
+  // Handle Enter key in tag input
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -394,6 +429,50 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                 </div>
               </div>
             </div>
+            <div>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    id="tagInput"
+                    value={tagInput}
+                    onChange={handleTagInputChange}
+                    onKeyDown={handleTagKeyDown}
+                    className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Add tag and press Enter"
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1.5 inline-flex text-primary-500 focus:outline-none"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
 
             {/* Request Configuration */}
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">

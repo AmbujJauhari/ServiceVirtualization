@@ -80,43 +80,43 @@ public class KafkaStubListenerService {
      */
     private void processStub(KafkaStub stub, String message, String key, String topic, ConsumerRecord<String, String> record) {
         // Skip if key pattern doesn't match
-        if (stub.getKeyPattern() != null && !stub.getKeyPattern().isEmpty() && key != null) {
-            if (!Pattern.matches(stub.getKeyPattern(), key)) {
-                logger.debug("Key pattern didn't match for stub: {}", stub.getName());
+        if (stub.keyPattern() != null && !stub.keyPattern().isEmpty() && key != null) {
+            if (!Pattern.matches(stub.keyPattern(), key)) {
+                logger.debug("Key pattern didn't match for stub: {}", stub.name());
                 return;
             }
         }
         
         // Skip if value pattern doesn't match
-        if (stub.getValuePattern() != null && !stub.getValuePattern().isEmpty()) {
-            if (!Pattern.matches(stub.getValuePattern(), message)) {
-                logger.debug("Value pattern didn't match for stub: {}", stub.getName());
+        if (stub.valuePattern() != null && !stub.valuePattern().isEmpty()) {
+            if (!Pattern.matches(stub.valuePattern(), message)) {
+                logger.debug("Value pattern didn't match for stub: {}", stub.name());
                 return;
             }
         }
         
-        logger.info("Stub matched: {}", stub.getName());
+        logger.info("Stub matched: {}", stub.name());
         
         // Handle response according to stub configuration
-        if ("direct".equals(stub.getResponseType())) {
+        if ("direct".equals(stub.responseType())) {
             // Add latency if specified
-            if (stub.getLatency() != null && stub.getLatency() > 0) {
+            if (stub.latency() != null && stub.latency() > 0) {
                 delayedResponse(stub, topic);
             } else {
                 sendResponse(stub, topic);
             }
-        } else if ("callback".equals(stub.getResponseType())) {
+        } else if ("callback".equals(stub.responseType())) {
             // Execute HTTP callback which will return response data and publish to Kafka
-            if (stub.getLatency() != null && stub.getLatency() > 0) {
+            if (stub.latency() != null && stub.latency() > 0) {
                 // Delayed callback
                 scheduler.schedule(() -> {
                     kafkaCallbackService.executeCallbackAsync(stub, topic, key, message);
-                }, stub.getLatency(), TimeUnit.MILLISECONDS);
+                }, stub.latency(), TimeUnit.MILLISECONDS);
             } else {
                 // Immediate callback
                 kafkaCallbackService.executeCallbackAsync(stub, topic, key, message);
             }
-            logger.info("Callback execution initiated for stub: {}", stub.getName());
+            logger.info("Callback execution initiated for stub: {}", stub.name());
         }
     }
     
@@ -126,14 +126,14 @@ public class KafkaStubListenerService {
     private void delayedResponse(KafkaStub stub, String topic) {
         scheduler.schedule(() -> {
             sendResponse(stub, topic);
-        }, stub.getLatency(), TimeUnit.MILLISECONDS);
+        }, stub.latency(), TimeUnit.MILLISECONDS);
     }
     
     /**
      * Send response message
      */
     private void sendResponse(KafkaStub stub, String requestTopic) {
-        String responseTopic = stub.getResponseTopic();
+        String responseTopic = stub.responseTopic();
         
         // If no response topic is configured, use request topic with "-response" suffix
         if (responseTopic == null || responseTopic.trim().isEmpty()) {
@@ -151,11 +151,11 @@ public class KafkaStubListenerService {
         // Publish the response message with responseKey from stub
         kafkaMessageService.publishMessage(
             responseTopic,
-            stub.getResponseKey(), // Use responseKey from stub instead of null
-            stub.getResponseContent(),
+            stub.responseKey(), // Use responseKey from stub instead of null
+            stub.responseContent(),
             headers
         );
         
-        logger.info("Response sent to topic: {} with key: {}", responseTopic, stub.getResponseKey());
+        logger.info("Response sent to topic: {} with key: {}", responseTopic, stub.responseKey());
     }
 } 

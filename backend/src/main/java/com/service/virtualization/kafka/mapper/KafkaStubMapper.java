@@ -4,6 +4,10 @@ import com.service.virtualization.kafka.dto.KafkaStubDTO;
 import com.service.virtualization.kafka.model.KafkaStub;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Mapper for converting between KafkaStub entity and DTO
  */
@@ -18,48 +22,49 @@ public class KafkaStubMapper {
      */
     public KafkaStubDTO toDTO(KafkaStub stub) {
         return new KafkaStubDTO(
-            stub.getId(),
-            stub.getName(),
-            stub.getDescription(),
-            stub.getUserId(),
-            stub.getRequestTopic(),
-            stub.getResponseTopic(),
-            
-            // Content formats and matching
-            stub.getRequestContentFormat(),
-            stub.getResponseContentFormat(),
-            stub.getRequestContentMatcher(),
-            
-            // Key matching
-            stub.getKeyMatchType(),
-            stub.getKeyPattern(),
-            
-            // Content/Value matching
-            stub.getContentMatchType(),
-            stub.getValuePattern(), // Legacy field
-            stub.getContentPattern(), // New field
-            stub.getCaseSensitive(),
-            
-            // Response configuration
-            stub.getResponseType(),
-            stub.getResponseKey(),
-            stub.getResponseContent(),
-            
-            // Schema Registry fields
-            stub.getUseResponseSchemaRegistry(),
-            stub.getResponseSchemaId(),
-            stub.getResponseSchemaSubject(),
-            stub.getResponseSchemaVersion(),
-            
-            stub.getLatency(),
-            
-            // Callback configuration
-            stub.getCallbackUrl(),
-            stub.getCallbackHeaders(),
-            
-            stub.getStatus(),
-            stub.getCreatedAt(),
-            stub.getUpdatedAt()
+                stub.id(),
+                stub.name(),
+                stub.description(),
+                stub.userId(),
+                stub.requestTopic(),
+                stub.responseTopic(),
+
+                // Content formats and matching
+                stub.requestContentFormat(),
+                stub.responseContentFormat(),
+                stub.requestContentMatcher(),
+
+                // Key matching
+                stub.keyMatchType(),
+                stub.keyPattern(),
+
+                // Content/Value matching
+                stub.contentMatchType(),
+                stub.valuePattern(), // Legacy field
+                stub.contentPattern(), // New field
+                stub.caseSensitive(),
+
+                // Response configuration
+                stub.responseType(),
+                stub.responseKey(),
+                stub.responseContent(),
+
+                // Schema Registry fields
+                stub.useResponseSchemaRegistry(),
+                stub.responseSchemaId(),
+                stub.responseSchemaSubject(),
+                stub.responseSchemaVersion(),
+
+                stub.latency(),
+
+                // Callback configuration
+                stub.callbackUrl(),
+                stub.callbackHeaders(),
+
+                stub.status(),
+                stub.createdAt(),
+                stub.updatedAt(),
+                stub.tags() != null ? stub.tags() : new ArrayList<>()
         );
     }
 
@@ -70,49 +75,50 @@ public class KafkaStubMapper {
      * @return The KafkaStub entity
      */
     public KafkaStub toModel(KafkaStubDTO dto) {
-        KafkaStub stub = new KafkaStub();
-        stub.setId(dto.id());
-        stub.setName(dto.name());
-        stub.setDescription(dto.description());
-        stub.setUserId(dto.userId());
-        stub.setRequestTopic(dto.requestTopic());
-        stub.setResponseTopic(dto.responseTopic());
-        
-        // Content formats and matching
-        stub.setRequestContentFormat(dto.requestContentFormat());
-        stub.setResponseContentFormat(dto.responseContentFormat());
-        stub.setRequestContentMatcher(dto.requestContentMatcher());
-        
-        // Key matching
-        stub.setKeyMatchType(dto.keyMatchType());
-        stub.setKeyPattern(dto.keyPattern());
-        
-        // Content/Value matching
-        stub.setContentMatchType(dto.contentMatchType());
-        stub.setValuePattern(dto.valuePattern()); // Legacy field
-        stub.setContentPattern(dto.contentPattern()); // New field
-        stub.setCaseSensitive(dto.caseSensitive());
-        
-        // Response configuration
-        stub.setResponseType(dto.responseType());
-        stub.setResponseKey(dto.responseKey());
-        stub.setResponseContent(dto.responseContent());
-        
-        // Callback configuration
-        stub.setCallbackUrl(dto.callbackUrl());
-        stub.setCallbackHeaders(dto.callbackHeaders());
-        
-        // Schema Registry fields (transient/UI-only)
-        stub.setUseResponseSchemaRegistry(dto.useResponseSchemaRegistry());
-        stub.setResponseSchemaId(dto.responseSchemaId());
-        stub.setResponseSchemaSubject(dto.responseSchemaSubject());
-        stub.setResponseSchemaVersion(dto.responseSchemaVersion());
-        
-        stub.setLatency(dto.latency());
-        stub.setStatus(dto.status());
-        stub.setCreatedAt(dto.createdAt());
-        stub.setUpdatedAt(dto.updatedAt());
-        
-        return stub;
+        return new KafkaStub(
+                dto.id(),
+                dto.name(),
+                dto.description(),
+                dto.userId(),
+                dto.requestTopic(),
+                dto.responseTopic(),
+
+                // Content formats and matching
+                dto.requestContentFormat(),
+                dto.responseContentFormat(),
+                dto.requestContentMatcher(),
+
+                // Key matching
+                dto.keyMatchType(),
+                dto.keyPattern(),
+
+                // Content/Value matching
+                dto.contentMatchType(),
+                dto.valuePattern(), // Legacy field
+                dto.contentPattern(), // New field
+                dto.caseSensitive(),
+
+                // Response configuration
+                dto.responseType(),
+                dto.responseKey(),
+                dto.responseContent(),
+
+                // Schema Registry fields (transient/UI-only)
+                dto.useResponseSchemaRegistry(),
+                dto.responseSchemaId(),
+                dto.responseSchemaSubject(),
+                dto.responseSchemaVersion(),
+
+                dto.latency(),
+                dto.status(),
+                dto.createdAt() != null ? dto.createdAt() : LocalDateTime.now(),
+                dto.updatedAt() != null ? dto.updatedAt() : LocalDateTime.now(),
+
+                // Callback configuration
+                dto.callbackUrl(),
+                dto.callbackHeaders(),
+
+                dto.tags() != null ? dto.tags() : List.of()
+        );
     }
 } 
