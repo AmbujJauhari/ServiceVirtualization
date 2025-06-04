@@ -1,7 +1,6 @@
 package com.service.virtualization.ibmmq.controller;
 
 import com.service.virtualization.ibmmq.model.IBMMQStub;
-import com.service.virtualization.ibmmq.dto.IBMMQStubDTO;
 import com.service.virtualization.ibmmq.service.IBMMQStubService;
 import com.service.virtualization.model.MessageHeader;
 import com.service.virtualization.model.StubStatus;
@@ -12,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,75 +38,51 @@ public class IBMMQStubController {
      * Create a new IBM MQ stub
      */
     @PostMapping
-    public ResponseEntity<IBMMQStubDTO> createStub(@RequestBody IBMMQStubDTO stubDTO) {
-        logger.info("Creating new IBM MQ stub: {}", stubDTO.name());
-
-        // Convert DTO to entity
-        IBMMQStub stub = convertToEntity(stubDTO);
+    public ResponseEntity<IBMMQStub> createStub(@RequestBody IBMMQStub stub) {
+        logger.info("Creating new IBM MQ stub: {}", stub.getName());
 
         // Save the entity
         IBMMQStub createdStub = ibmMQStubService.create(stub);
 
         // Convert back to DTO and return
-        return new ResponseEntity<>(convertToDTO(createdStub), HttpStatus.CREATED);
+        return new ResponseEntity<>(createdStub, HttpStatus.CREATED);
     }
 
     /**
      * Get all IBM MQ stubs
      */
     @GetMapping
-    public ResponseEntity<List<IBMMQStubDTO>> getAllStubs() {
+    public ResponseEntity<List<IBMMQStub>> getAllStubs() {
         logger.info("Fetching all IBM MQ stubs");
 
         List<IBMMQStub> stubs = ibmMQStubService.findAll();
-        List<IBMMQStubDTO> stubDTOs = stubs.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(stubDTOs);
+        return ResponseEntity.ok(stubs);
     }
 
     /**
      * Get IBM MQ stubs by user ID
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<IBMMQStubDTO>> getStubsByUser(@PathVariable String userId) {
+    public ResponseEntity<List<IBMMQStub>> getStubsByUser(@PathVariable String userId) {
         logger.info("Fetching IBM MQ stubs for user: {}", userId);
 
         List<IBMMQStub> stubs = ibmMQStubService.findByUserId(userId);
-        List<IBMMQStubDTO> stubDTOs = stubs.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(stubDTOs);
-    }
-
-    /**
-     * Get IBM MQ stubs by user ID and active status
-     */
-    @GetMapping("/user/{userId}/active")
-    public ResponseEntity<List<IBMMQStubDTO>> getActiveStubsByUser(@PathVariable String userId) {
-        logger.info("Fetching active IBM MQ stubs for user: {}", userId);
-
-        List<IBMMQStub> stubs = ibmMQStubService.findActiveByUserId(userId);
-        List<IBMMQStubDTO> stubDTOs = stubs.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(stubDTOs);
+        return ResponseEntity.ok(stubs);
     }
 
     /**
      * Get a IBM MQ stub by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<IBMMQStubDTO> getStubById(@PathVariable String id) {
+    public ResponseEntity<IBMMQStub> getStubById(@PathVariable String id) {
         logger.info("Fetching IBM MQ stub with ID: {}", id);
 
         Optional<IBMMQStub> stubOptional = ibmMQStubService.findById(id);
 
         return stubOptional
-                .map(stub -> ResponseEntity.ok(convertToDTO(stub)))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -116,17 +90,15 @@ public class IBMMQStubController {
      * Update an existing IBM MQ stub
      */
     @PutMapping("/{id}")
-    public ResponseEntity<IBMMQStubDTO> updateStub(@PathVariable String id, @RequestBody IBMMQStubDTO stubDTO) {
+    public ResponseEntity<IBMMQStub> updateStub(@PathVariable String id, @RequestBody IBMMQStub stub) {
         logger.info("Updating IBM MQ stub with ID: {}", id);
 
-        // Convert DTO to entity
-        IBMMQStub stub = convertToEntity(stubDTO);
 
         // Update the entity
         IBMMQStub updatedStub = ibmMQStubService.update(id, stub);
 
         // Convert back to DTO and return
-        return ResponseEntity.ok(convertToDTO(updatedStub));
+        return ResponseEntity.ok(updatedStub);
     }
 
     /**
@@ -134,6 +106,7 @@ public class IBMMQStubController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStub(@PathVariable String id) {
+
         logger.info("Deleting IBM MQ stub with ID: {}", id);
 
         ibmMQStubService.delete(id);
@@ -145,7 +118,7 @@ public class IBMMQStubController {
      * Update the status of an IBM MQ stub
      */
     @PatchMapping("/{id}/status")
-    public ResponseEntity<IBMMQStubDTO> updateStubStatus(@PathVariable String id, @RequestBody Map<String, String> statusUpdate) {
+    public ResponseEntity<IBMMQStub> updateStubStatus(@PathVariable String id, @RequestBody Map<String, String> statusUpdate) {
         StubStatus status = StubStatus.valueOf(statusUpdate.get("status"));
 
         if (status == null) {
@@ -156,63 +129,19 @@ public class IBMMQStubController {
 
         IBMMQStub updatedStub = ibmMQStubService.updateStatus(id, status);
 
-        return ResponseEntity.ok(convertToDTO(updatedStub));
+        return ResponseEntity.ok(updatedStub);
     }
 
     /**
-     * Add a header to an IBM MQ stub
+     * Toggle the status of an IBM MQ stub
      */
-    @PostMapping("/{id}/headers")
-    public ResponseEntity<IBMMQStubDTO> addStubHeader(@PathVariable String id, @RequestBody MessageHeader header) {
-        logger.info("Adding header to IBM MQ stub with ID: {}", id);
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<IBMMQStub> toggleStubStatus(@PathVariable String id) {
+        logger.info("Toggling status of IBM MQ stub with ID: {}", id);
 
-        IBMMQStub updatedStub = ibmMQStubService.addHeader(id, header);
+        IBMMQStub updatedStub = ibmMQStubService.toggleStubStatus(id);
 
-        return ResponseEntity.ok(convertToDTO(updatedStub));
-    }
-
-    /**
-     * Remove a header from an IBM MQ stub
-     */
-    @DeleteMapping("/{id}/headers/{headerName}")
-    public ResponseEntity<IBMMQStubDTO> removeStubHeader(@PathVariable String id, @PathVariable String headerName) {
-        logger.info("Removing header '{}' from IBM MQ stub with ID: {}", headerName, id);
-
-        IBMMQStub updatedStub = ibmMQStubService.removeHeader(id, headerName);
-
-        return ResponseEntity.ok(convertToDTO(updatedStub));
-    }
-
-    /**
-     * Get IBM MQ stubs by queue name
-     */
-    @GetMapping("/queue/{queueName}")
-    public ResponseEntity<List<IBMMQStubDTO>> getStubsByQueueName(@PathVariable String queueName) {
-        logger.info("Fetching IBM MQ stubs for queue: {}", queueName);
-
-        List<IBMMQStub> stubs = ibmMQStubService.findByQueueName(queueName);
-        List<IBMMQStubDTO> stubDTOs = stubs.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(stubDTOs);
-    }
-
-    /**
-     * Get IBM MQ stubs by queue manager and queue name
-     */
-    @GetMapping("/manager/{queueManager}/queue/{queueName}")
-    public ResponseEntity<List<IBMMQStubDTO>> getStubsByQueueManagerAndName(
-            @PathVariable String queueManager,
-            @PathVariable String queueName) {
-        logger.info("Fetching IBM MQ stubs for queue manager: {} and queue: {}", queueManager, queueName);
-
-        List<IBMMQStub> stubs = ibmMQStubService.findByQueueManagerAndName(queueManager, queueName);
-        List<IBMMQStubDTO> stubDTOs = stubs.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(stubDTOs);
+        return ResponseEntity.ok(updatedStub);
     }
 
     /**
@@ -257,70 +186,4 @@ public class IBMMQStubController {
             ));
         }
     }
-
-    /**
-     * Convert a DTO to an entity
-     */
-    private IBMMQStub convertToEntity(IBMMQStubDTO dto) {
-        IBMMQStub entity = new IBMMQStub();
-
-        if (dto.id() != null) {
-            entity.setId(dto.id());
-        }
-
-        entity.setName(dto.name());
-        entity.setDescription(dto.description());
-        entity.setUserId(dto.userId());
-        entity.setQueueManager(dto.queueManager());
-        entity.setQueueName(dto.queueName());
-        entity.setSelector(dto.selector());
-        
-        // Standardized content matching fields
-        entity.setContentMatchType(dto.contentMatchType() != null ? dto.contentMatchType() : IBMMQStub.ContentMatchType.NONE);
-        entity.setContentPattern(dto.contentPattern());
-        entity.setCaseSensitive(dto.caseSensitive() != null ? dto.caseSensitive() : false);
-        entity.setPriority(dto.priority() != null ? dto.priority() : 0);
-        
-        entity.setResponseContent(dto.responseContent());
-        entity.setResponseType(dto.responseType());
-        entity.setLatency(dto.latency());
-        entity.setHeaders(dto.headers());
-        entity.setStatus(dto.status() != null ? dto.status() : StubStatus.INACTIVE);
-
-        // Handle dates - use DTO dates if present, otherwise use current time
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreatedAt(dto.createdAt() != null ? dto.createdAt() : now);
-        entity.setUpdatedAt(dto.updatedAt() != null ? dto.updatedAt() : now);
-
-        return entity;
-    }
-
-    /**
-     * Convert an entity to a DTO
-     */
-    private IBMMQStubDTO convertToDTO(IBMMQStub entity) {
-        return new IBMMQStubDTO(
-                entity.getId(),
-                entity.getName(),
-                entity.getDescription(),
-                entity.getUserId(),
-                entity.getQueueManager(),
-                entity.getQueueName(),
-                entity.getSelector(),
-                
-                // Standardized content matching fields
-                entity.getContentMatchType(),
-                entity.getContentPattern(),
-                entity.isCaseSensitive(),
-                entity.getPriority(),
-                
-                entity.getResponseContent(),
-                entity.getResponseType(),
-                entity.getLatency(),
-                entity.getHeaders(),
-                entity.getStatus(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
-    }
-} 
+}

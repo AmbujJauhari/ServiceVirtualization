@@ -50,11 +50,11 @@ public record KafkaStub(
     StubStatus status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    
+
     // Callback configuration
     String callbackUrl,
     Map<String, String> callbackHeaders,
-    
+
     List<String> tags
 ) {
     /**

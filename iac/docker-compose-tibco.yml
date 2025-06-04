@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  tibco-ems:
+    image: kytay/tibco-ems:latest
+    container_name: tibco-ems
+    ports:
+      - "7222:7222"
+    tmpfs:
+      - /opt/tibco/ems/current:rw,exec,suid,size=200m
+    working_dir: /opt/tibco/ems/current
+    command: >
+      sh -c "
+      echo 'server=EMS-SERVER' > tibemsd.conf &&
+      echo 'listen=tcp://0.0.0.0:7222' >> tibemsd.conf &&
+      echo 'user_auth=none' >> tibemsd.conf &&
+      echo 'authorization=none' >> tibemsd.conf &&
+      echo 'create_destination=enabled' >> tibemsd.conf &&
+      echo 'users=users.conf' >> tibemsd.conf &&
+      echo 'groups=groups.conf' >> tibemsd.conf &&
+      echo 'transports=transports.conf' >> tibemsd.conf &&
+      echo 'channels=channels.conf' >> tibemsd.conf &&
+      echo 'stores=stores.conf' >> tibemsd.conf &&
+      echo 'topics=topics.conf' >> tibemsd.conf &&
+      echo 'queues=queues.conf' >> tibemsd.conf &&
+      echo 'acl=acl.conf' >> tibemsd.conf &&
+      echo 'routes=routes.conf' >> tibemsd.conf &&
+      echo 'factories=factories.conf' >> tibemsd.conf &&
+      echo 'bridges=bridges.conf' >> tibemsd.conf &&
+      echo 'tibrvcm=tibrvcm.conf' >> tibemsd.conf &&
+      echo 'durables=durables.conf' >> tibemsd.conf &&
+      echo '# Allow dynamic queue creation' > queues.conf &&
+      echo '>' >> queues.conf &&
+      echo '[*]' >> queues.conf &&
+      echo 'everyone=all' >> queues.conf &&
+      echo '# Allow dynamic topic creation' > topics.conf &&
+      echo '>' >> topics.conf &&
+      echo '[*]' >> topics.conf &&
+      echo 'everyone=all' >> topics.conf &&
+      echo '# ACL Configuration - Allow all operations' > acl.conf &&
+      echo 'GRANT ALL ON QUEUE * TO everyone' >> acl.conf &&
+      echo 'GRANT ALL ON TOPIC * TO everyone' >> acl.conf &&
+      echo 'GRANT CREATE_QUEUE ON QUEUE * TO everyone' >> acl.conf &&
+      echo 'GRANT CREATE_TOPIC ON TOPIC * TO everyone' >> acl.conf &&
+      touch users.conf durables.conf tibrvcm.conf groups.conf transports.conf channels.conf stores.conf routes.conf factories.conf bridges.conf &&
+      touch meta.db sync-msgs.db async-msgs.db &&
+      chmod 666 *.conf *.db &&
+      echo 'TIBCO EMS Configuration with Dynamic Destinations:' &&
+      cat tibemsd.conf &&
+      echo 'Queue Config:' &&
+      cat queues.conf &&
+      echo 'ACL Config:' &&
+      cat acl.conf &&
+      /opt/tibco/ems/10.2/bin/tibemsd
+      "

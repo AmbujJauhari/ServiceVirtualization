@@ -1,6 +1,6 @@
-package com.service.virtualization.activemq.service;
+package com.service.virtualization.ibmmq.service;
 
-import com.service.virtualization.activemq.model.ActiveMQStub;
+import com.service.virtualization.ibmmq.model.IBMMQStub;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
@@ -13,29 +13,24 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Service for handling responses to matched ActiveMQ messages.
+ * Service for handling responses to matched IBMMQ messages.
  */
 @Service
-public class ActiveMQResponseService {
-    private static final Logger logger = LoggerFactory.getLogger(ActiveMQResponseService.class);
+public class IBMMQResponseService {
+    private static final Logger logger = LoggerFactory.getLogger(IBMMQResponseService.class);
 
     @Autowired
-    @Qualifier("activemqQueueJmsTemplate")
+    @Qualifier("ibmmqQueueJmsTemplate")
     private JmsTemplate queueJmsTemplate;
 
     @Autowired
-    @Qualifier("activemqTopicJmsTemplate")
+    @Qualifier("ibmmqTopicJmsTemplate")
     private JmsTemplate topicJmsTemplate;
 
     @Autowired
-    private ActiveMQWebhookService activeMQWebhookService;
-
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    private IBMMQWebhookService IBMMQWebhookService;
 
     /**
      * Process and send a response for a matched message.
@@ -44,37 +39,15 @@ public class ActiveMQResponseService {
      * @param message        The original JMS message
      * @param messageContent The content of the original message
      */
-    public void processResponse(ActiveMQStub stub, Message message, String messageContent) {
+    public void processResponse(IBMMQStub stub, Message message, String messageContent) {
         try {
             String responseDestination = stub.getResponseDestination();
             String responseDestinationType = stub.getResponseType();
 
-            // If no response destination is specified, use the JMSReplyTo if available
-            if (responseDestination == null || responseDestination.trim().isEmpty()) {
-                if (message.getJMSReplyTo() != null) {
-                    responseDestination = message.getJMSReplyTo().toString();
-                    // Try to determine destination type from JMSReplyTo
-                    responseDestinationType = determineDestinationTypeFromReplyTo(message.getJMSReplyTo().toString());
-                } else {
-                    logger.warn("No response destination specified and no JMSReplyTo in message for stub {}",
-                            stub.getId());
-                    return;
-                }
-            }
-
             // Process the response based on type
-            final String finalDestination = responseDestination;
-            final String finalDestinationType = responseDestinationType;
             final Map<String, String> headers = extractHeaders(message);
 
-            // Handle latency if specified
-            if (stub.getLatency() > 0) {
-                scheduler.schedule(() -> {
-                    sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
-                }, stub.getLatency(), TimeUnit.MILLISECONDS);
-            } else {
-                sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
-            }
+            sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
         } catch (Exception e) {
             logger.error("Error processing response for stub {}: {}",
                     stub.getId(), e.getMessage(), e);
@@ -90,20 +63,20 @@ public class ActiveMQResponseService {
      * @param originalMessageContent The content of the original message
      * @param headers                Headers from the original message
      */
-    private void sendResponse(ActiveMQStub stub, String destination, String destinationType,
+    private void sendResponse(IBMMQStub stub, String destination, String destinationType,
                               String originalMessageContent, Map<String, String> headers) {
         try {
             // Determine which JmsTemplate to use based on destination type
             boolean isTopic = "topic".equalsIgnoreCase(destinationType);
             JmsTemplate jmsTemplate = isTopic ? topicJmsTemplate : queueJmsTemplate;
 
-            logger.debug("Sending response to {} {} for stub {}", 
+            logger.debug("Sending response to {} {} for stub {}",
                     isTopic ? "topic" : "queue", destination, stub.getId());
 
             // Check if we should get content from webhook
             String responseContent;
             if (stub.getWebhookUrl() != null && !stub.getWebhookUrl().trim().isEmpty()) {
-                responseContent = activeMQWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
+                responseContent = IBMMQWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
             } else {
                 responseContent = stub.getResponseContent();
             }
@@ -144,26 +117,10 @@ public class ActiveMQResponseService {
                 return responseMessage;
             });
 
-            logger.info("Sent response to {} {} for stub {}", 
+            logger.info("Sent response to {} {} for stub {}",
                     isTopic ? "topic" : "queue", destination, stub.getId());
         } catch (Exception e) {
             logger.error("Error sending response: {}", e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Try to determine destination type from JMSReplyTo string.
-     * This is a best-effort approach as the format may vary.
-     */
-    private String determineDestinationTypeFromReplyTo(String replyTo) {
-        if (replyTo == null) {
-            return "queue"; // Default to queue
-        }
-        
-        if (replyTo.toLowerCase().contains("topic")) {
-            return "topic";
-        } else {
-            return "queue";
         }
     }
 

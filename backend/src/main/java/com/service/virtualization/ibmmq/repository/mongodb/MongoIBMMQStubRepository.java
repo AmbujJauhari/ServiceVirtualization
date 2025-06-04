@@ -3,11 +3,12 @@ package com.service.virtualization.ibmmq.repository.mongodb;
 import com.service.virtualization.ibmmq.model.IBMMQStub;
 import com.service.virtualization.ibmmq.repository.IBMMQStubRepository;
 import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.tibco.model.TibcoStub;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,30 +30,17 @@ public class MongoIBMMQStubRepository implements IBMMQStubRepository {
     }
 
     @Override
-    public List<IBMMQStub> findByUserIdAndStatus(String userId, StubStatus status) {
-        Query query = new Query(Criteria.where("userId").is(userId).and("status").is(status));
-        return mongoTemplate.find(query, IBMMQStub.class, COLLECTION_NAME);
+    public void deleteById(String id) {
+        Query query = new Query(Criteria.where("id").is(id));
+        mongoTemplate.remove(query, TibcoStub.class, COLLECTION_NAME);
     }
 
     @Override
-    public List<IBMMQStub> findByQueueName(String queueName) {
-        Query query = new Query(Criteria.where("queueName").is(queueName));
-        return mongoTemplate.find(query, IBMMQStub.class, COLLECTION_NAME);
+    public boolean existsById(String id) {
+        Query query = new Query(Criteria.where("id").is(id));
+        return mongoTemplate.exists(query, TibcoStub.class, COLLECTION_NAME);
     }
 
-    @Override
-    public List<IBMMQStub> findByQueueManagerAndQueueName(String queueManager, String queueName) {
-        Query query = new Query(Criteria.where("queueManager").is(queueManager).and("queueName").is(queueName));
-        return mongoTemplate.find(query, IBMMQStub.class, COLLECTION_NAME);
-    }
-
-    @Override
-    public List<IBMMQStub> findByQueueManagerAndQueueNameAndStatus(String queueManager, String queueName, StubStatus status) {
-        Query query = new Query(Criteria.where("queueManager").is(queueManager)
-                .and("queueName").is(queueName)
-                .and("status").is(status));
-        return mongoTemplate.find(query, IBMMQStub.class, COLLECTION_NAME);
-    }
 
     @Override
     public Optional<IBMMQStub> findById(String id) {
@@ -65,12 +53,13 @@ public class MongoIBMMQStubRepository implements IBMMQStubRepository {
     }
 
     @Override
-    public void delete(IBMMQStub stub) {
-        mongoTemplate.remove(stub, COLLECTION_NAME);
+    public List<IBMMQStub> findAll() {
+        return mongoTemplate.findAll(IBMMQStub.class, COLLECTION_NAME);
     }
 
     @Override
-    public List<IBMMQStub> findAll() {
-        return mongoTemplate.findAll(IBMMQStub.class, COLLECTION_NAME);
+    public List<IBMMQStub> findByStatus(StubStatus status) {
+        Query query = new Query(Criteria.where("status").is(status));
+        return mongoTemplate.find(query, IBMMQStub.class, COLLECTION_NAME);
     }
 } 

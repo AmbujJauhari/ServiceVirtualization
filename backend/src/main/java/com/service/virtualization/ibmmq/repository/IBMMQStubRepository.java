@@ -7,13 +7,57 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IBMMQStubRepository {
-    List<IBMMQStub> findByUserId(String userId);
-    List<IBMMQStub> findByUserIdAndStatus(String userId, StubStatus status);
-    List<IBMMQStub> findByQueueName(String queueName);
-    List<IBMMQStub> findByQueueManagerAndQueueName(String queueManager, String queueName);
-    List<IBMMQStub> findByQueueManagerAndQueueNameAndStatus(String queueManager, String queueName, StubStatus status);
+    /**
+     * Save a TIBCO stub.
+     *
+     * @param IBMMQStub The TIBCO stub to save
+     * @return The saved TIBCO stub
+     */
+    IBMMQStub save(IBMMQStub IBMMQStub);
+
+    /**
+     * Find a TIBCO stub by its ID.
+     *
+     * @param id The ID of the TIBCO stub
+     * @return An Optional containing the TIBCO stub if found
+     */
     Optional<IBMMQStub> findById(String id);
-    IBMMQStub save(IBMMQStub stub);
-    void delete(IBMMQStub stub);
+
+    /**
+     * Find all TIBCO stubs.
+     *
+     * @return A list of all TIBCO stubs
+     */
     List<IBMMQStub> findAll();
+
+    /**
+     * Find TIBCO stubs by status.
+     *
+     * @param status The status to filter by
+     * @return A list of TIBCO stubs with the specified status
+     */
+    List<IBMMQStub> findByStatus(StubStatus status);
+
+    /**
+     * Find TIBCO stubs by user ID.
+     *
+     * @param userId The user ID to filter by
+     * @return A list of TIBCO stubs created by the specified user
+     */
+    List<IBMMQStub> findByUserId(String userId);
+
+    /**
+     * Delete a TIBCO stub by its ID.
+     *
+     * @param id The ID of the TIBCO stub to delete
+     */
+    void deleteById(String id);
+
+    /**
+     * Check if a TIBCO stub exists by its ID.
+     *
+     * @param id The ID of the TIBCO stub
+     * @return True if the TIBCO stub exists, false otherwise
+     */
+    boolean existsById(String id);
 } 

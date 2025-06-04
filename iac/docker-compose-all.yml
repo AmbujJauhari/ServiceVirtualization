@@ -1,0 +1,272 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # DATABASE SERVICES
+  # ============================================================================
+  
+  # MongoDB for document storage
+  mongodb:
+    image: mongo:6.0
+    container_name: sv-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: service_virtualization
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  # Sybase ASE for relational storage
+  sybase:
+    image: nguoianphu/docker-sybase
+    container_name: sv-sybase
+    ports:
+      - "5000:5000"
+    environment:
+      SYBASE_DB: service_virtualization
+      SYBASE_USER: sa
+      SYBASE_PASSWORD: myPassword
+    volumes:
+      - sybase-data:/opt/sybase/data
+    restart: unless-stopped
+
+  # ============================================================================
+  # MESSAGE QUEUE SERVICES
+  # ============================================================================
+  
+  # Apache Kafka with Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: sv-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: sv-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_LOG_RETENTION_HOURS: 168
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    restart: unless-stopped
+
+  # IBM MQ
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: sv-ibmmq
+    ports:
+      - "1414:1414"   # MQ Listener port
+      - "9443:9443"   # MQ Console (HTTPS)
+      - "9157:9157"   # MQ Metrics port
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: passw0rd
+      MQ_ADMIN_PASSWORD: passw0rd
+      MQ_ENABLE_METRICS: "true"
+      MQ_DISABLE_WEB_CONSOLE: "false"
+      MQ_GRACE_PERIOD: 30
+    volumes:
+      - ibmmq-data:/mnt/mqm
+      - ibmmq-logs:/var/mqm
+      - ./ibmmq/config:/etc/mqm
+      - ./ibmmq/scripts:/opt/mqm/scripts
+    healthcheck:
+      test: ["CMD", "dspmq", "-m", "QM1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # ActiveMQ (for comparison and migration scenarios)
+  activemq:
+    image: apache/activemq-classic:latest
+    container_name: sv-activemq
+    ports:
+      - "61616:61616"  # OpenWire port
+      - "8161:8161"    # Web Console
+      - "5672:5672"    # AMQP port
+      - "61613:61613"  # STOMP port
+      - "1883:1883"    # MQTT port
+    environment:
+      ACTIVEMQ_CONFIG_NAME: activemq
+      ACTIVEMQ_CONFIG_DEFAULTACCOUNT: false
+      ACTIVEMQ_ADMIN_LOGIN: admin
+      ACTIVEMQ_ADMIN_PASSWORD: admin
+      ACTIVEMQ_USER_LOGIN: user
+      ACTIVEMQ_USER_PASSWORD: password
+    volumes:
+      - activemq-data:/opt/apache-activemq/data
+      - ./activemq/config:/opt/apache-activemq/conf
+    restart: unless-stopped
+
+  # ============================================================================
+  # MANAGEMENT AND MONITORING
+  # ============================================================================
+  
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: sv-kafka-ui
+    ports:
+      - "8082:8080"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    restart: unless-stopped
+
+  # IBM MQ Web Console (alternative)
+  ibmmq-console:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: sv-ibmmq-console
+    ports:
+      - "9080:9080"   # HTTP Console
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_QMGR_HOSTNAME: ibmmq
+      MQ_QMGR_PORT: 1414
+      MQ_QMGR_CHANNEL: DEV.ADMIN.SVRCONN
+      MQ_ADMIN_USER: admin
+      MQ_ADMIN_PASSWORD: passw0rd
+      MQ_CONSOLE_USER: admin
+      MQ_CONSOLE_PASSWORD: passw0rd
+    command: ["runmqweb"]
+    restart: unless-stopped
+
+  # MongoDB Express (Web UI for MongoDB)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: sv-mongo-express
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    restart: unless-stopped
+
+  # ============================================================================
+  # SERVICE VIRTUALIZATION APPLICATION
+  # ============================================================================
+  
+  # Backend API (when containerized)
+  # sv-backend:
+  #   build:
+  #     context: ../backend
+  #     dockerfile: Dockerfile
+  #   container_name: sv-backend
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - mongodb
+  #     - sybase
+  #     - kafka
+  #     - ibmmq
+  #     - activemq
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: docker
+  #     SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/service_virtualization?authSource=admin
+  #     SPRING_DATASOURCE_URL: jdbc:sybase:Tds:sybase:5000/service_virtualization
+  #     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #     IBM_MQ_QUEUE_MANAGER: QM1
+  #     IBM_MQ_HOST: ibmmq
+  #     IBM_MQ_PORT: 1414
+  #     IBM_MQ_CHANNEL: SV.APP.SVRCONN
+  #     ACTIVEMQ_BROKER_URL: tcp://activemq:61616
+  #   restart: unless-stopped
+
+  # Frontend (when containerized)
+  # sv-frontend:
+  #   build:
+  #     context: ../UI
+  #     dockerfile: Dockerfile
+  #   container_name: sv-frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - sv-backend
+  #   environment:
+  #     REACT_APP_API_URL: http://localhost:8080/api
+  #   restart: unless-stopped
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  # Database volumes
+  mongodb-data:
+    driver: local
+  sybase-data:
+    driver: local
+  
+  # Kafka volumes
+  zookeeper-data:
+    driver: local
+  zookeeper-log:
+    driver: local
+  kafka-data:
+    driver: local
+  
+  # IBM MQ volumes
+  ibmmq-data:
+    driver: local
+  ibmmq-logs:
+    driver: local
+  
+  # ActiveMQ volumes
+  activemq-data:
+    driver: local
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  default:
+    name: sv-network
+    driver: bridge 

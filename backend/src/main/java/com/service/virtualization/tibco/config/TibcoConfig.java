@@ -1,5 +1,6 @@
 package com.service.virtualization.tibco.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import org.springframework.jms.connection.CachingConnectionFactory;
 
 import jakarta.jms.ConnectionFactory;
 import com.tibco.tibjms.TibjmsConnectionFactory;
+import org.springframework.jms.core.JmsTemplate;
 
 /**
  * Configuration for TIBCO EMS integration.
@@ -47,5 +49,24 @@ public class TibcoConfig {
         cachingConnectionFactory.setReconnectOnException(true);
 
         return cachingConnectionFactory;
+    }
+
+    @Bean(name = "tibcoQueueJmsTemplate")
+    public JmsTemplate queueJmsTemplate(@Qualifier("tibcoConnectionFactory") ConnectionFactory connectionFactory) {
+        JmsTemplate template = new JmsTemplate();
+        template.setConnectionFactory(connectionFactory);
+        template.setPubSubDomain(false); // false for queues
+        return template;
+    }
+
+    /**
+     * JMS template for sending messages to ActiveMQ topics
+     */
+    @Bean(name = "tibcoTopicJmsTemplate")
+    public JmsTemplate topicJmsTemplate(@Qualifier("tibcoConnectionFactory") ConnectionFactory connectionFactory) {
+        JmsTemplate template = new JmsTemplate();
+        template.setConnectionFactory(connectionFactory);
+        template.setPubSubDomain(true); // true for topics
+        return template;
     }
 } 

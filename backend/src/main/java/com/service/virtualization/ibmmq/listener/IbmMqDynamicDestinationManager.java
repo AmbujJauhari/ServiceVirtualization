@@ -1,6 +1,8 @@
-package com.service.virtualization.activemq.listener;
+package com.service.virtualization.ibmmq.listener;
 
-import com.service.virtualization.activemq.model.ActiveMQStub;
+import com.service.virtualization.ibmmq.model.IBMMQStub;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,25 +11,23 @@ import org.springframework.jms.connection.JmsTransactionManager;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.JMSException;
-import jakarta.jms.MessageListener;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages dynamic registration and unregistration of JMS listeners based on ActiveMQ stubs.
+ * Manages dynamic registration and unregistration of JMS listeners based on (IBMMQ) stubs.
  */
 @Component
-public class DynamicDestinationManager {
-    private static final Logger logger = LoggerFactory.getLogger(DynamicDestinationManager.class);
+public class IbmMqDynamicDestinationManager {
+    private static final Logger logger = LoggerFactory.getLogger(IbmMqDynamicDestinationManager.class);
     
+
     @Autowired
-    @Qualifier("activemqConnectionFactory")
+    @Qualifier("ibmmqConnectionFactory")
     private ConnectionFactory connectionFactory;
     
     @Autowired
-    private ActiveMQMessageListener messageListener;
+    private IBMMQMessageListener messageListener;
     
     // Keep track of active listeners by stub ID
     private final Map<String, DefaultMessageListenerContainer> activeListeners = new ConcurrentHashMap<>();
@@ -35,10 +35,10 @@ public class DynamicDestinationManager {
     /**
      * Register a new JMS listener for the given stub.
      *
-     * @param stub The ActiveMQ stub to register a listener for
+     * @param stub The IBMMQ stub to register a listener for
      * @return true if registration was successful, false otherwise
      */
-    public boolean registerListener(ActiveMQStub stub) {
+    public boolean registerListener(IBMMQStub stub) {
         try {
             // If already registered, unregister first
             if (activeListeners.containsKey(stub.getId())) {

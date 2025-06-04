@@ -7,6 +7,15 @@ export interface MessageHeader {
   type: string;
 }
 
+export interface CreateStubErrorResponse {
+  message: string;
+  conflictingStub?: {
+    id: string;
+    name: string;
+    priority: number;
+  };
+}
+
 export enum ContentMatchType {
   NONE = 'NONE',
   CONTAINS = 'CONTAINS',
@@ -16,7 +25,9 @@ export enum ContentMatchType {
 
 export enum StubStatus {
   ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE'
+  INACTIVE = 'INACTIVE',
+  ARCHIVED = 'ARCHIVED',
+  DRAFT = 'DRAFT'
 }
 
 export interface IBMMQStub {
@@ -24,9 +35,9 @@ export interface IBMMQStub {
   name: string;
   description?: string;
   userId?: string;
-  queueManager: string;
-  queueName: string;
-  selector?: string;
+  destinationType?: string;
+  destinationName: string;
+  messageSelector?: string;
   
   // Standardized content matching configuration
   contentMatchType?: ContentMatchType;
@@ -36,8 +47,10 @@ export interface IBMMQStub {
   
   responseContent?: string;
   responseType?: string;
+  responseDestination?: string;
+  webhookUrl?: string;
   latency?: number;
-  headers?: MessageHeader[];
+  headers?: Record<string, string>;
   status?: StubStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -100,6 +113,14 @@ export const ibmMqApi = createApi({
       invalidatesTags: ['IBMMQStub'],
     }),
     
+    toggleIBMMQStubStatus: builder.mutation<IBMMQStub, string>({
+      query: (id) => ({
+        url: `/ibmmq/stubs/${id}/toggle`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['IBMMQStub'],
+    }),
+    
     deleteIBMMQStub: builder.mutation<void, string>({
       query: (id) => ({
         url: `/ibmmq/stubs/${id}`,
@@ -147,6 +168,7 @@ export const {
   useCreateIBMMQStubMutation,
   useUpdateIBMMQStubMutation,
   useUpdateIBMMQStubStatusMutation,
+  useToggleIBMMQStubStatusMutation,
   useDeleteIBMMQStubMutation,
   useAddMessageHeaderMutation,
   useRemoveMessageHeaderMutation,

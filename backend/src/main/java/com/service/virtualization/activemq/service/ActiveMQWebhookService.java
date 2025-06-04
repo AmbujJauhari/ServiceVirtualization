@@ -16,8 +16,8 @@ import java.util.Map;
  * Service for handling webhook interactions for dynamic responses.
  */
 @Service
-public class WebhookService {
-    private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
+public class ActiveMQWebhookService {
+    private static final Logger logger = LoggerFactory.getLogger(ActiveMQWebhookService.class);
     
     private final RestTemplate restTemplate = new RestTemplate();
     

@@ -73,6 +73,8 @@ kafka:
 ibmmq:
   host: ${IBMMQ_HOST:localhost}
   port: ${IBMMQ_PORT:1414}
+  queue-manager: ${IBMMQ_QUEUE_MANAGER:QM1}
+  channel: ${IBMMQ_CHANNEL:DEV.APP.SVRCONN}
   connection-timeout: ${IBMMQ_CONNECTION_TIMEOUT:2000}
 
 # Tibco EMS

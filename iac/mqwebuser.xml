@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server>
+    <featureManager>
+        <feature>basicAuthenticationMQ-1.0</feature>
+    </featureManager>
+    
+    <basicRegistry id="basic" realm="MQWebConsole">
+        <user name="admin" password="admin" />
+    </basicRegistry>
+    
+    <authorization-roles id="adminRoles">
+        <security-role name="MQWebAdmin">
+            <user name="admin" />
+        </security-role>
+    </authorization-roles>
+</server> 

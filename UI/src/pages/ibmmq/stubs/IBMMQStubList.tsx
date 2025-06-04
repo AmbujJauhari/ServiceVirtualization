@@ -4,6 +4,7 @@ import {
   useGetIBMMQStubsQuery, 
   useUpdateIBMMQStubStatusMutation, 
   useDeleteIBMMQStubMutation,
+  useToggleIBMMQStubStatusMutation,
   IBMMQStub,
   ContentMatchType,
   StubStatus
@@ -17,6 +18,7 @@ const IBMMQStubList: React.FC = () => {
   const { data: stubs, isLoading, isError, error, refetch } = useGetIBMMQStubsQuery();
   const [updateStatus] = useUpdateIBMMQStubStatusMutation();
   const [deleteStub] = useDeleteIBMMQStubMutation();
+  const [toggleStatus] = useToggleIBMMQStubStatusMutation();
 
   const getContentMatchTypeLabel = (matchType?: ContentMatchType) => {
     switch (matchType) {
@@ -46,17 +48,43 @@ const IBMMQStubList: React.FC = () => {
     }
   };
 
+  const getStatusBadgeClasses = (status?: StubStatus) => {
+    switch (status) {
+      case StubStatus.ACTIVE:
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case StubStatus.INACTIVE:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+      case StubStatus.DRAFT:
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case StubStatus.ARCHIVED:
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status?: StubStatus) => {
+    switch (status) {
+      case StubStatus.ACTIVE:
+        return 'Active';
+      case StubStatus.INACTIVE:
+        return 'Inactive';
+      case StubStatus.DRAFT:
+        return 'Draft';
+      case StubStatus.ARCHIVED:
+        return 'Archived';
+      default:
+        return 'Unknown';
+    }
+  };
+
   const handleStatusToggle = async (stub: IBMMQStub) => {
     if (!stub.id) return;
     
     try {
-      const newStatus = stub.status === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE;
-      await updateStatus({
-        id: stub.id,
-        status: newStatus
-      });
+      await toggleStatus(stub.id).unwrap();
     } catch (err) {
-      console.error('Failed to update status:', err);
+      console.error('Failed to toggle status:', err);
     }
   };
 
@@ -126,6 +154,7 @@ const IBMMQStubList: React.FC = () => {
               <tr>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queue Information</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Configuration</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Matching</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -149,6 +178,33 @@ const IBMMQStubList: React.FC = () => {
                     {stub.selector && (
                       <div className="text-gray-500 text-sm mt-1">
                         <span className="font-semibold">Selector:</span> {stub.selector}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200">
+                    {stub.responseDestination ? (
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 bg-purple-100 text-purple-800">
+                          {stub.responseDestinationType || 'queue'}
+                        </span>
+                        {stub.responseDestination}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-sm">Uses JMSReplyTo</span>
+                    )}
+                    {stub.webhookUrl && (
+                      <div className="text-gray-500 text-sm mt-1">
+                        <span className="font-semibold">Webhook:</span> 
+                        <span className="font-mono text-xs bg-gray-100 px-1 rounded ml-1">
+                          {stub.webhookUrl.length > 30 ? 
+                            `${stub.webhookUrl.substring(0, 30)}...` : 
+                            stub.webhookUrl}
+                        </span>
+                      </div>
+                    )}
+                    {stub.latency && stub.latency > 0 && (
+                      <div className="text-gray-500 text-sm mt-1">
+                        <span className="font-semibold">Latency:</span> {stub.latency}ms
                       </div>
                     )}
                   </td>
@@ -180,13 +236,9 @@ const IBMMQStubList: React.FC = () => {
                   <td className="py-2 px-4 border-b border-gray-200">
                     <button
                       onClick={() => stub.id && handleStatusToggle(stub)}
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        stub.status === StubStatus.ACTIVE
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeClasses(stub.status)}`}
                     >
-                      {stub.status === StubStatus.ACTIVE ? 'Active' : 'Inactive'}
+                      {getStatusLabel(stub.status)}
                     </button>
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">

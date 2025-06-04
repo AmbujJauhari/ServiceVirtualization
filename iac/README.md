@@ -1,138 +1,299 @@
 # Service Virtualization Infrastructure
 
-This directory contains Docker configurations for running the infrastructure required by the Service Virtualization application.
+This directory contains Docker Compose configurations for deploying the complete Service Virtualization infrastructure, including message queues, databases, and management tools.
 
-## Available Services
+## 🏗️ Architecture Overview
 
-### ActiveMQ
+The infrastructure includes:
 
-Apache ActiveMQ is a powerful open source messaging server. It supports multiple protocols including JMS, AMQP, STOMP, and MQTT.
+- **Message Queues**: IBM MQ, Apache Kafka, ActiveMQ
+- **Databases**: MongoDB, Sybase ASE
+- **Management Tools**: Web consoles for all services
+- **Monitoring**: Kafka UI, MongoDB Express
 
-[See ActiveMQ documentation](activemq/README.md)
+## 📋 Prerequisites
 
-Quick start:
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- At least 8GB RAM available for containers
+- Ports 1414, 5000, 8080-8082, 9080, 9092, 9443, 27017, 61616 available
+
+## 🚀 Quick Start
+
+### Option 1: Deploy All Services
 ```bash
-# Start ActiveMQ
-docker-compose up -d
+# Deploy complete infrastructure
+docker-compose -f docker-compose-all.yml up -d
+
+# Check status
+docker-compose -f docker-compose-all.yml ps
+
+# View logs
+docker-compose -f docker-compose-all.yml logs -f
 ```
 
-Access at:
-- JMS endpoint: `tcp://localhost:61616`
-- Web console: `http://localhost:8161/admin` (credentials: admin/admin)
+### Option 2: Deploy Individual Services
 
-### Kafka
-
-Apache Kafka is a distributed event streaming platform capable of handling trillions of events a day.
-
-[See Kafka documentation](kafka/README.md)
-
-Quick start:
+#### IBM MQ Only
 ```bash
-# Start Kafka
+docker-compose -f docker-compose-ibmmq.yml up -d
+```
+
+#### Kafka Only
+```bash
 docker-compose -f docker-compose-kafka.yml up -d
 ```
 
-Access at:
-- Kafka: `localhost:29092`
-- Kafka UI: `http://localhost:8080`
+## 🔧 Service Details
+
+### IBM MQ
+- **Container**: `sv-ibmmq`
+- **Ports**: 
+  - 1414 (MQ Listener)
+  - 9443 (HTTPS Console)
+  - 9080 (HTTP Console - alternative)
+  - 9157 (Metrics)
+- **Queue Manager**: QM1
+- **Credentials**: admin/passw0rd
+- **Web Console**: https://localhost:9443/ibmmq/console
+
+#### Pre-configured Queues
+- `DEV.REQUEST.QUEUE` - Development request queue
+- `DEV.RESPONSE.QUEUE` - Development response queue
+- `SV.STUB.REQUEST` - Service virtualization stub requests
+- `SV.STUB.RESPONSE` - Service virtualization stub responses
+- `TEST.PRIORITY.HIGH` - High priority test queue
+- `TEST.JSON.QUEUE` - JSON message test queue
+- `TEST.XML.QUEUE` - XML message test queue
+
+#### Pre-configured Channels
+- `DEV.ADMIN.SVRCONN` - Admin server connection
+- `SV.APP.SVRCONN` - Application server connection
+
+### Apache Kafka
+- **Container**: `sv-kafka`
+- **Ports**: 9092 (Bootstrap server)
+- **Zookeeper**: `sv-zookeeper` (port 2181)
+- **UI**: http://localhost:8082
 
 ### MongoDB
+- **Container**: `sv-mongodb`
+- **Port**: 27017
+- **Credentials**: admin/password
+- **Database**: service_virtualization
+- **Web UI**: http://localhost:8081 (MongoDB Express)
 
-MongoDB is a document-oriented NoSQL database used for high volume data storage.
+### Sybase ASE
+- **Container**: `sv-sybase`
+- **Port**: 5000
+- **Credentials**: sa/myPassword
+- **Database**: service_virtualization
 
-[See MongoDB documentation](mongodb/README.md)
+### ActiveMQ
+- **Container**: `sv-activemq`
+- **Ports**: 
+  - 61616 (OpenWire)
+  - 8161 (Web Console)
+  - 5672 (AMQP)
+  - 61613 (STOMP)
+  - 1883 (MQTT)
+- **Credentials**: admin/admin
+- **Web Console**: http://localhost:8161
 
-Quick start:
+## 🔐 Security Configuration
+
+### IBM MQ Security
+- Default users: `admin`, `app`, `svapp`
+- Channel authentication configured
+- Queue-level permissions set
+- TLS/SSL ready (certificates can be mounted)
+
+### Default Credentials
+| Service | Username | Password | Notes |
+|---------|----------|----------|-------|
+| IBM MQ | admin | passw0rd | Full admin access |
+| IBM MQ | app | passw0rd | Application access |
+| MongoDB | admin | password | Root access |
+| Sybase | sa | myPassword | System admin |
+| ActiveMQ | admin | admin | Admin console |
+| Kafka UI | - | - | No authentication |
+
+## 📁 Directory Structure
+
+```
+iac/
+├── docker-compose-all.yml      # Complete infrastructure
+├── docker-compose-ibmmq.yml    # IBM MQ only
+├── docker-compose-kafka.yml    # Kafka only
+├── ibmmq/
+│   ├── config/
+│   │   └── mq.ini              # MQ configuration
+│   └── scripts/
+│       ├── setup-queues.mqsc   # Queue setup script
+│       └── init-container.sh   # Container initialization
+├── kafka/
+│   └── config/
+├── mongodb/
+│   └── init/
+└── README.md                   # This file
+```
+
+## 🛠️ Management Commands
+
+### IBM MQ Commands
 ```bash
-# Start MongoDB
-docker-compose -f docker-compose-mongodb.yml up -d
+# Connect to IBM MQ container
+docker exec -it sv-ibmmq bash
+
+# Display queue manager
+dspmq
+
+# Run MQ commands
+runmqsc QM1
+
+# Display queues
+echo "DISPLAY QLOCAL(*)" | runmqsc QM1
+
+# Display channels
+echo "DISPLAY CHANNEL(*)" | runmqsc QM1
 ```
 
-Access at:
-- MongoDB: `mongodb://localhost:27017`
-- MongoDB Express: `http://localhost:8081` (credentials: admin/password)
-
-## Running Multiple Services
-
-You can run multiple services simultaneously:
-
+### Kafka Commands
 ```bash
-# Start all services
-docker-compose up -d
-docker-compose -f docker-compose-kafka.yml up -d
-docker-compose -f docker-compose-mongodb.yml up -d
+# List topics
+docker exec sv-kafka kafka-topics --bootstrap-server localhost:9092 --list
+
+# Create topic
+docker exec sv-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic test-topic
+
+# Produce messages
+docker exec -it sv-kafka kafka-console-producer --bootstrap-server localhost:9092 --topic test-topic
+
+# Consume messages
+docker exec -it sv-kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic test-topic --from-beginning
 ```
 
-## Stopping Services
-
-To stop the services:
-
+### MongoDB Commands
 ```bash
-# Stop services
-docker-compose down
-docker-compose -f docker-compose-kafka.yml down
-docker-compose -f docker-compose-mongodb.yml down
+# Connect to MongoDB
+docker exec -it sv-mongodb mongosh -u admin -p password
+
+# List databases
+show dbs
+
+# Use service virtualization database
+use service_virtualization
+
+# List collections
+show collections
 ```
 
-Add `-v` flag to remove volumes and completely reset the services:
+## 🔍 Monitoring and Logs
 
+### View Service Logs
 ```bash
-docker-compose down -v
+# All services
+docker-compose -f docker-compose-all.yml logs -f
+
+# Specific service
+docker-compose -f docker-compose-all.yml logs -f ibmmq
+
+# IBM MQ error logs
+docker exec sv-ibmmq cat /var/mqm/qmgrs/QM1/errors/AMQERR01.LOG
 ```
 
-## Configuration
-
-### Environment Variables
-
-See the individual service READMEs for specific environment variables you can configure.
-
-## Integration with Service Virtualization
-
-To configure your Service Virtualization application to use this ActiveMQ container, update your application properties:
-
-```properties
-activemq.broker-url=tcp://localhost:61616
-activemq.username=admin
-activemq.password=admin
-```
-
-## Data Persistence
-
-ActiveMQ data is persisted in a Docker volume named `sv-activemq-data`. This ensures that your messages and configuration are preserved across container restarts.
-
-## Monitoring
-
-### JMX Access
-
-JMX is exposed on port 1099. You can connect using tools like JConsole:
-
+### Health Checks
 ```bash
-jconsole localhost:1099
+# Check all container status
+docker ps
+
+# Check IBM MQ health
+docker exec sv-ibmmq dspmq -m QM1
+
+# Check Kafka health
+docker exec sv-kafka kafka-broker-api-versions --bootstrap-server localhost:9092
 ```
 
-### Web Console
+## 🚨 Troubleshooting
 
-The ActiveMQ web console provides a graphical interface for monitoring and managing the broker. Access it at:
+### Common Issues
 
+#### IBM MQ Won't Start
+```bash
+# Check logs
+docker logs sv-ibmmq
+
+# Verify license acceptance
+docker exec sv-ibmmq env | grep LICENSE
+
+# Check queue manager status
+docker exec sv-ibmmq dspmq -m QM1
 ```
-http://localhost:8161/admin
+
+#### Port Conflicts
+```bash
+# Check port usage
+netstat -tulpn | grep :1414
+
+# Stop conflicting services
+sudo systemctl stop ibm-mq  # if installed locally
 ```
 
-Default credentials: admin/admin
+#### Memory Issues
+```bash
+# Check container memory usage
+docker stats
 
-## Troubleshooting
+# Increase Docker memory limit in Docker Desktop
+# Or reduce container resource limits in compose files
+```
 
-- If the container fails to start, check the logs:
-  ```bash
-  docker-compose logs activemq
-  ```
+### Reset Environment
+```bash
+# Stop all services
+docker-compose -f docker-compose-all.yml down
 
-- If you can't connect to ActiveMQ, ensure ports are not in use by another application:
-  ```bash
-  netstat -an | grep 61616
-  ```
+# Remove volumes (WARNING: This deletes all data)
+docker-compose -f docker-compose-all.yml down -v
 
-- To restart the ActiveMQ container:
-  ```bash
-  docker-compose restart activemq
-  ``` 
+# Remove images
+docker-compose -f docker-compose-all.yml down --rmi all
+
+# Clean up
+docker system prune -f
+```
+
+## 🔧 Customization
+
+### Adding Custom Queues
+1. Edit `iac/ibmmq/scripts/setup-queues.mqsc`
+2. Add your queue definitions
+3. Restart IBM MQ container
+
+### Custom Configuration
+1. Mount custom config files in compose volumes
+2. Override environment variables
+3. Use Docker secrets for production credentials
+
+### Production Considerations
+- Use external volumes for data persistence
+- Configure proper TLS/SSL certificates
+- Set up proper authentication and authorization
+- Configure monitoring and alerting
+- Use Docker secrets for sensitive data
+- Set resource limits appropriately
+
+## 📚 Additional Resources
+
+- [IBM MQ Documentation](https://www.ibm.com/docs/en/ibm-mq)
+- [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
+- [MongoDB Documentation](https://docs.mongodb.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+
+## 🤝 Support
+
+For issues related to:
+- **Infrastructure**: Check this README and Docker logs
+- **Service Virtualization**: See main application documentation
+- **IBM MQ**: Consult IBM MQ documentation
+- **Kafka**: Check Kafka documentation 

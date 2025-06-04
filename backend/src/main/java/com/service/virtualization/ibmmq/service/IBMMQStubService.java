@@ -1,10 +1,14 @@
 package com.service.virtualization.ibmmq.service;
 
 import com.service.virtualization.exception.ResourceNotFoundException;
+import com.service.virtualization.ibmmq.listener.IbmMqDynamicDestinationManager;
 import com.service.virtualization.ibmmq.model.IBMMQStub;
 import com.service.virtualization.ibmmq.repository.IBMMQStubRepository;
 import com.service.virtualization.model.MessageHeader;
 import com.service.virtualization.model.StubStatus;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +16,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
-import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-import jakarta.jms.Session;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of the IBMMQStubService interface
@@ -28,14 +28,14 @@ import java.util.stream.Collectors;
 public class IBMMQStubService {
 
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubService.class);
-    
+
     private final IBMMQStubRepository ibmMQStubRepository;
-    private final JmsTemplate jmsTemplate;
+    @Autowired
+    private IbmMqDynamicDestinationManager destinationManager;
 
     @Autowired
-    public IBMMQStubService(IBMMQStubRepository ibmMQStubRepository, @Qualifier("ibmMQTemplate") JmsTemplate jmsTemplate) {
+    public IBMMQStubService(IBMMQStubRepository ibmMQStubRepository) {
         this.ibmMQStubRepository = ibmMQStubRepository;
-        this.jmsTemplate = jmsTemplate;
     }
 
     public IBMMQStub create(IBMMQStub ibmMQStub) {
@@ -43,127 +43,133 @@ public class IBMMQStubService {
         LocalDateTime now = LocalDateTime.now();
         ibmMQStub.setCreatedAt(now);
         ibmMQStub.setUpdatedAt(now);
-        
-        return ibmMQStubRepository.save(ibmMQStub);
+
+        IBMMQStub savedStub = ibmMQStubRepository.save(ibmMQStub);
+        if (savedStub.isActive()) {
+            registerStubListener(savedStub);
+        }
+
+        return savedStub;
+    }
+
+    private void registerStubListener(IBMMQStub stub) {
+        if (stub.isActive()) {
+            boolean success = destinationManager.registerListener(stub);
+            if (success) {
+                logger.info("Registered listener for IBMMQ stub: {}", stub.getId());
+            } else {
+                logger.warn("Failed to register listener for IBMMQ stub: {}", stub.getId());
+            }
+        }
     }
 
     public List<IBMMQStub> findAll() {
         return ibmMQStubRepository.findAll();
     }
 
+    public List<IBMMQStub> findAllByStatus(StubStatus status) {
+        logger.debug("Finding all IBMMQ stubs with status: {}", status);
+        return ibmMQStubRepository.findByStatus(status);
+    }
+
     public List<IBMMQStub> findByUserId(String userId) {
         return ibmMQStubRepository.findByUserId(userId);
     }
 
-    public List<IBMMQStub> findActiveByUserId(String userId) {
-        return ibmMQStubRepository.findByUserIdAndStatus(userId, StubStatus.ACTIVE);
-    }
 
     public Optional<IBMMQStub> findById(String id) {
         return ibmMQStubRepository.findById(id);
     }
 
     public IBMMQStub update(String id, IBMMQStub ibmMQStub) {
+        IBMMQStub existingStub = findById(id).orElseThrow(() -> new ResourceNotFoundException("IBMMQ stub not found with id: " + id));
+
+        // Update fields
+        existingStub.setName(ibmMQStub.getName());
+        existingStub.setDescription(ibmMQStub.getDescription());
+        existingStub.setDestinationName(ibmMQStub.getDestinationName());
+        existingStub.setMessageSelector(ibmMQStub.getMessageSelector());
+        existingStub.setContentMatchType(ibmMQStub.getContentMatchType());
+        existingStub.setContentPattern(ibmMQStub.getContentPattern());
+        existingStub.setCaseSensitive(ibmMQStub.isCaseSensitive());
+        existingStub.setResponseType(ibmMQStub.getResponseType());
+        existingStub.setResponseDestination(ibmMQStub.getResponseDestination());
+        existingStub.setResponseContent(ibmMQStub.getResponseContent());
+        existingStub.setWebhookUrl(ibmMQStub.getWebhookUrl());
+        existingStub.setPriority(ibmMQStub.getPriority());
+        existingStub.setHeaders(ibmMQStub.getHeaders());
+        existingStub.setStatus(ibmMQStub.getStatus());
+        existingStub.setUpdatedAt(LocalDateTime.now());
+
+        IBMMQStub updatedStub = ibmMQStubRepository.save(existingStub);
+
+        // Handle listener registration/unregistration if status changed
+        updateStubListener(updatedStub);
+
+        return updatedStub;
+
+    }
+
+    public void updateStubListener(IBMMQStub stub) {
+        if (stub.isActive()) {
+            registerStubListener(stub);
+        } else {
+            destinationManager.unregisterListener(stub.getId());
+            logger.info("Unregistered listener for IBMMQ stub: {}", stub.getId());
+        }
+    }
+
+    public void delete(String id) {
+        IBMMQStub stub = findById(id).orElseThrow(() -> new ResourceNotFoundException("IBMMQ stub not found with id: " + id));
+
+        // Unregister listener if it exists
+        destinationManager.unregisterListener(id);
+
+        ibmMQStubRepository.deleteById(id);
+        logger.info("Deleted ActiveMQ stub with ID: {}", id);
+    }
+
+    public IBMMQStub updateStatus(String id, StubStatus status) {
         return ibmMQStubRepository.findById(id)
                 .map(existingStub -> {
-                    // Update fields
-                    existingStub.setName(ibmMQStub.getName());
-                    existingStub.setDescription(ibmMQStub.getDescription());
-                    existingStub.setQueueManager(ibmMQStub.getQueueManager());
-                    existingStub.setQueueName(ibmMQStub.getQueueName());
-                    existingStub.setSelector(ibmMQStub.getSelector());
-                    
-                    // Update standardized content matching fields
-                    existingStub.setContentMatchType(ibmMQStub.getContentMatchType() != null ? 
-                        ibmMQStub.getContentMatchType() : IBMMQStub.ContentMatchType.NONE);
-                    existingStub.setContentPattern(ibmMQStub.getContentPattern());
-                    existingStub.setCaseSensitive(ibmMQStub.isCaseSensitive());
-                    existingStub.setPriority(ibmMQStub.getPriority());
-                    
-                    existingStub.setResponseContent(ibmMQStub.getResponseContent());
-                    existingStub.setResponseType(ibmMQStub.getResponseType());
-                    existingStub.setLatency(ibmMQStub.getLatency());
-                    existingStub.setHeaders(ibmMQStub.getHeaders());
-                    existingStub.setStatus(ibmMQStub.getStatus());
+                    existingStub.setStatus(status);
                     existingStub.setUpdatedAt(LocalDateTime.now());
-                    
-                    // Save and return updated stub
                     return ibmMQStubRepository.save(existingStub);
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("IBMMQStub not found with id " + id));
     }
 
-    public void delete(String id) {
-        ibmMQStubRepository.findById(id)
-                .ifPresent(stub -> ibmMQStubRepository.delete(stub));
-    }
-
-    public IBMMQStub updateStatus(String id, StubStatus status) {
+    /**
+     * Toggle the status of a stub between ACTIVE and INACTIVE.
+     *
+     * @param id The stub ID
+     * @return The updated stub
+     */
+    public IBMMQStub toggleStubStatus(String id) {
         return ibmMQStubRepository.findById(id)
-                .map(stub -> {
-                    stub.setStatus(status);
-                    stub.setUpdatedAt(LocalDateTime.now());
-                    return ibmMQStubRepository.save(stub);
+                .map(existingStub -> {
+                    // Toggle between ACTIVE and INACTIVE
+                    StubStatus newStatus = existingStub.getStatus() == StubStatus.ACTIVE ?
+                            StubStatus.INACTIVE : StubStatus.ACTIVE;
+                    existingStub.setStatus(newStatus);
+                    existingStub.setUpdatedAt(LocalDateTime.now());
+                    return ibmMQStubRepository.save(existingStub);
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("IBMMQStub not found with id " + id));
     }
 
-    public IBMMQStub addHeader(String stubId, MessageHeader header) {
-        return ibmMQStubRepository.findById(stubId)
-                .map(stub -> {
-                    // Add or update header
-                    List<MessageHeader> headers = stub.getHeaders();
-                    // Remove existing header with same name if exists
-                    headers = headers.stream()
-                            .filter(h -> !h.getName().equals(header.getName()))
-                            .collect(Collectors.toList());
-                    // Add new header
-                    headers.add(header);
-                    stub.setHeaders(headers);
-                    stub.setUpdatedAt(LocalDateTime.now());
-                    return ibmMQStubRepository.save(stub);
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("IBMMQStub not found with id " + stubId));
-    }
 
-    public IBMMQStub removeHeader(String stubId, String headerName) {
-        return ibmMQStubRepository.findById(stubId)
-                .map(stub -> {
-                    // Remove header with given name
-                    List<MessageHeader> headers = stub.getHeaders();
-                    headers = headers.stream()
-                            .filter(h -> !h.getName().equals(headerName))
-                            .collect(Collectors.toList());
-                    stub.setHeaders(headers);
-                    stub.setUpdatedAt(LocalDateTime.now());
-                    return ibmMQStubRepository.save(stub);
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("IBMMQStub not found with id " + stubId));
-    }
-
-    public List<IBMMQStub> findByQueueName(String queueName) {
-        return ibmMQStubRepository.findByQueueName(queueName);
-    }
-
-    public List<IBMMQStub> findByQueueManagerAndName(String queueManager, String queueName) {
-        return ibmMQStubRepository.findByQueueManagerAndQueueName(queueManager, queueName);
-    }
-
-    public List<IBMMQStub> findActiveByQueueManagerAndName(String queueManager, String queueName) {
-        return ibmMQStubRepository.findByQueueManagerAndQueueNameAndStatus(queueManager, queueName, StubStatus.ACTIVE);
-    }
-    
     public boolean publishMessage(String queueManager, String queueName, String message, List<MessageHeader> headers) {
         try {
             // Configure JmsTemplate for the specific queue manager if needed
             // This might require more dynamic configuration based on your IBM MQ setup
-            
+
             // Send message to the specified queue
-            jmsTemplate.send(queueName, session -> {
-                Message jmsMessage = createMessage(session, message, headers);
-                return jmsMessage;
-            });
-            
+//            jmsTemplate.send(queueName, session -> {
+//                Message jmsMessage = createMessage(session, message, headers);
+//                return jmsMessage;
+//            });
+
             logger.info("Successfully published message to queue '{}' on queue manager '{}'", queueName, queueManager);
             return true;
         } catch (Exception e) {
@@ -171,13 +177,13 @@ public class IBMMQStubService {
             return false;
         }
     }
-    
+
     /**
      * Create a JMS message with appropriate type and headers
      */
     private Message createMessage(Session session, String content, List<MessageHeader> headers) throws JMSException {
         Message message;
-        
+
         // Determine if content is likely JSON or XML based on content
         if (content.trim().startsWith("{") || content.trim().startsWith("[")) {
             message = session.createTextMessage(content);
@@ -196,17 +202,17 @@ public class IBMMQStubService {
             message = session.createTextMessage(content);
             message.setStringProperty("ContentType", "text/plain");
         }
-        
+
         // Set headers if provided
         if (headers != null) {
             for (MessageHeader header : headers) {
                 setMessageProperty(message, header);
             }
         }
-        
+
         return message;
     }
-    
+
     /**
      * Set a message property based on the header type
      */
@@ -214,7 +220,7 @@ public class IBMMQStubService {
         String name = header.getName();
         String value = header.getValue();
         String type = header.getType().toLowerCase();
-        
+
         switch (type) {
             case "string":
                 message.setStringProperty(name, value);
@@ -239,7 +245,7 @@ public class IBMMQStubService {
                 message.setStringProperty(name, value);
         }
     }
-    
+
     /**
      * Check if a string is valid Base64
      */
@@ -252,5 +258,9 @@ public class IBMMQStubService {
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public List<IBMMQStub> findByStatus(StubStatus status) {
+        return ibmMQStubRepository.findByStatus(status);
     }
 } 

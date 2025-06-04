@@ -7,17 +7,25 @@ import {
   IBMMQStub,
   MessageHeader,
   ContentMatchType,
-  StubStatus
+  StubStatus,
+  CreateStubErrorResponse
 } from '../../../api/ibmMqApi';
 import TextEditor from '../../../components/common/TextEditor';
+
+interface IBMMQStubFormProps {
+  isEdit?: boolean;
+}
 
 /**
  * Form for creating and editing IBM MQ stubs
  */
-const IBMMQStubForm: React.FC = () => {
+const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
   const { id } = useParams<{ id: string }>();
-  const isEditMode = Boolean(id);
+  const isEditMode = isEdit || Boolean(id);
   const navigate = useNavigate();
+
+  // Error state
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch existing stub for edit mode
   const { data: existingStub, isLoading: isLoadingStub } = useGetIBMMQStubQuery(id ?? '', {
@@ -25,15 +33,15 @@ const IBMMQStubForm: React.FC = () => {
   });
 
   // Mutations
-  const [createStub, { isLoading: isCreating }] = useCreateIBMMQStubMutation();
+  const [createStub, { isLoading: isCreating, error: createError }] = useCreateIBMMQStubMutation();
   const [updateStub, { isLoading: isUpdating }] = useUpdateIBMMQStubMutation();
 
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [queueManager, setQueueManager] = useState('');
-  const [queueName, setQueueName] = useState('');
-  const [selector, setSelector] = useState('');
+  const [destinationType, setDestinationType] = useState('queue');
+  const [destinationName, setDestinationName] = useState('');
+  const [messageSelector, setMessageSelector] = useState('');
   
   // Standardized content matching configuration
   const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
@@ -43,6 +51,9 @@ const IBMMQStubForm: React.FC = () => {
   
   const [responseType, setResponseType] = useState('text');
   const [responseContent, setResponseContent] = useState('');
+  const [responseDestination, setResponseDestination] = useState('');
+  const [responseDestinationType, setResponseDestinationType] = useState('queue');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [latency, setLatency] = useState(0);
   const [headers, setHeaders] = useState<MessageHeader[]>([]);
   const [status, setStatus] = useState<StubStatus>(StubStatus.ACTIVE);
@@ -57,9 +68,9 @@ const IBMMQStubForm: React.FC = () => {
     if (existingStub) {
       setName(existingStub.name || '');
       setDescription(existingStub.description || '');
-      setQueueManager(existingStub.queueManager || '');
-      setQueueName(existingStub.queueName || '');
-      setSelector(existingStub.selector || '');
+      setDestinationType(existingStub.destinationType || 'queue');
+      setDestinationName(existingStub.destinationName || '');
+      setMessageSelector(existingStub.messageSelector || '');
       
       // Load standardized content matching configuration
       setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
@@ -69,8 +80,26 @@ const IBMMQStubForm: React.FC = () => {
       
       setResponseType(existingStub.responseType || 'text');
       setResponseContent(existingStub.responseContent || '');
+      setResponseDestination(existingStub.responseDestination || '');
+      setResponseDestinationType(existingStub.responseType === 'topic' ? 'topic' : 'queue');
+      setWebhookUrl(existingStub.webhookUrl || '');
       setLatency(existingStub.latency || 0);
-      setHeaders(existingStub.headers || []);
+      
+      // Convert headers from Record<string, string> to MessageHeader[] for UI
+      if (existingStub.headers && typeof existingStub.headers === 'object') {
+        const headersArray: MessageHeader[] = [];
+        Object.entries(existingStub.headers).forEach(([name, value]) => {
+          headersArray.push({
+            name,
+            value: String(value),
+            type: 'string' // Default type since backend doesn't store type
+          });
+        });
+        setHeaders(headersArray);
+      } else {
+        setHeaders([]);
+      }
+      
       setStatus(existingStub.status || StubStatus.ACTIVE);
     }
   }, [existingStub]);
@@ -96,13 +125,21 @@ const IBMMQStubForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // Transform headers from MessageHeader[] to Map<string, string> format expected by backend
+    const headersData = Array.isArray(headers) ? headers : [];
+    const headersMap: Record<string, string> = {};
+    headersData.forEach(header => {
+      headersMap[header.name] = header.value;
+    });
 
     const stubData: Partial<IBMMQStub> = {
       name,
       description,
-      queueManager,
-      queueName,
-      selector,
+      destinationType,
+      destinationName,
+      messageSelector,
       
       // Standardized content matching configuration
       contentMatchType,
@@ -110,10 +147,12 @@ const IBMMQStubForm: React.FC = () => {
       caseSensitive,
       priority,
       
-      responseType,
+      responseType: responseDestinationType,
       responseContent,
+      responseDestination,
+      webhookUrl,
       latency,
-      headers,
+      headers: headersMap,
       status
     };
 
@@ -123,13 +162,24 @@ const IBMMQStubForm: React.FC = () => {
           id,
           ...stubData
         });
+        navigate('/ibmmq');
       } else {
-        await createStub(stubData);
+        try {
+          const result = await createStub(stubData).unwrap();
+          navigate('/ibmmq');
+        } catch (err: any) {
+          if (err.status === 409) { // Conflict status code
+            const errorResponse = err.data as CreateStubErrorResponse;
+            setError(errorResponse.message || 'A stub with higher priority already exists for this queue.');
+          } else {
+            setError('An error occurred while creating the stub. Please try again.');
+            console.error('Error creating stub:', err);
+          }
+        }
       }
-      navigate('/ibmmq');
     } catch (error) {
+      setError('An error occurred while saving the stub. Please try again.');
       console.error('Error saving IBM MQ stub:', error);
-      alert('Failed to save IBM MQ stub. Please try again.');
     }
   };
 
@@ -143,6 +193,13 @@ const IBMMQStubForm: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-6">
           {isEditMode ? 'Edit IBM MQ Stub' : 'Create IBM MQ Stub'}
         </h1>
+
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
@@ -177,51 +234,70 @@ const IBMMQStubForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Queue Configuration */}
+          {/* Destination Configuration */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Queue Configuration</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Destination Configuration</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="queueManager">
-                  Queue Manager*
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="destinationType">
+                  Destination Type*
                 </label>
-                <input
-                  id="queueManager"
-                  type="text"
-                  value={queueManager}
-                  onChange={(e) => setQueueManager(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                <select
+                  id="destinationType"
+                  value={destinationType}
+                  onChange={(e) => setDestinationType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   required
-                />
+                >
+                  <option value="queue">Queue</option>
+                  <option value="topic">Topic</option>
+                </select>
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="queueName">
-                  Queue Name*
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="destinationName">
+                  Destination Name*
                 </label>
                 <input
-                  id="queueName"
+                  id="destinationName"
                   type="text"
-                  value={queueName}
-                  onChange={(e) => setQueueName(e.target.value)}
+                  value={destinationName}
+                  onChange={(e) => setDestinationName(e.target.value)}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   required
                 />
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="selector">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="messageSelector">
                 Message Selector
               </label>
               <input
-                id="selector"
+                id="messageSelector"
                 type="text"
-                value={selector}
-                onChange={(e) => setSelector(e.target.value)}
+                value={messageSelector}
+                onChange={(e) => setMessageSelector(e.target.value)}
                 placeholder="e.g. JMSCorrelationID='12345'"
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Selector expression to filter which messages this stub responds to.
+                JMS selector expression to filter which messages this stub responds to.
+              </p>
+            </div>
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="priority">
+                Priority
+              </label>
+              <input
+                id="priority"
+                type="number"
+                min="0"
+                max="100"
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Priority for matching (higher values = higher priority). New stubs cannot have a priority lower than existing stubs.
               </p>
             </div>
           </div>
@@ -229,77 +305,66 @@ const IBMMQStubForm: React.FC = () => {
           {/* Content Matching Configuration */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Content Matching</h2>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="contentMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentMatchType">
                   Match Type
                 </label>
                 <select
                   id="contentMatchType"
                   value={contentMatchType}
                   onChange={(e) => setContentMatchType(e.target.value as ContentMatchType)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 >
-                  <option value={ContentMatchType.NONE}>No content matching</option>
-                  <option value={ContentMatchType.CONTAINS}>Message contains pattern</option>
-                  <option value={ContentMatchType.EXACT}>Message exactly matches pattern</option>
-                  <option value={ContentMatchType.REGEX}>Message matches regex pattern</option>
+                  <option value={ContentMatchType.NONE}>No Content Matching</option>
+                  <option value={ContentMatchType.CONTAINS}>Contains Text</option>
+                  <option value={ContentMatchType.EXACT}>Exact Match</option>
+                  <option value={ContentMatchType.REGEX}>Regular Expression</option>
                 </select>
-              </div>
-
-              {contentMatchType !== ContentMatchType.NONE && (
-                <>
-                  <div>
-                    <label htmlFor="contentPattern" className="block text-sm font-medium text-gray-700 mb-1">
-                      Content Pattern
-                    </label>
-                    <TextEditor
-                      value={contentPattern}
-                      onChange={setContentPattern}
-                      height="200px"
-                      language="text"
-                      placeholder="Enter the content pattern to match..."
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      {contentMatchType === ContentMatchType.CONTAINS && 'Messages containing this text will match'}
-                      {contentMatchType === ContentMatchType.EXACT && 'Messages with exactly this content will match'}
-                      {contentMatchType === ContentMatchType.REGEX && 'Messages matching this regular expression will match'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="caseSensitive"
-                      checked={caseSensitive}
-                      onChange={(e) => setCaseSensitive(e.target.checked)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="caseSensitive" className="ml-2 block text-sm text-gray-700">
-                      Case sensitive matching
-                    </label>
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority
-                </label>
-                <input
-                  type="number"
-                  id="priority"
-                  value={priority}
-                  onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-                  min="0"
-                  max="100"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Higher priority stubs will be matched first (0-100, default: 0)
+                <p className="text-sm text-gray-500 mt-1">
+                  How to match the message content.
                 </p>
               </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="caseSensitive">
+                  Case Sensitivity
+                </label>
+                <div className="flex items-center">
+                  <input
+                    id="caseSensitive"
+                    type="checkbox"
+                    checked={caseSensitive}
+                    onChange={(e) => setCaseSensitive(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="ml-2 block text-gray-700" htmlFor="caseSensitive">
+                    Case sensitive matching
+                  </label>
+                </div>
+              </div>
             </div>
+            
+            {contentMatchType !== ContentMatchType.NONE && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentPattern">
+                  Content Pattern
+                </label>
+                <textarea
+                  id="contentPattern"
+                  value={contentPattern}
+                  onChange={(e) => setContentPattern(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32"
+                  placeholder={contentMatchType === ContentMatchType.REGEX ? '^\\s*<order>.*</order>\\s*$' : contentMatchType === ContentMatchType.EXACT ? 'Enter complete message content to match exactly' : 'Enter text to search for in the message content'}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {contentMatchType === ContentMatchType.REGEX ? 
+                    'Regular expression pattern to match against message content.' : 
+                    contentMatchType === ContentMatchType.CONTAINS ?
+                    'Text pattern that must be contained in the message content.' :
+                    'Complete message content that must match exactly (e.g., full XML or JSON content).'}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Response Configuration */}
@@ -308,7 +373,7 @@ const IBMMQStubForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseType">
-                  Response Type
+                  Response Content Type
                 </label>
                 <select
                   id="responseType"
@@ -323,21 +388,70 @@ const IBMMQStubForm: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
-                  Response Latency (ms)
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseDestinationType">
+                  Response Destination Type
                 </label>
-                <input
-                  id="latency"
-                  type="number"
-                  min="0"
-                  value={latency}
-                  onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Add artificial delay to simulate processing time.
-                </p>
+                <select
+                  id="responseDestinationType"
+                  value={responseDestinationType}
+                  onChange={(e) => setResponseDestinationType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="queue">Queue</option>
+                  <option value="topic">Topic</option>
+                </select>
               </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseDestination">
+                Response Destination
+              </label>
+              <input
+                id="responseDestination"
+                type="text"
+                value={responseDestination}
+                onChange={(e) => setResponseDestination(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Leave empty to use JMSReplyTo from request"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Destination where the response will be sent. If empty, uses JMSReplyTo from the incoming message.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="webhookUrl">
+                Webhook URL
+              </label>
+              <input
+                id="webhookUrl"
+                type="text"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="http://localhost:8080/webhook"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Optional: HTTP endpoint to notify when this stub is triggered.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
+                Response Latency (ms)
+              </label>
+              <input
+                id="latency"
+                type="number"
+                min="0"
+                value={latency}
+                onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Add artificial delay to simulate processing time.
+              </p>
             </div>
 
             <div className="mt-4">

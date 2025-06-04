@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: ibmmq
+    ports:
+      - "1414:1414"    # MQ TCP port
+      - "9443:9443"    # Admin Console port (HTTPS)
+      - "9080:9080"    # Admin Console port (HTTP)
+    environment:
+      - LICENSE=accept
+      - MQ_QMGR_NAME=QM1
+      - MQ_ENABLE_METRICS=true
+      # REMOVE ALL USER/PASSWORD SETTINGS - NO AUTHENTICATION
+      # - MQ_APP_PASSWORD=admin     # REMOVED
+      - MQ_ADMIN_PASSWORD=admin   # REMOVED  
+      # - MQ_APP_USER=app           # REMOVED
+      - MQ_ADMIN_USER=admin       # REMOVED
+      # Maximum authentication disabling for service virtualization
+      - MQ_DISABLE_WEB_CONSOLE_AUTH=true
+      - MQ_DEV=true
+      - MQ_ENABLE_EMBEDDED_WEB_SERVER=true
+      - MQ_DISABLE_CHANNEL_AUTH=true
+      - MQ_ENABLE_MQSC_COMMANDS=true
+      - MQ_ENABLE_DEFAULT_OBJECTS=true
+      # Force no security mode
+      - MQ_CONFIGURE_DEFAULT_OBJECTS=true
+    volumes:
+      - ./ibmmq/20-config.mqsc:/etc/mqm/20-config.mqsc:ro
+
+networks:
+  sv-network:

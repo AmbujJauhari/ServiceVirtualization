@@ -1,67 +1,75 @@
 package com.service.virtualization.ibmmq.config;
 
+import com.ibm.mq.jakarta.jms.MQQueueConnectionFactory;
+import com.ibm.msg.client.jakarta.wmq.WMQConstants;
 import jakarta.jms.ConnectionFactory;
-import org.apache.activemq.ActiveMQConnectionFactory;
+import jakarta.jms.JMSException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.config.JmsListenerContainerFactory;
-import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.listener.DefaultMessageListenerContainer;
+import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
 
 @Configuration
 @EnableJms
 public class IBMMQConfig {
 
-    @Value("${activemq.broker-url:tcp://localhost:61616}")
+    @Value("${ibmmq.broker-url:localhost")
     private String brokerUrl;
 
-    @Value("${activemq.username:admin}")
-    private String username;
+    @Value("${ibmmq.port:1414}")
+    private Integer port;
 
-    @Value("${activemq.password:admin}")
-    private String password;
+    @Value("${ibmmq.queue.manager:QM1}")
+    private String queueManager;
 
-    @Value("${activemq.connection.cache-size:10}")
-    private int sessionCacheSize;
+    @Value("${ibmmq.channel:MY.OPEN.CHANNEL}")
+    private String channel;
 
     @Bean(name = "ibmmqConnectionFactory")
-    public ConnectionFactory ibmmqConnectionFactory() {
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
-        connectionFactory.setBrokerURL(brokerUrl);
-        connectionFactory.setUserName(username);
-        connectionFactory.setPassword(password);
+    public ConnectionFactory ibmmqConnectionFactory() throws JMSException {
+        MQQueueConnectionFactory factory = new MQQueueConnectionFactory();
 
-        // Set security for dynamic destinations
-        connectionFactory.setTrustAllPackages(true);
+        // Basic connection properties only
+        factory.setHostName(brokerUrl);
+        factory.setPort(port);
+        factory.setQueueManager(queueManager);
+        factory.setChannel(channel);
+        factory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
+        factory.setIntProperty(WMQConstants.JMS_IBM_CHARACTER_SET, 1208); // UTF-8
 
-        // Wrap with caching connection factory for better performance
-        CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory();
-        cachingConnectionFactory.setTargetConnectionFactory(connectionFactory);
-        cachingConnectionFactory.setSessionCacheSize(sessionCacheSize);
-        cachingConnectionFactory.setReconnectOnException(true);
-
-        return cachingConnectionFactory;
+        return factory;
     }
 
-    @Bean(name = "ibmMQTemplate")
-    public JmsTemplate jmsTemplate() {
-        JmsTemplate template = new JmsTemplate();
-        template.setConnectionFactory(ibmmqConnectionFactory());
-        template.setPubSubDomain(false); // Default to queues
+    @Bean(name = "ibmmqQueueJmsTemplate")
+    public JmsTemplate queueJmsTemplate(@Qualifier("ibmmqConnectionFactory") ConnectionFactory ibmmqConnectionFactory) {
+        JmsTemplate template = new JmsTemplate(ibmmqConnectionFactory);
+        template.setMessageConverter(messageConverter());
+        template.setDeliveryPersistent(true);
+        template.setSessionTransacted(false);
+        template.setPubSubDomain(false);
         return template;
     }
 
-    @Bean(name = "ibmmqListenerContainerFactory")
-    public JmsListenerContainerFactory<DefaultMessageListenerContainer> ibmmqListenerContainerFactory() {
-        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        factory.setConnectionFactory(ibmmqConnectionFactory());
-        factory.setPubSubDomain(false); // Default to queues
-        factory.setConcurrency("1-10"); // Set concurrency for message processing
-        factory.setSessionAcknowledgeMode(jakarta.jms.Session.AUTO_ACKNOWLEDGE);
-        return factory;
+    @Bean(name = "ibmmqTopicJmsTemplate")
+    public JmsTemplate topicJmsTemplate(@Qualifier("ibmmqConnectionFactory") ConnectionFactory ibmmqConnectionFactory) {
+        JmsTemplate template = new JmsTemplate(ibmmqConnectionFactory);
+        template.setMessageConverter(messageConverter());
+        template.setDeliveryPersistent(true);
+        template.setSessionTransacted(false);
+        template.setPubSubDomain(true);
+        return template;
+    }
+
+    @Bean
+    public MessageConverter messageConverter() {
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setTargetType(MessageType.TEXT);
+        converter.setTypeIdPropertyName("_type");
+        return converter;
     }
 }

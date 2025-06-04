@@ -1,14 +1,12 @@
 package com.service.virtualization.ibmmq.model;
 
-import com.service.virtualization.model.MessageHeader;
 import com.service.virtualization.model.StubStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents an IBM MQ message stub for service virtualization
@@ -26,123 +24,54 @@ public class IBMMQStub {
         REGEX       // Message content matches the regex pattern
     }
 
-    /**
-     * Unique identifier for the stub
-     */
     @Id
     private String id;
-    
-    /**
-     * Name of the stub
-     */
     private String name;
-    
-    /**
-     * Description of the stub
-     */
     private String description;
-    
-    /**
-     * User ID that owns this stub
-     */
     private String userId;
-    
-    /**
-     * Queue manager name
-     */
-    private String queueManager;
-    
-    /**
-     * Queue name
-     */
-    private String queueName;
-    
-    /**
-     * JMS selector for filtering messages
-     */
-    private String selector;
-    
-    // Standardized content matching configuration
-    /**
-     * Type of content matching to perform
-     */
+
+    // Request configuration
+    private String destinationType; // "queue" or "topic"
+    private String destinationName;
+    private String messageSelector;
+
+    // Content matching configuration
     private ContentMatchType contentMatchType = ContentMatchType.NONE;
-    
-    /**
-     * Pattern to match against message content
-     */
     private String contentPattern;
-    
-    /**
-     * Whether content matching should be case sensitive
-     */
     private boolean caseSensitive = false;
-    
-    /**
-     * Priority for stub matching (higher number = higher priority)
-     */
-    private int priority = 0;
-    
-    /**
-     * Content of the response message
-     */
+
+    // Response configuration
+    private String responseType; // "queue" or "topic"
+    private String responseDestination;
     private String responseContent;
-    
-    /**
-     * Type of the response (text, json, xml, bytes)
-     */
-    private String responseType;
-    
-    /**
-     * Artificial latency in milliseconds
-     */
+
+    // Webhook configuration
+    private String webhookUrl;
+
+    // Priority for stub matching (higher number = higher priority)
+    private int priority = 0;
+
     private Integer latency;
+
+    // Custom headers for response
+    private Map<String, String> headers = new HashMap<>();
     
-    /**
-     * Custom message headers to include in the response
-     */
-    private List<MessageHeader> headers;
+    private StubStatus status = StubStatus.ACTIVE;;
     
-    /**
-     * Status of the stub (active/inactive)
-     */
-    private StubStatus status;
-    
-    /**
-     * Creation timestamp
-     */
     private LocalDateTime createdAt;
     
-    /**
-     * Last update timestamp
-     */
     private LocalDateTime updatedAt;
     
     /**
      * Default constructor
      */
     public IBMMQStub() {
-        this.headers = new ArrayList<>();
         this.latency = 0;
-        this.status = StubStatus.INACTIVE;
-        this.contentMatchType = ContentMatchType.NONE;
-        this.caseSensitive = false;
-        this.priority = 0;
-    }
-    
-    /**
-     * Constructor with essential fields
-     */
-    public IBMMQStub(String name, String queueManager, String queueName, String userId) {
-        this();
-        this.name = name;
-        this.queueManager = queueManager;
-        this.queueName = queueName;
-        this.userId = userId;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    
+
     public String getId() {
         return id;
     }
@@ -175,28 +104,28 @@ public class IBMMQStub {
         this.userId = userId;
     }
 
-    public String getQueueManager() {
-        return queueManager;
+    public String getDestinationType() {
+        return destinationType;
     }
 
-    public void setQueueManager(String queueManager) {
-        this.queueManager = queueManager;
+    public void setDestinationType(String destinationType) {
+        this.destinationType = destinationType;
     }
 
-    public String getQueueName() {
-        return queueName;
+    public String getDestinationName() {
+        return destinationName;
     }
 
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
+    public void setDestinationName(String destinationName) {
+        this.destinationName = destinationName;
     }
 
-    public String getSelector() {
-        return selector;
+    public String getMessageSelector() {
+        return messageSelector;
     }
 
-    public void setSelector(String selector) {
-        this.selector = selector;
+    public void setMessageSelector(String messageSelector) {
+        this.messageSelector = messageSelector;
     }
 
     public ContentMatchType getContentMatchType() {
@@ -223,12 +152,20 @@ public class IBMMQStub {
         this.caseSensitive = caseSensitive;
     }
 
-    public int getPriority() {
-        return priority;
+    public String getResponseType() {
+        return responseType;
     }
 
-    public void setPriority(int priority) {
-        this.priority = priority;
+    public void setResponseType(String responseType) {
+        this.responseType = responseType;
+    }
+
+    public String getResponseDestination() {
+        return responseDestination;
+    }
+
+    public void setResponseDestination(String responseDestination) {
+        this.responseDestination = responseDestination;
     }
 
     public String getResponseContent() {
@@ -239,12 +176,20 @@ public class IBMMQStub {
         this.responseContent = responseContent;
     }
 
-    public String getResponseType() {
-        return responseType;
+    public String getWebhookUrl() {
+        return webhookUrl;
     }
 
-    public void setResponseType(String responseType) {
-        this.responseType = responseType;
+    public void setWebhookUrl(String webhookUrl) {
+        this.webhookUrl = webhookUrl;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public Integer getLatency() {
@@ -255,11 +200,11 @@ public class IBMMQStub {
         this.latency = latency;
     }
 
-    public List<MessageHeader> getHeaders() {
+    public Map<String, String> getHeaders() {
         return headers;
     }
 
-    public void setHeaders(List<MessageHeader> headers) {
+    public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
     }
 
@@ -286,68 +231,8 @@ public class IBMMQStub {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-    
-    // Utility methods
-    
-    /**
-     * Add a header to the list of headers
-     * @param header the header to add
-     */
-    public void addHeader(MessageHeader header) {
-        if (this.headers == null) {
-            this.headers = new ArrayList<>();
-        }
-        this.headers.add(header);
-    }
-    
-    /**
-     * Remove a header by name
-     * @param headerName the name of the header to remove
-     * @return true if a header was removed, false otherwise
-     */
-    public boolean removeHeader(String headerName) {
-        if (this.headers == null) {
-            return false;
-        }
-        return this.headers.removeIf(h -> Objects.equals(h.getName(), headerName));
-    }
-    
-    /**
-     * Check if this stub is active
-     * @return true if status is ACTIVE
-     */
+
     public boolean isActive() {
         return status == StubStatus.ACTIVE;
     }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        IBMMQStub that = (IBMMQStub) o;
-        return status == that.status &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(name, that.name) &&
-                Objects.equals(userId, that.userId) &&
-                Objects.equals(queueManager, that.queueManager) &&
-                Objects.equals(queueName, that.queueName);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, userId, queueManager, queueName, status);
-    }
-    
-    @Override
-    public String toString() {
-        return "IBMMQStub{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", queueManager='" + queueManager + '\'' +
-                ", queueName='" + queueName + '\'' +
-                ", contentMatchType=" + contentMatchType +
-                ", priority=" + priority +
-                ", status=" + status +
-                '}';
-    }
-} 
+}

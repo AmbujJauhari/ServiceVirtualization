@@ -1,6 +1,6 @@
 package com.service.virtualization.activemq.service;
 
-import com.service.virtualization.activemq.listener.DynamicDestinationManager;
+import com.service.virtualization.activemq.listener.ActiveMqDynamicDestinationManager;
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.activemq.repository.ActiveMQStubRepository;
 import com.service.virtualization.exception.ResourceNotFoundException;
@@ -42,7 +42,7 @@ public class ActiveMQStubService {
     private ActiveMQStubRepository activeMQStubRepository;
     
     @Autowired
-    private DynamicDestinationManager destinationManager;
+    private ActiveMqDynamicDestinationManager destinationManager;
     
     /**
      * Get all ActiveMQ stubs.
@@ -229,7 +229,7 @@ public class ActiveMQStubService {
      *
      * @param stub The stub to update
      */
-    private void updateStubListener(ActiveMQStub stub) {
+    public void updateStubListener(ActiveMQStub stub) {
         if (stub.isActive()) {
             registerStubListener(stub);
         } else {

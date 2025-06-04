@@ -71,14 +71,4 @@ public class ActiveMQConfig {
         return template;
     }
     
-    /**
-     * JMS template for sending messages to ActiveMQ (legacy - for backward compatibility)
-     */
-    @Bean(name = "activemqJmsTemplate")
-    public JmsTemplate jmsTemplate() {
-        JmsTemplate template = new JmsTemplate();
-        template.setConnectionFactory(activemqConnectionFactory());
-        template.setPubSubDomain(false); // Default to queues
-        return template;
-    }
-} 
+}

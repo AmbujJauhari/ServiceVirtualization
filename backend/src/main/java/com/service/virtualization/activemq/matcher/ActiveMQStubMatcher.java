@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
  * Handles matching of JMS messages against registered ActiveMQ stubs.
  */
 @Component
-public class StubMatcher {
-    private static final Logger logger = LoggerFactory.getLogger(StubMatcher.class);
+public class ActiveMQStubMatcher {
+    private static final Logger logger = LoggerFactory.getLogger(ActiveMQStubMatcher.class);
     
     /**
      * Find a matching stub for the given message.

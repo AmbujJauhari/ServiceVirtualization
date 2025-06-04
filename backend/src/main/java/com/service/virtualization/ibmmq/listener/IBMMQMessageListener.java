@@ -1,37 +1,37 @@
-package com.service.virtualization.activemq.listener;
+package com.service.virtualization.ibmmq.listener;
 
-import com.service.virtualization.activemq.matcher.ActiveMQStubMatcher;
-import com.service.virtualization.activemq.model.ActiveMQStub;
-import com.service.virtualization.activemq.service.ActiveMQResponseService;
+import com.service.virtualization.ibmmq.matcher.IBMMQStubMatcher;
+import com.service.virtualization.ibmmq.model.IBMMQStub;
+import com.service.virtualization.ibmmq.service.IBMMQResponseService;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageListener;
+import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-import jakarta.jms.MessageListener;
-import jakarta.jms.TextMessage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Message listener for ActiveMQ messages.
+ * Message listener for IBMMQ messages.
  * Handles incoming messages, matches them against registered stubs,
  * and processes responses according to stub configuration.
  */
 @Component
-public class ActiveMQMessageListener implements MessageListener {
-    private static final Logger logger = LoggerFactory.getLogger(ActiveMQMessageListener.class);
+public class IBMMQMessageListener implements MessageListener {
+    private static final Logger logger = LoggerFactory.getLogger(IBMMQMessageListener.class);
 
     @Autowired
-    private ActiveMQStubMatcher activeMQStubMatcher;
+    private IBMMQStubMatcher IBMMQStubMatcher;
     
     @Autowired
-    private ActiveMQResponseService responseService;
+    private IBMMQResponseService responseService;
     
     // Map to store stubs by ID
-    private final Map<String, ActiveMQStub> registeredStubs = new ConcurrentHashMap<>();
+    private final Map<String, IBMMQStub> registeredStubs = new ConcurrentHashMap<>();
     
     /**
      * Handles incoming JMS messages.
@@ -48,7 +48,7 @@ public class ActiveMQMessageListener implements MessageListener {
             String messageContent = extractMessageContent(message);
             
             // Find matching stub
-            ActiveMQStub matchingStub = activeMQStubMatcher.findMatchingStub(message, registeredStubs.values());
+            IBMMQStub matchingStub = IBMMQStubMatcher.findMatchingStub(message, registeredStubs.values());
             
             if (matchingStub != null) {
                 logger.info("Found matching stub {} for message on {}", 
@@ -70,7 +70,7 @@ public class ActiveMQMessageListener implements MessageListener {
      *
      * @param stub The stub to register
      */
-    public void registerStub(ActiveMQStub stub) {
+    public void registerStub(IBMMQStub stub) {
         registeredStubs.put(stub.getId(), stub);
         logger.info("Registered stub {} for {}", stub.getId(), stub.getDestinationName());
     }

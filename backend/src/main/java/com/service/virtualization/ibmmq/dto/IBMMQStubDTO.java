@@ -27,6 +27,9 @@ public record IBMMQStubDTO(
     
     String responseContent,
     String responseType,
+    String responseDestination,
+    String responseDestinationType,
+    String webhookUrl,
     Integer latency,
     List<MessageHeader> headers,
     StubStatus status,
@@ -39,6 +42,6 @@ public record IBMMQStubDTO(
     public IBMMQStubDTO() {
         this(null, null, null, null, null, null, null, 
              IBMMQStub.ContentMatchType.NONE, null, false, 0, 
-             null, null, 0, List.of(), StubStatus.INACTIVE, null, null);
+             null, null, null, "queue", null, 0, List.of(), StubStatus.INACTIVE, null, null);
     }
 } 

@@ -123,6 +123,7 @@
             <version>2.7.0</version>
         </dependency>
 
+        <!-- Keep javax.jms for TIBCO EMS 8.6 compatibility -->
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>javax.jms-api</artifactId>
@@ -132,6 +133,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-activemq</artifactId>
+        </dependency>
+
+        <!-- IBM MQ Client -->
+        <dependency>
+            <groupId>com.ibm.mq</groupId>
+            <artifactId>com.ibm.mq.jakarta.client</artifactId>
+            <version>9.3.4.1</version>
         </dependency>
     </dependencies>
 

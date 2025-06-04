@@ -16,7 +16,7 @@ const EditIBMMQStub: React.FC = () => {
           Back to IBM MQ Dashboard
         </Link>
       </div>
-      <IBMMQStubForm />
+      <IBMMQStubForm isEdit={true} />
     </div>
   );
 };
