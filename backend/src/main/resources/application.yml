@@ -62,6 +62,8 @@ management:
   health:
     defaults:
       enabled: true
+    jms:
+      enabled: false  # Disable JMS health check to avoid javax/jakarta conflicts
 
 # External Service Connection Properties (for health checks)
 # Kafka
@@ -79,9 +81,12 @@ ibmmq:
 
 # Tibco EMS
 tibco:
-  server: ${TIBCO_SERVER:localhost}
-  port: ${TIBCO_PORT:7222}
-  connection-timeout: ${TIBCO_CONNECTION_TIMEOUT:2000}
+  enabled: true
+  url: tcp://localhost:7222
+  username: admin
+  password: admin
+  connection:
+    cache-size: 10
 
 # ActiveMQ
 activemq:

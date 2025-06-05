@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useGetTibcoDestinationsQuery, useGetTibcoStubByIdQuery, useCreateTibcoStubMutation, useUpdateTibcoStubMutation, ContentMatchType, StubStatus } from '../../../api/tibcoApi';
-import TextEditor from '../../../components/common/TextEditor';
 
 interface TibcoStubFormProps {
   isEdit?: boolean;
 }
 
-interface ResponseHeader {
-  key: string;
+interface MessageHeader {
+  name: string;
   value: string;
+  type: string;
 }
 
 const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [createStub] = useCreateTibcoStubMutation();
-  const [updateStub] = useUpdateTibcoStubMutation();
-  const { data: destinations, isLoading: isLoadingDestinations } = useGetTibcoDestinationsQuery();
-  const { data: existingStub, isLoading: isLoadingStub } = useGetTibcoStubByIdQuery(id!, { skip: !isEdit || !id });
+  const isEditMode = isEdit || Boolean(id);
+  const navigate = useNavigate();
+
+  // Error state
+  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [requestDestinationType, setRequestDestinationType] = useState<'TOPIC' | 'QUEUE'>('TOPIC');
-  const [requestDestinationName, setRequestDestinationName] = useState('');
-  const [responseDestinationType, setResponseDestinationType] = useState<'TOPIC' | 'QUEUE'>('TOPIC');
-  const [responseDestinationName, setResponseDestinationName] = useState('');
+  const [destinationType, setDestinationType] = useState('queue');
+  const [destinationName, setDestinationName] = useState('');
   const [messageSelector, setMessageSelector] = useState('');
   
   // Standardized content matching configuration
@@ -35,35 +33,45 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [priority, setPriority] = useState(0);
   
-  const [responseType, setResponseType] = useState<'direct' | 'callback'>('direct');
+  const [responseType, setResponseType] = useState('text');
   const [responseContent, setResponseContent] = useState('');
-  const [responseHeaders, setResponseHeaders] = useState<ResponseHeader[]>([]);
+  const [responseDestination, setResponseDestination] = useState('');
+  const [responseDestinationType, setResponseDestinationType] = useState('queue');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [latency, setLatency] = useState(0);
-  
-  // UI state
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [headers, setHeaders] = useState<MessageHeader[]>([]);
+  const [status, setStatus] = useState<StubStatus>(StubStatus.ACTIVE);
 
-  // Load existing stub data if in edit mode
+  // New header form fields
+  const [newHeaderName, setNewHeaderName] = useState('');
+  const [newHeaderValue, setNewHeaderValue] = useState('');
+  const [newHeaderType, setNewHeaderType] = useState('string');
+
+  // Mutations
+  const [createStub, { isLoading: isCreating }] = useCreateTibcoStubMutation();
+  const [updateStub, { isLoading: isUpdating }] = useUpdateTibcoStubMutation();
+  const { data: existingStub, isLoading: isLoadingStub } = useGetTibcoStubByIdQuery(id!, { skip: !isEditMode || !id });
+
+  // Populate form with existing data in edit mode
   useEffect(() => {
-    if (isEdit && existingStub) {
-      setName(existingStub.name);
+    if (existingStub) {
+      setName(existingStub.name || '');
       setDescription(existingStub.description || '');
       
-      // Load request destination
-      if (existingStub.requestDestination) {
-        setRequestDestinationType(existingStub.requestDestination.type);
-        setRequestDestinationName(existingStub.requestDestination.name);
+      // Map from flat destination structure
+      if (existingStub.destinationType) {
+        setDestinationType(existingStub.destinationType.toLowerCase());
+      }
+      if (existingStub.destinationName) {
+        setDestinationName(existingStub.destinationName);
       }
       
-      // Load response destination
+      // Map response destination
+      if (existingStub.responseType) {
+        setResponseDestinationType(existingStub.responseType.toLowerCase());
+      }
       if (existingStub.responseDestination) {
-        setResponseDestinationType(existingStub.responseDestination.type);
-        setResponseDestinationName(existingStub.responseDestination.name);
-      } else if (existingStub.requestDestination) {
-        // Default response destination to match request if not specified
-        setResponseDestinationType(existingStub.requestDestination.type);
-        setResponseDestinationName(existingStub.requestDestination.name);
+        setResponseDestination(existingStub.responseDestination);
       }
       
       setMessageSelector(existingStub.messageSelector || '');
@@ -74,65 +82,69 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
       setCaseSensitive(existingStub.caseSensitive !== undefined ? existingStub.caseSensitive : false);
       setPriority(existingStub.priority || 0);
       
-      setResponseType(existingStub.responseType === 'callback' ? 'callback' : 'direct');
+      // Map response type from direct/callback to text/json/xml/bytes
+      setResponseType(existingStub.responseType === 'callback' ? 'json' : 'text');
       setResponseContent(existingStub.responseContent || '');
       setLatency(existingStub.latency || 0);
       
-      // Load response headers if they exist
-      if (existingStub.responseHeaders) {
-        const headers: ResponseHeader[] = Object.entries(existingStub.responseHeaders).map(([key, value]) => ({
-          key,
-          value: value as string
-        }));
-        setResponseHeaders(headers);
+      // Convert headers from Record<string, string> to MessageHeader[] for UI
+      if (existingStub.responseHeaders && typeof existingStub.responseHeaders === 'object') {
+        const headersArray: MessageHeader[] = [];
+        Object.entries(existingStub.responseHeaders).forEach(([name, value]) => {
+          headersArray.push({
+            name,
+            value: String(value),
+            type: 'string' // Default type since backend doesn't store type
+          });
+        });
+        setHeaders(headersArray);
+      } else {
+        setHeaders([]);
       }
+      
+      setStatus(existingStub.status || StubStatus.ACTIVE);
     }
-  }, [isEdit, existingStub]);
+  }, [existingStub]);
 
   const handleAddHeader = () => {
-    setResponseHeaders([...responseHeaders, { key: '', value: '' }]);
+    if (!newHeaderName.trim()) return;
+
+    const newHeader: MessageHeader = {
+      name: newHeaderName,
+      value: newHeaderValue,
+      type: newHeaderType
+    };
+
+    setHeaders([...headers, newHeader]);
+    setNewHeaderName('');
+    setNewHeaderValue('');
+    setNewHeaderType('string');
   };
 
-  const handleRemoveHeader = (index: number) => {
-    setResponseHeaders(responseHeaders.filter((_, i) => i !== index));
-  };
-
-  const handleHeaderChange = (index: number, field: 'key' | 'value', value: string) => {
-    const updatedHeaders = [...responseHeaders];
-    updatedHeaders[index][field] = value;
-    setResponseHeaders(updatedHeaders);
-  };
-
-  const handleCancel = () => {
-    navigate('/tibco');
+  const handleRemoveHeader = (headerName: string) => {
+    setHeaders(headers.filter(header => header.name !== headerName));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setIsSubmitting(true);
+    setError(null);
 
-    try {
-      // Convert headers array to object
-      const headersObject: Record<string, string> = {};
-      responseHeaders.forEach(header => {
-        if (header.key.trim()) {
-          headersObject[header.key.trim()] = header.value;
-        }
+    // Transform headers from MessageHeader[] to Map<string, string> format expected by backend
+    const headersData = Array.isArray(headers) ? headers : [];
+    const headersMap: Record<string, string> = {};
+    headersData.forEach(header => {
+      headersMap[header.name] = header.value;
       });
 
+    // Map to flat destination structure that matches backend
       const stubData = {
-        id: isEdit ? id : undefined,
+      id: isEditMode ? id : undefined,
         name,
         description,
-        requestDestination: {
-          type: requestDestinationType,
-          name: requestDestinationName
-        },
-        responseDestination: {
-          type: responseDestinationType,
-          name: responseDestinationName
-        },
+      destinationType: destinationType.toUpperCase(),
+      destinationName,
+      responseType: responseDestinationType.toUpperCase(),
+      responseDestination: responseDestination || destinationName, // Default to request destination if not specified
         messageSelector,
         
         // Standardized content matching configuration
@@ -141,381 +153,446 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
         caseSensitive,
         priority,
         
-        responseType,
         responseContent,
-        responseHeaders: headersObject,
+      responseHeaders: headersMap,
         latency,
-        status: StubStatus.ACTIVE
+      webhookUrl,
+      status
       };
 
-      if (isEdit) {
-        await updateStub(stubData).unwrap();
+    try {
+      if (isEditMode && id) {
+        await updateStub(stubData);
+        navigate('/tibco');
       } else {
+        try {
         await createStub(stubData).unwrap();
+          navigate('/tibco');
+        } catch (err: any) {
+          if (err.status === 409) { // Conflict status code
+            setError('A stub with higher priority already exists for this destination.');
+          } else {
+            setError('An error occurred while creating the stub. Please try again.');
+            console.error('Error creating stub:', err);
+          }
+        }
       }
-
-      navigate('/tibco');
     } catch (error) {
-      console.error('Failed to save stub:', error);
-      setErrorMessage('Failed to save stub. Please check your input and try again.');
-    } finally {
-      setIsSubmitting(false);
+      setError('An error occurred while saving the stub. Please try again.');
+      console.error('Error saving TIBCO stub:', error);
     }
   };
 
-  if (isEdit && isLoadingStub) {
-    return <div className="p-6 text-center">Loading stub data...</div>;
+  if (isEditMode && isLoadingStub) {
+    return <div className="text-center py-4">Loading...</div>;
   }
 
-  const filteredDestinations = destinations?.filter(dest => dest.type === requestDestinationType) || [];
-
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-lg font-medium text-gray-700 mb-2">
-          {isEdit ? 'Edit TIBCO Stub' : 'Create TIBCO Stub'}
-        </h2>
-        <nav className="text-sm text-gray-500">
-          <Link to="/tibco" className="hover:text-gray-700">TIBCO</Link>
-          <span className="mx-2">/</span>
-          <span>{isEdit ? 'Edit Stub' : 'Create Stub'}</span>
-        </nav>
-      </div>
+    <div className="container mx-auto p-4">
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          {isEditMode ? 'Edit TIBCO Stub' : 'Create TIBCO Stub'}
+        </h1>
 
-      {errorMessage && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-700">{errorMessage}</p>
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit}>
         {/* Basic Information */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-4">Basic Information</h3>
-          
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                  Name*
               </label>
               <input
+                  id="name"
                 type="text"
-                id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 required
               />
             </div>
-
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
                 Description
               </label>
               <input
+                  id="description"
                 type="text"
-                id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
             </div>
           </div>
         </div>
 
         {/* Destination Configuration */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-4">Destination Configuration</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Request Destination */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Destination Configuration</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Request Destination</h4>
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="requestDestinationType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Type *
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="destinationType">
+                  Destination Type*
                   </label>
                   <select
-                    id="requestDestinationType"
-                    value={requestDestinationType}
-                    onChange={(e) => setRequestDestinationType(e.target.value as 'TOPIC' | 'QUEUE')}
-                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  id="destinationType"
+                  value={destinationType}
+                  onChange={(e) => setDestinationType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     required
                   >
-                    <option value="TOPIC">Topic</option>
-                    <option value="QUEUE">Queue</option>
+                  <option value="queue">Queue</option>
+                  <option value="topic">Topic</option>
                   </select>
                 </div>
-
                 <div>
-                  <label htmlFor="requestDestinationName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Name *
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="destinationName">
+                  Destination Name*
                   </label>
                   <input
+                  id="destinationName"
                     type="text"
-                    id="requestDestinationName"
-                    value={requestDestinationName}
-                    onChange={(e) => setRequestDestinationName(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Enter destination name"
+                  value={destinationName}
+                  onChange={(e) => setDestinationName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     required
                   />
-                </div>
               </div>
             </div>
-
-            {/* Response Destination */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Response Destination</h4>
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="responseDestinationType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Type *
-                  </label>
-                  <select
-                    id="responseDestinationType"
-                    value={responseDestinationType}
-                    onChange={(e) => setResponseDestinationType(e.target.value as 'TOPIC' | 'QUEUE')}
-                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    required
-                  >
-                    <option value="TOPIC">Topic</option>
-                    <option value="QUEUE">Queue</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="responseDestinationName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Name *
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="messageSelector">
+                Message Selector
                   </label>
                   <input
+                id="messageSelector"
                     type="text"
-                    id="responseDestinationName"
-                    value={responseDestinationName}
-                    onChange={(e) => setResponseDestinationName(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Enter destination name"
-                    required
-                  />
-                </div>
-              </div>
+                value={messageSelector}
+                onChange={(e) => setMessageSelector(e.target.value)}
+                placeholder="e.g. JMSCorrelationID='12345'"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                JMS selector expression to filter which messages this stub responds to.
+              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Message Selector */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-4">Message Selector</h3>
-          
-          <div>
-            <label htmlFor="messageSelector" className="block text-sm font-medium text-gray-700 mb-1">
-              Message Selector (JMS Selector)
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="priority">
+                Priority
             </label>
             <input
-              type="text"
-              id="messageSelector"
-              value={messageSelector}
-              onChange={(e) => setMessageSelector(e.target.value)}
-              className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              placeholder="e.g., MessageType = 'ORDER'"
+                id="priority"
+                type="number"
+                min="0"
+                max="100"
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Optional JMS message selector to filter incoming messages
+              <p className="text-sm text-gray-500 mt-1">
+                Priority for matching (higher values = higher priority). New stubs cannot have a priority lower than existing stubs.
             </p>
           </div>
         </div>
 
         {/* Content Matching Configuration */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-4">Content Matching</h3>
-          
-          <div className="space-y-4">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Content Matching</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="contentMatchType" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentMatchType">
                 Match Type
               </label>
               <select
                 id="contentMatchType"
                 value={contentMatchType}
                 onChange={(e) => setContentMatchType(e.target.value as ContentMatchType)}
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               >
-                <option value={ContentMatchType.NONE}>No content matching</option>
-                <option value={ContentMatchType.CONTAINS}>Message contains pattern</option>
-                <option value={ContentMatchType.EXACT}>Message exactly matches pattern</option>
-                <option value={ContentMatchType.REGEX}>Message matches regex pattern</option>
+                  <option value={ContentMatchType.NONE}>No Content Matching</option>
+                  <option value={ContentMatchType.CONTAINS}>Contains Text</option>
+                  <option value={ContentMatchType.EXACT}>Exact Match</option>
+                  <option value={ContentMatchType.REGEX}>Regular Expression</option>
               </select>
-            </div>
-
-            {contentMatchType !== ContentMatchType.NONE && (
-              <>
-                <div>
-                  <label htmlFor="contentPattern" className="block text-sm font-medium text-gray-700 mb-1">
-                    Content Pattern
-                  </label>
-                  <TextEditor
-                    value={contentPattern}
-                    onChange={setContentPattern}
-                    height="200px"
-                    language="text"
-                    placeholder="Enter the content pattern to match..."
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    {contentMatchType === ContentMatchType.CONTAINS && 'Messages containing this text will match'}
-                    {contentMatchType === ContentMatchType.EXACT && 'Messages with exactly this content will match'}
-                    {contentMatchType === ContentMatchType.REGEX && 'Messages matching this regular expression will match'}
+                <p className="text-sm text-gray-500 mt-1">
+                  How to match the message content.
                   </p>
                 </div>
-
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="caseSensitive">
+                  Case Sensitivity
+                </label>
                 <div className="flex items-center">
                   <input
-                    type="checkbox"
                     id="caseSensitive"
+                    type="checkbox"
                     checked={caseSensitive}
                     onChange={(e) => setCaseSensitive(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="caseSensitive" className="ml-2 block text-sm text-gray-700">
+                  <label className="ml-2 block text-gray-700" htmlFor="caseSensitive">
                     Case sensitive matching
                   </label>
                 </div>
-              </>
+              </div>
+            </div>
+            
+            {contentMatchType !== ContentMatchType.NONE && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contentPattern">
+                  Content Pattern
+                </label>
+                <textarea
+                  id="contentPattern"
+                  value={contentPattern}
+                  onChange={(e) => setContentPattern(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32"
+                  placeholder={contentMatchType === ContentMatchType.REGEX ? '^\\s*<order>.*</order>\\s*$' : contentMatchType === ContentMatchType.EXACT ? 'Enter complete message content to match exactly' : 'Enter text to search for in the message content'}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {contentMatchType === ContentMatchType.REGEX ? 
+                    'Regular expression pattern to match against message content.' : 
+                    contentMatchType === ContentMatchType.CONTAINS ?
+                    'Text pattern that must be contained in the message content.' :
+                    'Complete message content that must match exactly (e.g., full XML or JSON content).'}
+                </p>
+              </div>
             )}
+          </div>
 
+          {/* Response Configuration */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Response Configuration</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseType">
+                  Response Content Type
+                </label>
+                <select
+                  id="responseType"
+                  value={responseType}
+                  onChange={(e) => setResponseType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="text">Text</option>
+                  <option value="json">JSON</option>
+                  <option value="xml">XML</option>
+                  <option value="bytes">Bytes</option>
+                </select>
+              </div>
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                Priority
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseDestinationType">
+                  Response Destination Type
+                </label>
+                <select
+                  id="responseDestinationType"
+                  value={responseDestinationType}
+                  onChange={(e) => setResponseDestinationType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="queue">Queue</option>
+                  <option value="topic">Topic</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseDestination">
+                Response Destination
               </label>
               <input
-                type="number"
-                id="priority"
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-                min="0"
-                max="100"
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                id="responseDestination"
+                type="text"
+                value={responseDestination}
+                onChange={(e) => setResponseDestination(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Leave empty to use JMSReplyTo from request"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Higher priority stubs will be matched first (0-100, default: 0)
+              <p className="text-sm text-gray-500 mt-1">
+                Destination where the response will be sent. If empty, uses JMSReplyTo from the incoming message.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Response Configuration */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-4">Response Configuration</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="responseType" className="block text-sm font-medium text-gray-700 mb-1">
-                Response Type
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="webhookUrl">
+                Webhook URL
               </label>
-              <select
-                id="responseType"
-                value={responseType}
-                onChange={(e) => setResponseType(e.target.value as 'direct' | 'callback')}
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="direct">Direct Response</option>
-                <option value="callback">Callback (Future Enhancement)</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="responseContent" className="block text-sm font-medium text-gray-700 mb-1">
-                Response Content *
-              </label>
-              <TextEditor
-                value={responseContent}
-                onChange={setResponseContent}
-                height="300px"
-                language="json"
-                placeholder="Enter the response message content..."
+              <input
+                id="webhookUrl"
+                type="text"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Optional webhook URL for external notifications"
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Optional webhook URL to notify external systems when this stub is triggered.
+              </p>
             </div>
 
-            <div>
-              <label htmlFor="latency" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseContent">
+                Response Content*
+              </label>
+              <textarea
+                id="responseContent"
+                value={responseContent}
+                onChange={(e) => setResponseContent(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32"
+                placeholder="Enter the response message content..."
+                required
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                The content of the response message to be sent.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
                 Response Latency (ms)
               </label>
               <input
-                type="number"
                 id="latency"
+                type="number"
+                min="0"
                 value={latency}
                 onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
-                min="0"
-                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="0"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Artificial delay before sending the response (in milliseconds)
+              <p className="text-sm text-gray-500 mt-1">
+                Artificial delay before sending the response (in milliseconds).
               </p>
             </div>
+          </div>
 
-            {/* Response Headers */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Response Headers
-                </label>
+          {/* Message Headers */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Message Headers</h2>
+            
+            {/* Add new header form */}
+            <div className="mb-4 p-4 border rounded">
+              <h3 className="text-md font-medium text-gray-700 mb-2">Add Header</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <input
+                  type="text"
+                  placeholder="Header Name"
+                  value={newHeaderName}
+                  onChange={(e) => setNewHeaderName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+                <input
+                  type="text"
+                  placeholder="Header Value"
+                  value={newHeaderValue}
+                  onChange={(e) => setNewHeaderValue(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+                <select
+                  value={newHeaderType}
+                  onChange={(e) => setNewHeaderType(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="string">String</option>
+                  <option value="integer">Integer</option>
+                  <option value="boolean">Boolean</option>
+                </select>
                 <button
                   type="button"
                   onClick={handleAddHeader}
-                  className="text-sm text-primary-600 hover:text-primary-700"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
-                  + Add Header
+                  Add
                 </button>
               </div>
+              </div>
               
-              {responseHeaders.map((header, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Header name"
-                    value={header.key}
-                    onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Header value"
-                    value={header.value}
-                    onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  />
+            {/* Display existing headers */}
+            {headers.length > 0 && (
+              <div>
+                <h3 className="text-md font-medium text-gray-700 mb-2">Current Headers</h3>
+                <div className="border rounded">
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {headers.map((header, index) => (
+                        <tr key={index}>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{header.name}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{header.value}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{header.type}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
                   <button
                     type="button"
-                    onClick={() => handleRemoveHeader(index)}
-                    className="px-3 py-2 text-red-600 hover:text-red-700"
+                              onClick={() => handleRemoveHeader(header.name)}
+                              className="text-red-600 hover:text-red-900"
                   >
                     Remove
                   </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
+              </div>
+            )}
             </div>
+
+          {/* Status */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Status</h2>
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                Stub Status
+              </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as StubStatus)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              >
+                <option value={StubStatus.ACTIVE}>Active</option>
+                <option value={StubStatus.INACTIVE}>Inactive</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Active stubs will process incoming messages, inactive stubs will be ignored
+              </p>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-3">
+          {/* Form Actions */}
+          <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              onClick={() => navigate('/tibco')}
+              className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              disabled={isCreating || isUpdating}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
           >
-            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Stub' : 'Create Stub')}
+              {isCreating || isUpdating ? 'Saving...' : (isEditMode ? 'Update Stub' : 'Create Stub')}
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 };

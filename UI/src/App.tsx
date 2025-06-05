@@ -10,6 +10,8 @@ import IBMMQDashboard from './pages/ibmmq/IBMMQDashboard';
 import StubForm from './pages/rest/stubs/StubForm';
 import SoapStubForm from './pages/soap/stubs/SoapStubForm';
 import TibcoStubForm from './pages/tibco/stubs/TibcoStubForm';
+import CreateTibcoStub from './pages/tibco/stubs/CreateTibcoStub';
+import EditTibcoStub from './pages/tibco/stubs/EditTibcoStub';
 import CreateKafkaStub from './pages/kafka/stubs/CreateKafkaStub';
 import EditKafkaStub from './pages/kafka/stubs/EditKafkaStub';
 import CreateActiveMQStub from './pages/activemq/stubs/CreateActiveMQStub';
@@ -219,8 +221,8 @@ const App: React.FC = () => {
         <Route path="/activemq" element={<ActiveMQDashboard />} />
         <Route path="/ibmmq" element={<IBMMQDashboard />} />
         <Route path="/fol" element={<FolDashboard />} />
-        <Route path="/tibco/stubs/create" element={<TibcoStubForm />} />
-        <Route path="/tibco/stubs/:id/edit" element={<TibcoStubForm isEdit={true} />} />
+        <Route path="/tibco/stubs/create" element={<CreateTibcoStub />} />
+        <Route path="/tibco/stubs/:id/edit" element={<EditTibcoStub />} />
         <Route path="/rest/stubs/new" element={<StubForm />} />
         <Route path="/rest/stubs/:id/edit" element={<StubForm isEdit={true} />} />
         <Route path="/soap/stubs/new" element={<SoapStubForm />} />

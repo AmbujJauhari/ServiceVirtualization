@@ -16,6 +16,9 @@ services:
       echo 'user_auth=none' >> tibemsd.conf &&
       echo 'authorization=none' >> tibemsd.conf &&
       echo 'create_destination=enabled' >> tibemsd.conf &&
+      echo 'client_timeout=300' >> tibemsd.conf &&
+      echo 'connection_cleanup_time=600' >> tibemsd.conf &&
+      echo 'statistics=enabled' >> tibemsd.conf &&
       echo 'users=users.conf' >> tibemsd.conf &&
       echo 'groups=groups.conf' >> tibemsd.conf &&
       echo 'transports=transports.conf' >> tibemsd.conf &&
@@ -53,3 +56,4 @@ services:
       cat acl.conf &&
       /opt/tibco/ems/10.2/bin/tibemsd
       "
+      

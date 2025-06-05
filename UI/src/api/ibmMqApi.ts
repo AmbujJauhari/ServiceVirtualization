@@ -95,40 +95,6 @@ export const ibmMqApi = createApi({
       invalidatesTags: ['IBMMQStub'],
     }),
     
-    updateIBMMQStub: builder.mutation<IBMMQStub, Partial<IBMMQStub>>({
-      query: (stub) => ({
-        url: `/ibmmq/stubs/${stub.id}`,
-        method: 'PUT',
-        body: stub,
-      }),
-      invalidatesTags: ['IBMMQStub'],
-    }),
-    
-    updateIBMMQStubStatus: builder.mutation<IBMMQStub, UpdateIBMMQStubStatusRequest>({
-      query: ({ id, status }) => ({
-        url: `/ibmmq/stubs/${id}/status`,
-        method: 'PATCH',
-        body: { status: status },
-      }),
-      invalidatesTags: ['IBMMQStub'],
-    }),
-    
-    toggleIBMMQStubStatus: builder.mutation<IBMMQStub, string>({
-      query: (id) => ({
-        url: `/ibmmq/stubs/${id}/toggle`,
-        method: 'PATCH',
-      }),
-      invalidatesTags: ['IBMMQStub'],
-    }),
-    
-    deleteIBMMQStub: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/ibmmq/stubs/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['IBMMQStub'],
-    }),
-    
     addMessageHeader: builder.mutation<IBMMQStub, { id: string, header: MessageHeader }>({
       query: ({ id, header }) => ({
         url: `/ibmmq/stubs/${id}/headers`,

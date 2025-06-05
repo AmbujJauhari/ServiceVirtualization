@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Configuration
 public class TibcoEMSStandaloneConsumer implements CommandLineRunner {
 
-    private static final String QUEUE_NAME = "TEST.QUEUE.1";
+    private static final String QUEUE_NAME = "TEST.QUEUE.2";
     private final AtomicLong messageCounter = new AtomicLong(0);
     private volatile boolean running = true;
 

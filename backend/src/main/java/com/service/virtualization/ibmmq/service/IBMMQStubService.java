@@ -30,12 +30,12 @@ public class IBMMQStubService {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubService.class);
 
     private final IBMMQStubRepository ibmMQStubRepository;
-    @Autowired
-    private IbmMqDynamicDestinationManager destinationManager;
+    private final IbmMqDynamicDestinationManager destinationManager;
 
     @Autowired
-    public IBMMQStubService(IBMMQStubRepository ibmMQStubRepository) {
+    public IBMMQStubService(IBMMQStubRepository ibmMQStubRepository, IbmMqDynamicDestinationManager destinationManager) {
         this.ibmMQStubRepository = ibmMQStubRepository;
+        this.destinationManager = destinationManager;
     }
 
     public IBMMQStub create(IBMMQStub ibmMQStub) {

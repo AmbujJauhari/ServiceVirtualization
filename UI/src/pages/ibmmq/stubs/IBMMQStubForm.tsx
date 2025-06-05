@@ -325,22 +325,22 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
                   How to match the message content.
                 </p>
               </div>
-              <div>
+                  <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="caseSensitive">
                   Case Sensitivity
-                </label>
-                <div className="flex items-center">
-                  <input
+                    </label>
+                  <div className="flex items-center">
+                    <input
                     id="caseSensitive"
-                    type="checkbox"
-                    checked={caseSensitive}
-                    onChange={(e) => setCaseSensitive(e.target.checked)}
+                      type="checkbox"
+                      checked={caseSensitive}
+                      onChange={(e) => setCaseSensitive(e.target.checked)}
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
+                    />
                   <label className="ml-2 block text-gray-700" htmlFor="caseSensitive">
-                    Case sensitive matching
-                  </label>
-                </div>
+                      Case sensitive matching
+                    </label>
+                  </div>
               </div>
             </div>
             
@@ -438,20 +438,20 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
             </div>
 
             <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
-                Response Latency (ms)
-              </label>
-              <input
-                id="latency"
-                type="number"
-                min="0"
-                value={latency}
-                onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Add artificial delay to simulate processing time.
-              </p>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latency">
+                  Response Latency (ms)
+                </label>
+                <input
+                  id="latency"
+                  type="number"
+                  min="0"
+                  value={latency}
+                  onChange={(e) => setLatency(parseInt(e.target.value) || 0)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Add artificial delay to simulate processing time.
+                </p>
             </div>
 
             <div className="mt-4">

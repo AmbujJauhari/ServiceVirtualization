@@ -24,8 +24,15 @@ export interface TibcoStub {
   name: string;
   description?: string;
   userId?: string;
-  requestDestination: TibcoDestination;
-  responseDestination: TibcoDestination;
+  
+  // Flat destination structure to match backend
+  destinationType?: string; // "QUEUE" or "TOPIC"
+  destinationName: string;
+  
+  // Response destination as flat strings
+  responseType?: string; // "QUEUE" or "TOPIC"
+  responseDestination?: string;
+  
   messageSelector?: string;
   
   // Legacy body match criteria (kept for backward compatibility)
@@ -39,12 +46,14 @@ export interface TibcoStub {
   // Priority for stub matching
   priority?: number;
   
-  responseType?: string; // DIRECT or CALLBACK
   responseContent?: string;
   responseHeaders?: Record<string, string>;
   
   // Response latency in milliseconds
   latency?: number;
+  
+  // Webhook configuration
+  webhookUrl?: string;
   
   status?: StubStatus;
   createdAt?: string;
@@ -200,28 +209,21 @@ export const tibcoApi = createApi({
       }),
       invalidatesTags: ['TibcoSchedule']
     })
-  })
+  }),
 });
 
 export const {
-  // Destinations
   useGetTibcoDestinationsQuery,
   useCreateTibcoDestinationMutation,
   useDeleteTibcoDestinationMutation,
-  
-  // Stubs
   useGetTibcoStubsQuery,
   useGetTibcoStubByIdQuery,
   useCreateTibcoStubMutation,
   useUpdateTibcoStubMutation,
   useDeleteTibcoStubMutation,
   useUpdateTibcoStubStatusMutation,
-  
-  // Publishing
   usePublishTibcoMessageMutation,
-  
-  // Scheduling
   useGetTibcoSchedulesQuery,
   useCreateTibcoScheduleMutation,
-  useDeleteTibcoScheduleMutation
+  useDeleteTibcoScheduleMutation,
 } = tibcoApi; 

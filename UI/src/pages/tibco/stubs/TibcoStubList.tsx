@@ -50,15 +50,13 @@ const TibcoStubList: React.FC = () => {
     }
   };
 
-  const handleCreateStub = () => {
-    navigate('/tibco/stubs/create');
-  };
+
 
   const filteredStubs = stubs?.filter(
     (stub) => {
-      // Get destination info from the request destination
-      const destinationName = stub.requestDestination?.name || '';
-      const destinationType = stub.requestDestination?.type || '';
+      // Get destination info from flat structure
+      const destinationName = stub.destinationName || '';
+      const destinationType = stub.destinationType || '';
       const contentPattern = stub.contentPattern?.toLowerCase() || '';
       const lowercaseFilter = filter.toLowerCase();
         
@@ -74,12 +72,6 @@ const TibcoStubList: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-medium text-gray-700">Message Stubs</h2>
-        <button
-          onClick={handleCreateStub}
-          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          Create Stub
-        </button>
       </div>
 
       <div className="mb-4">
@@ -141,14 +133,14 @@ const TibcoStubList: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        stub.requestDestination?.type === 'TOPIC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                        stub.destinationType === 'TOPIC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {stub.requestDestination?.type}
+                        {stub.destinationType}
                       </span>
                       <span className="ml-2 text-sm text-gray-500">
-                        {stub.requestDestination?.name || ''}
-                        {stub.responseDestination && stub.responseDestination.name !== stub.requestDestination?.name && 
-                          ` → ${stub.responseDestination.name}`}
+                        {stub.destinationName || ''}
+                        {stub.responseDestination && stub.responseDestination !== stub.destinationName && 
+                          ` → ${stub.responseDestination}`}
                       </span>
                     </div>
                   </td>
