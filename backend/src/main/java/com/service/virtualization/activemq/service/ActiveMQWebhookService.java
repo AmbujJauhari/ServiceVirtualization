@@ -3,6 +3,7 @@ package com.service.virtualization.activemq.service;
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -14,8 +15,10 @@ import java.util.Map;
 
 /**
  * Service for handling webhook interactions for dynamic responses.
+ * Only active when activemq-disabled profile is NOT active
  */
 @Service
+@Profile("!activemq-disabled")
 public class ActiveMQWebhookService {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQWebhookService.class);
     

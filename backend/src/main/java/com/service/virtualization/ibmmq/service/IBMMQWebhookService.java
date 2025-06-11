@@ -9,13 +9,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 
 /**
- * Service for handling webhook interactions for dynamic responses.
+ * Service for IBM MQ webhook operations
+ * Only active when ibmmq-disabled profile is NOT active
  */
 @Service
+@Profile("!ibmmq-disabled")
 public class IBMMQWebhookService {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQWebhookService.class);
 

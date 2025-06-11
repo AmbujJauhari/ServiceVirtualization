@@ -9,15 +9,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Initializer for IBM MQ stubs that runs on application startup.
- * Ensures all active IBM MQ stubs are properly initialized and ready to process messages.
+ * Initializer for IBM MQ stubs
+ * Only active when ibmmq-disabled profile is NOT active
  */
 @Component
+@Profile("!ibmmq-disabled")
 public class IBMMQStubInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubInitializer.class);

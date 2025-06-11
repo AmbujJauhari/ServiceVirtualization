@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.context.annotation.Profile;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -21,8 +22,10 @@ import java.util.stream.Collectors;
 
 /**
  * Service for interacting with WireMock admin APIs
+ * Only active when rest-disabled profile is NOT active
  */
 @Service
+@Profile("!rest-disabled")
 public class WireMockAdminService {
 
     private static final Logger logger = LoggerFactory.getLogger(WireMockAdminService.class);

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -16,10 +17,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Initializer for IBM MQ stubs that runs on application startup.
- * Ensures all active IBM MQ stubs are properly initialized and ready to process messages.
+ * Initializer for ActiveMQ stubs that runs on application startup.
+ * Ensures all active ActiveMQ stubs are properly initialized and ready to process messages.
+ * Only active when activemq-disabled profile is NOT active
  */
 @Component
+@Profile("!activemq-disabled")
 public class ActiveMQStubInitializer {
 
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQStubInitializer.class);

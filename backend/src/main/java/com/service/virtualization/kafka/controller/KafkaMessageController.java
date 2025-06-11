@@ -8,6 +8,7 @@ import com.service.virtualization.kafka.dto.SchemaInfoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +16,11 @@ import java.util.List;
 
 /**
  * REST API for Kafka message operations
+ * Only active when kafka-disabled profile is NOT active
  */
 @RestController
 @RequestMapping("/api/kafka")
+@Profile("!kafka-disabled")
 public class KafkaMessageController {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaMessageController.class);

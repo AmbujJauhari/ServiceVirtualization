@@ -6,8 +6,12 @@ import com.service.virtualization.soap.SoapStubDTO;
 import com.service.virtualization.soap.SoapStub;
 import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.soap.service.SoapStubService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +21,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * REST controller for SOAP stub operations
+ * REST API for managing SOAP stubs
+ * Only active when soap-disabled profile is NOT active
  */
 @RestController
 @RequestMapping("/api/soap/stubs")
+@Tag(name = "SOAP Stubs", description = "APIs for managing SOAP service stubs")
+@Profile("!soap-disabled")
 public class SoapStubController {
     
     private static final Logger logger = LoggerFactory.getLogger(SoapStubController.class);

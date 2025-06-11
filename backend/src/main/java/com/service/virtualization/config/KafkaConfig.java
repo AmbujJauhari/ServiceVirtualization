@@ -7,6 +7,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -16,8 +17,10 @@ import java.util.Map;
 
 /**
  * Configuration class for Kafka
+ * Only loaded when kafka-disabled profile is NOT active
  */
 @Configuration
+@Profile("!kafka-disabled")
 public class KafkaConfig {
 
     @Value("${kafka.bootstrap-servers:localhost:9092}")

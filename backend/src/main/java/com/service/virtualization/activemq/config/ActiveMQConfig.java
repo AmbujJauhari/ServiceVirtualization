@@ -4,15 +4,18 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
 
 import jakarta.jms.ConnectionFactory;
 
 /**
- * Configuration for ActiveMQ integration.
+ * Configuration for ActiveMQ
+ * Only loaded when activemq-disabled profile is NOT active
  */
 @Configuration
+@Profile("!activemq-disabled")
 public class ActiveMQConfig {
 
     @Value("${activemq.broker-url:tcp://localhost:61616}")

@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +17,10 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Service for managing Kafka topics
+ * Only active when kafka-disabled profile is NOT active
  */
 @Service
+@Profile("!kafka-disabled")
 public class KafkaTopicService {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaTopicService.class);

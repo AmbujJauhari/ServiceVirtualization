@@ -8,12 +8,18 @@ import com.service.virtualization.soap.SoapStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service for managing Kafka stubs
+ * Only active when kafka-disabled profile is NOT active
+ */
 @Service
+@Profile("!kafka-disabled")
 public class KafkaStubService {
     private static final Logger logger = LoggerFactory.getLogger(KafkaStubService.class);
 

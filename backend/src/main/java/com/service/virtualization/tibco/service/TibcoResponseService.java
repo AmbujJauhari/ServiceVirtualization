@@ -10,14 +10,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Service for handling responses to matched Tibco messages.
+ * Only active when tibco-disabled profile is NOT active
  */
 @Service
+@Profile("!tibco-disabled")
 public class TibcoResponseService {
     private static final Logger logger = LoggerFactory.getLogger(TibcoResponseService.class);
 

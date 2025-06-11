@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Ensures that all required topics exist for active stubs
  */
 @Component
+@Profile("!kafka-disabled")
 public class KafkaStubInitializer implements ApplicationListener<ApplicationReadyEvent> {
     
     private static final Logger logger = LoggerFactory.getLogger(KafkaStubInitializer.class);

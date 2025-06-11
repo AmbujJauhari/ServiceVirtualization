@@ -1,11 +1,14 @@
 package com.service.virtualization.activemq.controller;
 
+
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.activemq.service.ActiveMQStubService;
 import com.service.virtualization.model.MessageHeader;
+import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +20,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller for managing ActiveMQ stubs.
+ * REST API for managing ActiveMQ stubs
+ * Only active when activemq-disabled profile is NOT active
  */
 @RestController
 @RequestMapping("/api/activemq/stubs")
+@Profile("!activemq-disabled")
 public class ActiveMQStubController {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQStubController.class);
     

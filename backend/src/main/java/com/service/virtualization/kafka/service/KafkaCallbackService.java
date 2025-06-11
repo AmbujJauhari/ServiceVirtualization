@@ -6,6 +6,7 @@ import com.service.virtualization.kafka.model.KafkaStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -27,6 +28,7 @@ import java.util.concurrent.Executors;
  * 3. Publish the webhook response data to Kafka response topic
  */
 @Service
+@Profile("!kafka-disabled")
 public class KafkaCallbackService {
     
     private static final Logger logger = LoggerFactory.getLogger(KafkaCallbackService.class);

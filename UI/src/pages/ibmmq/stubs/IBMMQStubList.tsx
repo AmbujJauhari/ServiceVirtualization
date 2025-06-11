@@ -105,14 +105,12 @@ const IBMMQStubList: React.FC = () => {
     const lowercaseFilter = filter.toLowerCase();
     const name = stub.name?.toLowerCase() || '';
     const description = stub.description?.toLowerCase() || '';
-    const queueManager = stub.queueManager?.toLowerCase() || '';
-    const queueName = stub.queueName?.toLowerCase() || '';
+    const destinationName = stub.destinationName?.toLowerCase() || '';
     const contentPattern = stub.contentPattern?.toLowerCase() || '';
     
     return name.includes(lowercaseFilter) ||
            description.includes(lowercaseFilter) ||
-           queueManager.includes(lowercaseFilter) ||
-           queueName.includes(lowercaseFilter) ||
+           destinationName.includes(lowercaseFilter) ||
            contentPattern.includes(lowercaseFilter);
   });
 
@@ -154,7 +152,7 @@ const IBMMQStubList: React.FC = () => {
             <thead>
               <tr>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queue Information</th>
+                <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination Information</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Configuration</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Matching</th>
                 <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
@@ -171,14 +169,14 @@ const IBMMQStubList: React.FC = () => {
                   </td>
                   <td className="py-2 px-4 border-b border-gray-200">
                     <div>
-                      <span className="font-semibold">Queue Manager:</span> {stub.queueManager}
+                      <span className="font-semibold">Destination Type:</span> {stub.destinationType || 'queue'}
                     </div>
                     <div>
-                      <span className="font-semibold">Queue:</span> {stub.queueName}
+                      <span className="font-semibold">Destination:</span> {stub.destinationName}
                     </div>
-                    {stub.selector && (
+                    {stub.messageSelector && (
                       <div className="text-gray-500 text-sm mt-1">
-                        <span className="font-semibold">Selector:</span> {stub.selector}
+                        <span className="font-semibold">Selector:</span> {stub.messageSelector}
                       </div>
                     )}
                   </td>
@@ -186,7 +184,7 @@ const IBMMQStubList: React.FC = () => {
                     {stub.responseDestination ? (
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 bg-purple-100 text-purple-800">
-                          {stub.responseDestinationType || 'queue'}
+                          {stub.responseType || 'queue'}
                         </span>
                         {stub.responseDestination}
                       </div>

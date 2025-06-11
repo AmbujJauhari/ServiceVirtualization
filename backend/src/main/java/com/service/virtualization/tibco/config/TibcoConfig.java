@@ -6,21 +6,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.core.JmsTemplate;
 
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Connection;
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import com.tibco.tibjms.TibjmsConnectionFactory;
-import org.springframework.jms.core.JmsTemplate;
 
 /**
  * Configuration for TIBCO EMS integration.
  * 
  * This configuration creates a Jakarta-compatible wrapper around the 
  * TIBCO EMS javax.jms implementation to work with Spring Boot 3.x.
+ * Only loaded when tibco-disabled profile is NOT active
  */
 @Configuration
+@Profile("!tibco-disabled")
 @ConditionalOnProperty(name = "tibco.enabled", havingValue = "true", matchIfMissing = true)
 public class TibcoConfig {
 

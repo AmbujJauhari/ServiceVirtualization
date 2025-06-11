@@ -12,14 +12,17 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 /**
  * SOAP stub service implementation using WireMock infrastructure
+ * Only active when soap-disabled profile is NOT active
  */
 @Service
+@Profile("!soap-disabled")
 public class SoapStubServiceImpl implements SoapStubService {
 
     private static final Logger logger = LoggerFactory.getLogger(SoapStubServiceImpl.class);

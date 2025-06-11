@@ -8,13 +8,16 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.util.Base64Utils;
+import org.springframework.context.annotation.Profile;
 
 import java.util.*;
 
 /**
  * Service for interacting with Confluent Schema Registry with RBAC support
+ * Only active when kafka-disabled profile is NOT active
  */
 @Service
+@Profile("!kafka-disabled")
 public class SchemaRegistryService {
 
     private static final Logger logger = LoggerFactory.getLogger(SchemaRegistryService.class);

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
@@ -23,9 +24,11 @@ import com.service.virtualization.rest.service.RestWebhookService;
 import jakarta.annotation.PreDestroy;
 
 /**
- * Configuration for WireMock server
+ * Configuration for WireMock (REST protocol support)
+ * Only loaded when rest-disabled profile is NOT active
  */
 @Configuration
+@Profile("!rest-disabled")
 public class WireMockConfig {
     
     private static final Logger logger = LoggerFactory.getLogger(WireMockConfig.class);

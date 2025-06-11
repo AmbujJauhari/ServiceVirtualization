@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +15,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Initializes all active stubs from the database when the application starts
+ * Initializes all active REST stubs from the database when the application starts
+ * Only active when rest-disabled profile is NOT active
  */
 @Component
+@Profile("!rest-disabled")
 public class StubInitializer implements ApplicationListener<ApplicationReadyEvent> {
     
     private static final Logger logger = LoggerFactory.getLogger(StubInitializer.class);

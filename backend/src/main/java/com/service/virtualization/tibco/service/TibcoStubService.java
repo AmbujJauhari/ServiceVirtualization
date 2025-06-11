@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Implementation of the TibcoStubService interface.
+ * Service for managing TIBCO stubs
+ * Only active when tibco-disabled profile is NOT active
  */
 @Service
+@Profile("!tibco-disabled")
 public class TibcoStubService {
     private static final Logger logger = LoggerFactory.getLogger(TibcoStubService.class);
 

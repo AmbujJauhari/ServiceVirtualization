@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -20,8 +21,10 @@ import java.util.stream.Collectors;
 
 /**
  * Implementation of StubService that manages stubs using WireMock and database storage
+ * Only active when rest-disabled profile is NOT active
  */
 @Service
+@Profile("!rest-disabled")
 public class RestStubService {
 
     private static final Logger logger = LoggerFactory.getLogger(RestStubService.class);

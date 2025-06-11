@@ -8,14 +8,20 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 
+/**
+ * Configuration for IBM MQ
+ * Only loaded when ibmmq-disabled profile is NOT active
+ */
 @Configuration
 @EnableJms
+@Profile("!ibmmq-disabled")
 public class IBMMQConfig {
 
     @Value("${ibmmq.broker-url:localhost")

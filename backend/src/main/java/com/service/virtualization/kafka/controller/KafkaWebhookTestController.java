@@ -3,6 +3,7 @@ package com.service.virtualization.kafka.controller;
 import com.service.virtualization.kafka.service.KafkaCallbackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,9 +12,11 @@ import java.util.Map;
 
 /**
  * Test controller demonstrating webhook response format for Kafka callbacks
+ * Only active when kafka-disabled profile is NOT active
  */
 @RestController
 @RequestMapping("/webhook/test")
+@Profile("!kafka-disabled")
 @CrossOrigin(originPatterns = {"http://localhost:*", "https://localhost:*"}, allowCredentials = "true")
 public class KafkaWebhookTestController {
 

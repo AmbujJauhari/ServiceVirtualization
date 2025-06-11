@@ -24,10 +24,12 @@ import java.util.stream.Collectors;
 
 /**
  * REST controller for managing TIBCO EMS stubs.
+ * Only active when tibco-disabled profile is NOT active
  */
 @RestController
 @RequestMapping("/api/tibco/stubs")
 @Tag(name = "TIBCO Stubs", description = "APIs for managing TIBCO EMS message stubs")
+@Profile("!tibco-disabled")
 public class TibcoStubController {
     private static final Logger logger = LoggerFactory.getLogger(TibcoStubController.class);
 

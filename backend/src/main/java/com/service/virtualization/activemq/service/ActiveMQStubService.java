@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.Session;
@@ -38,8 +39,10 @@ class StubPriorityConflictException extends RuntimeException {
 
 /**
  * Service for managing ActiveMQ stubs.
+ * Only active when activemq-disabled profile is NOT active
  */
 @Service
+@Profile("!activemq-disabled")
 public class ActiveMQStubService {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQStubService.class);
     

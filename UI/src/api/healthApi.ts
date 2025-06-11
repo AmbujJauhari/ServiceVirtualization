@@ -16,16 +16,33 @@ export interface SystemHealth {
   services: ServiceHealth[];
 }
 
+export interface ProtocolStatus {
+  name: string;
+  enabled: boolean;
+  reason: string;
+}
+
+export interface ProtocolsResponse {
+  protocols: ProtocolStatus[];
+  timestamp: string;
+}
+
 export const healthApi = createApi({
   reducerPath: 'healthApi',
   baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
-  tagTypes: ['Health'],
+  tagTypes: ['Health', 'Protocols'],
   endpoints: (builder) => ({
     getSystemHealth: builder.query<SystemHealth, void>({
       query: () => '/health/status',
       providesTags: ['Health'],
       // Cache the result for a short time (30 seconds)
       keepUnusedDataFor: 30,
+    }),
+    getProtocolStatus: builder.query<ProtocolsResponse, void>({
+      query: () => '/health/protocols',
+      providesTags: ['Protocols'],
+      // Cache for longer since protocols don't change often
+      keepUnusedDataFor: 300, // 5 minutes
     }),
   }),
 });
@@ -39,4 +56,4 @@ export const useGetSystemHealthWithPolling = (pollingInterval = 30000) => {
   return result;
 };
 
-export const { useGetSystemHealthQuery } = healthApi; 
+export const { useGetSystemHealthQuery, useGetProtocolStatusQuery } = healthApi; 

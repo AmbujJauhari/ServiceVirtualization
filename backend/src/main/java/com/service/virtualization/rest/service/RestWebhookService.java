@@ -10,13 +10,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 
 /**
- * Service for handling webhook interactions for REST stubs
+ * Service for REST webhook operations
+ * Only active when rest-disabled profile is NOT active
  */
 @Service
+@Profile("!rest-disabled")
 public class RestWebhookService {
     
     private static final Logger logger = LoggerFactory.getLogger(RestWebhookService.class);

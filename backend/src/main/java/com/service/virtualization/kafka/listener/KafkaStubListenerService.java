@@ -10,6 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -29,8 +30,10 @@ import java.util.regex.Pattern;
 
 /**
  * Service to listen to Kafka topics and process messages based on stubs
+ * Only active when kafka-disabled profile is NOT active
  */
 @Service
+@Profile("!kafka-disabled")
 public class KafkaStubListenerService {
     private static final Logger logger = LoggerFactory.getLogger(KafkaStubListenerService.class);
     

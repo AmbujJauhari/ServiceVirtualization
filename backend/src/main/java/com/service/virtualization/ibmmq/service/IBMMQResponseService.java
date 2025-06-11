@@ -10,14 +10,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Service for handling responses to matched IBMMQ messages.
+ * Service for IBM MQ response processing
+ * Only active when ibmmq-disabled profile is NOT active
  */
 @Service
+@Profile("!ibmmq-disabled")
 public class IBMMQResponseService {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQResponseService.class);
 

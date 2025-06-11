@@ -13,6 +13,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -21,11 +22,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Implementation of the Kafka message service
+ * Service for handling Kafka message operations
+ * Only active when kafka-disabled profile is NOT active
  */
 @Service
+@Profile("!kafka-disabled")
 public class KafkaMessageService {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaMessageService.class);

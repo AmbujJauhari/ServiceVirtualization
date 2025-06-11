@@ -8,14 +8,17 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Initializes all active SOAP stubs from the database when the application starts
+ * Only active when soap-disabled profile is NOT active
  */
 @Component
+@Profile("!soap-disabled")
 public class SoapStubInitializer implements ApplicationListener<ApplicationReadyEvent> {
     
     private static final Logger logger = LoggerFactory.getLogger(SoapStubInitializer.class);

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
@@ -18,9 +19,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Service for handling responses to matched ActiveMQ messages.
+ * Service for processing ActiveMQ response generation
+ * Only active when activemq-disabled profile is NOT active
  */
 @Service
+@Profile("!activemq-disabled")
 public class ActiveMQResponseService {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQResponseService.class);
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
+import About from './pages/About';
 import RestDashboard from './pages/rest/RestDashboard';
 import SoapDashboard from './pages/soap/SoapDashboard';
 import TibcoDashboard from './pages/tibco/TibcoDashboard';
@@ -90,6 +91,13 @@ const App: React.FC = () => {
       return {
         title: 'File Management',
         subtitle: 'Manage file stubs, publish files, and schedule file publications'
+      };
+    }
+    
+    if (path === '/about') {
+      return {
+        title: 'About Service Virtualization Platform',
+        subtitle: 'Understand the architecture, benefits, and strategic impact of our platform'
       };
     }
     
@@ -214,6 +222,7 @@ const App: React.FC = () => {
     <MainLayout title={title} subtitle={subtitle}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/about" element={<About />} />
         <Route path="/rest" element={<RestDashboard />} />
         <Route path="/soap" element={<SoapDashboard />} />
         <Route path="/tibco" element={<TibcoDashboard />} />
