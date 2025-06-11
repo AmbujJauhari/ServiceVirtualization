@@ -4,7 +4,6 @@ import {
   useGetIBMMQStubsQuery, 
   useUpdateIBMMQStubStatusMutation, 
   useDeleteIBMMQStubMutation,
-  useToggleIBMMQStubStatusMutation,
   IBMMQStub,
   ContentMatchType,
   StubStatus
@@ -18,7 +17,6 @@ const IBMMQStubList: React.FC = () => {
   const { data: stubs, isLoading, isError, error, refetch } = useGetIBMMQStubsQuery();
   const [updateStatus] = useUpdateIBMMQStubStatusMutation();
   const [deleteStub] = useDeleteIBMMQStubMutation();
-  const [toggleStatus] = useToggleIBMMQStubStatusMutation();
 
   const getContentMatchTypeLabel = (matchType?: ContentMatchType) => {
     switch (matchType) {
@@ -81,8 +79,11 @@ const IBMMQStubList: React.FC = () => {
   const handleStatusToggle = async (stub: IBMMQStub) => {
     if (!stub.id) return;
     
+    // Toggle between ACTIVE and INACTIVE status
+    const newStatus = stub.status === StubStatus.ACTIVE ? StubStatus.INACTIVE : StubStatus.ACTIVE;
+    
     try {
-      await toggleStatus(stub.id).unwrap();
+      await updateStatus({ id: stub.id, status: newStatus }).unwrap();
     } catch (err) {
       console.error('Failed to toggle status:', err);
     }

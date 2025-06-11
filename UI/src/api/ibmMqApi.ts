@@ -61,6 +61,18 @@ export interface UpdateIBMMQStubStatusRequest {
   status: StubStatus;
 }
 
+export interface PublishMessageRequest {
+  destinationType: string;
+  destinationName: string;
+  message: string;
+  headers?: MessageHeader[];
+}
+
+export interface PublishMessageResponse {
+  success: boolean;
+  message: string;
+}
+
 export const ibmMqApi = createApi({
   reducerPath: 'ibmMqApi',
   baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
@@ -95,6 +107,32 @@ export const ibmMqApi = createApi({
       invalidatesTags: ['IBMMQStub'],
     }),
     
+    updateIBMMQStub: builder.mutation<IBMMQStub, Partial<IBMMQStub>>({
+      query: (stub) => ({
+        url: `/ibmmq/stubs/${stub.id}`,
+        method: 'PUT',
+        body: stub,
+      }),
+      invalidatesTags: ['IBMMQStub'],
+    }),
+    
+    updateIBMMQStubStatus: builder.mutation<IBMMQStub, UpdateIBMMQStubStatusRequest>({
+      query: ({ id, status }) => ({
+        url: `/ibmmq/stubs/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['IBMMQStub'],
+    }),
+    
+    deleteIBMMQStub: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/ibmmq/stubs/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['IBMMQStub'],
+    }),
+    
     addMessageHeader: builder.mutation<IBMMQStub, { id: string, header: MessageHeader }>({
       query: ({ id, header }) => ({
         url: `/ibmmq/stubs/${id}/headers`,
@@ -123,6 +161,14 @@ export const ibmMqApi = createApi({
         `/ibmmq/stubs/queue/active?queueManager=${queueManager}&queueName=${queueName}`,
       providesTags: ['IBMMQStub'],
     }),
+    
+    publishMessage: builder.mutation<PublishMessageResponse, PublishMessageRequest>({
+      query: (messageRequest) => ({
+        url: '/ibmmq/stubs/publish',
+        method: 'POST',
+        body: messageRequest,
+      }),
+    }),
   }),
 });
 
@@ -134,10 +180,10 @@ export const {
   useCreateIBMMQStubMutation,
   useUpdateIBMMQStubMutation,
   useUpdateIBMMQStubStatusMutation,
-  useToggleIBMMQStubStatusMutation,
   useDeleteIBMMQStubMutation,
   useAddMessageHeaderMutation,
   useRemoveMessageHeaderMutation,
   useGetIBMMQStubsByQueueQuery,
   useGetActiveIBMMQStubsByQueueQuery,
+  usePublishMessageMutation,
 } = ibmMqApi; 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ActiveMQStubList from './stubs/ActiveMQStubList';
+import ActiveMQOnDemandPublish from './ActiveMQOnDemandPublish';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -61,12 +62,21 @@ const ActiveMQDashboard: React.FC = () => {
             >
               Stubs
             </button>
+            <button
+              className={`px-4 py-3 text-sm font-medium ${activeTab === 1 ? 'text-primary-700 border-b-2 border-primary-500' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => handleTabChange(1)}
+            >
+              On-Demand Publish
+            </button>
           </nav>
         </div>
 
         <div className="p-4">
           <TabPanel value={activeTab} index={0}>
             <ActiveMQStubList />
+          </TabPanel>
+          <TabPanel value={activeTab} index={1}>
+            <ActiveMQOnDemandPublish />
           </TabPanel>
         </div>
       </div>

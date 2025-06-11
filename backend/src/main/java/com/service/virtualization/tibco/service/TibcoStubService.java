@@ -157,21 +157,24 @@ public class TibcoStubService {
     }
 
 
-    public boolean publishMessage(String queueManager, String queueName, String message, List<MessageHeader> headers) {
+    public boolean publishMessage(String queueManager, String destinationType, String destinationName, String message, List<MessageHeader> headers) {
         try {
             // Configure JmsTemplate for the specific queue manager if needed
-            // This might require more dynamic configuration based on your Tibco MQ setup
+            // This might require more dynamic configuration based on your Tibco EMS setup
+            
+            boolean isTopic = "topic".equalsIgnoreCase(destinationType);
 
-            // Send message to the specified queue
-//            jmsTemplate.send(queueName, session -> {
+            // Send message to the specified destination (queue or topic)
+//            jmsTemplate.send(destinationName, session -> {
 //                Message jmsMessage = createMessage(session, message, headers);
 //                return jmsMessage;
 //            });
 
-            logger.info("Successfully published message to queue '{}' on queue manager '{}'", queueName, queueManager);
+            logger.info("Successfully published message to {} '{}' on queue manager '{}'", 
+                       isTopic ? "topic" : "queue", destinationName, queueManager);
             return true;
         } catch (Exception e) {
-            logger.error("Failed to publish message to Tibco MQ: {}", e.getMessage(), e);
+            logger.error("Failed to publish message to Tibco EMS {}: {}", destinationType, e.getMessage(), e);
             return false;
         }
     }

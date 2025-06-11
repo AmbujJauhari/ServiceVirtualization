@@ -3,6 +3,7 @@ package com.service.virtualization.tibco.controller;
 import com.service.virtualization.model.StubStatus;
 import com.service.virtualization.tibco.model.TibcoStub;
 import com.service.virtualization.tibco.service.TibcoStubService;
+import com.service.virtualization.model.MessageHeader;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for managing TIBCO EMS stubs.
@@ -180,5 +184,56 @@ public class TibcoStubController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Publish a message to a Tibco EMS queue or topic
+     */
+    @PostMapping("/publish")
+    @Operation(
+            summary = "Publish a message to Tibco EMS",
+            description = "Publishes a message to a Tibco EMS queue or topic",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Message published successfully"),
+                    @ApiResponse(responseCode = "500", description = "Failed to publish message")
+            }
+    )
+    public ResponseEntity<Map<String, Object>> publishMessage(@RequestBody Map<String, Object> messageRequest) {
+        try {
+            String queueManager = "default"; // Hardcoded queue manager
+            String destinationType = (String) messageRequest.getOrDefault("destinationType", "queue");
+            String destinationName = (String) messageRequest.get("destinationName");
+            String message = (String) messageRequest.get("message");
+            List<Map<String, String>> headerMaps = (List<Map<String, String>>) messageRequest.getOrDefault("headers", new ArrayList<>());
+
+            // Convert headers from maps to MessageHeader objects
+            List<MessageHeader> headers = headerMaps.stream()
+                    .map(map -> new MessageHeader(
+                            map.get("name"),
+                            map.get("value"),
+                            map.getOrDefault("type", "string")))
+                    .collect(Collectors.toList());
+
+            logger.info("Publishing message to {} '{}' on Tibco EMS", destinationType, destinationName);
+
+            boolean success = tibcoStubService.publishMessage(queueManager, destinationType, destinationName, message, headers);
+
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Message published successfully to " + destinationType
+                ));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "success", false,
+                        "message", "Failed to publish message to " + destinationType
+                ));
+            }
+        } catch (Exception e) {
+            logger.error("Error publishing message: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Error publishing message: " + e.getMessage()
+            ));
+        }
+    }
 
 } 

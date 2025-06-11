@@ -2,6 +2,7 @@ package com.service.virtualization.activemq.controller;
 
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.activemq.service.ActiveMQStubService;
+import com.service.virtualization.model.MessageHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,9 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Controller for managing ActiveMQ stubs.
@@ -118,5 +121,49 @@ public class ActiveMQStubController {
     public ResponseEntity<List<ActiveMQStub>> getStubsByUser(@PathVariable String userId) {
         logger.info("Fetching ActiveMQ stubs for user ID: {}", userId);
         return ResponseEntity.ok(activeMQStubService.getStubsByUser(userId));
+    }
+
+    /**
+     * Publish a message to an ActiveMQ queue or topic
+     */
+    @PostMapping("/publish")
+    public ResponseEntity<Map<String, Object>> publishMessage(@RequestBody Map<String, Object> messageRequest) {
+        try {
+            String queueManager = "default"; // Hardcoded queue manager
+            String destinationType = (String) messageRequest.getOrDefault("destinationType", "queue");
+            String destinationName = (String) messageRequest.get("destinationName");
+            String message = (String) messageRequest.get("message");
+            List<Map<String, String>> headerMaps = (List<Map<String, String>>) messageRequest.getOrDefault("headers", new ArrayList<>());
+
+            // Convert headers from maps to MessageHeader objects
+            List<MessageHeader> headers = headerMaps.stream()
+                    .map(map -> new MessageHeader(
+                            map.get("name"),
+                            map.get("value"),
+                            map.getOrDefault("type", "string")))
+                    .collect(Collectors.toList());
+
+            logger.info("Publishing message to {} '{}' on ActiveMQ", destinationType, destinationName);
+
+            boolean success = activeMQStubService.publishMessage(queueManager, destinationType, destinationName, message, headers);
+
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Message published successfully to " + destinationType
+                ));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "success", false,
+                        "message", "Failed to publish message to " + destinationType
+                ));
+            }
+        } catch (Exception e) {
+            logger.error("Error publishing message: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Error publishing message: " + e.getMessage()
+            ));
+        }
     }
 } 

@@ -54,6 +54,18 @@ export interface CreateStubErrorResponse {
   message: string;
 }
 
+export interface PublishMessageRequest {
+  destinationType: string;
+  destinationName: string;
+  message: string;
+  headers?: MessageHeader[];
+}
+
+export interface PublishMessageResponse {
+  success: boolean;
+  message: string;
+}
+
 export const activemqApi = createApi({
   reducerPath: 'activemqApi',
   baseQuery: fetchBaseQuery({ baseUrl: config.API_URL }),
@@ -147,6 +159,14 @@ export const activemqApi = createApi({
         `/activemq/stubs/destination/active?destinationType=${destinationType}&destinationName=${destinationName}`,
       providesTags: ['ActiveMQStub'],
     }),
+    
+    publishMessage: builder.mutation<PublishMessageResponse, PublishMessageRequest>({
+      query: (messageRequest) => ({
+        url: '/activemq/stubs/publish',
+        method: 'POST',
+        body: messageRequest,
+      }),
+    }),
   }),
 });
 
@@ -164,4 +184,5 @@ export const {
   useGetActiveMQStubsByDestinationQuery,
   useGetActiveMQStubsByDestinationTypeAndNameQuery,
   useGetActiveActiveMQStubsByDestinationTypeAndNameQuery,
+  usePublishMessageMutation,
 } = activemqApi; 

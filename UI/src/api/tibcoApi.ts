@@ -90,11 +90,21 @@ export interface DeleteDestinationRequest {
 }
 
 export interface PublishMessageRequest {
-  destinationType: 'TOPIC' | 'QUEUE';
+  destinationType: string;
   destinationName: string;
-  contentType: string;
   message: string;
-  properties?: Record<string, string>;
+  headers?: MessageHeader[];
+}
+
+export interface PublishMessageResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface MessageHeader {
+  name: string;
+  value: string;
+  type: string;
 }
 
 export interface CreateScheduleRequest extends PublishMessageRequest {
@@ -179,12 +189,12 @@ export const tibcoApi = createApi({
     }),
     
     // Publishing
-    publishTibcoMessage: builder.mutation<void, PublishMessageRequest>({
-      query: (message) => ({
-        url: '/tibco/publish',
+    publishMessage: builder.mutation<PublishMessageResponse, PublishMessageRequest>({
+      query: (messageRequest) => ({
+        url: '/tibco/stubs/publish',
         method: 'POST',
-        body: message
-      })
+        body: messageRequest,
+      }),
     }),
     
     // Scheduling
@@ -222,7 +232,7 @@ export const {
   useUpdateTibcoStubMutation,
   useDeleteTibcoStubMutation,
   useUpdateTibcoStubStatusMutation,
-  usePublishTibcoMessageMutation,
+  usePublishMessageMutation,
   useGetTibcoSchedulesQuery,
   useCreateTibcoScheduleMutation,
   useDeleteTibcoScheduleMutation,

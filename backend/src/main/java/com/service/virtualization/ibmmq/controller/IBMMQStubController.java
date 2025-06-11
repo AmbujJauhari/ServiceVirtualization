@@ -145,13 +145,14 @@ public class IBMMQStubController {
     }
 
     /**
-     * Publish a message to an IBM MQ queue
+     * Publish a message to an IBM MQ queue or topic
      */
     @PostMapping("/publish")
     public ResponseEntity<Map<String, Object>> publishMessage(@RequestBody Map<String, Object> messageRequest) {
         try {
-            String queueManager = (String) messageRequest.get("queueManager");
-            String queueName = (String) messageRequest.get("queueName");
+            String queueManager = "QM1"; // Hardcoded queue manager
+            String destinationType = (String) messageRequest.getOrDefault("destinationType", "queue");
+            String destinationName = (String) messageRequest.get("destinationName");
             String message = (String) messageRequest.get("message");
             List<Map<String, String>> headerMaps = (List<Map<String, String>>) messageRequest.getOrDefault("headers", new ArrayList<>());
 
@@ -163,19 +164,19 @@ public class IBMMQStubController {
                             map.getOrDefault("type", "string")))
                     .collect(Collectors.toList());
 
-            logger.info("Publishing message to queue '{}' on manager '{}'", queueName, queueManager);
+            logger.info("Publishing message to {} '{}' on manager '{}'", destinationType, destinationName, queueManager);
 
-            boolean success = ibmMQStubService.publishMessage(queueManager, queueName, message, headers);
+            boolean success = ibmMQStubService.publishMessage(queueManager, destinationType, destinationName, message, headers);
 
             if (success) {
                 return ResponseEntity.ok(Map.of(
                         "success", true,
-                        "message", "Message published successfully"
+                        "message", "Message published successfully to " + destinationType
                 ));
             } else {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                         "success", false,
-                        "message", "Failed to publish message"
+                        "message", "Failed to publish message to " + destinationType
                 ));
             }
         } catch (Exception e) {
