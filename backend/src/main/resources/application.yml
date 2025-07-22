@@ -12,40 +12,38 @@ spring:
     username: sa
     password: password
     driver-class-name: com.sybase.jdbc4.jdbc.SybDriver
-  cloud:
-    gateway:
-      routes:
-      # Proxy route - forwards requests from /proxy/** to WireMock
-      - id: wiremock-proxy
-        uri: http://localhost:${wiremock.server.port}
-        predicates:
-        - Path=/proxy/**
-        filters:
-        - name: StripPrefix
-          args:
-            parts: 1  # Remove /proxy prefix before forwarding
-        - name: RewriteLocationResponseHeader
-          args:
-            stripVersionMode: NEVER_STRIP
-            locationHeaderName: Location
-            hostValue: localhost:${server.port}
-            protocolsRegex: http|https
-      # Ensure local API routes are handled by the application (not proxied)
-      - id: local-api
-        uri: forward:///
-        predicates:
-        - Path=/api/**,/actuator/**,/swagger-ui/**,/v3/api-docs/**
-        order: 0  # Higher priority than proxy route
-      # Global CORS and HTTP client configuration  
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-      httpclient:
-        connect-timeout: 5000
-        response-timeout: 30s
+  # Netflix Zuul proxy configuration (Spring MVC compatible)
+  # No spring.cloud.gateway configuration needed
+
+# Zuul proxy configuration
+zuul:
+  routes:
+    # Proxy route - forwards /proxy/** to WireMock
+    wiremock-proxy:
+      path: /proxy/**
+      url: http://localhost:${wiremock.server.port}
+      stripPrefix: true  # Remove /proxy prefix before forwarding
+    # Local API routes - ensure they're handled locally, not proxied
+    api:
+      path: /api/**
+      url: forward:/api
+    actuator:
+      path: /actuator/**
+      url: forward:/actuator
+    swagger:
+      path: /swagger-ui/**
+      url: forward:/swagger-ui
+    docs:
+      path: /v3/api-docs/**
+      url: forward:/v3/api-docs
+  # Disable ribbon load balancing for simple forwarding
+  ribbon:
+    eureka:
+      enabled: false
+  # Timeout configuration
+  host:
+    connect-timeout-millis: 5000
+    socket-timeout-millis: 30000
 
 server:
   port: 8080
@@ -155,5 +153,6 @@ schema:
 # Proxy Configuration Notes:
 # - Client applications should set proxyUrl to: http://localhost:8080/proxy  
 # - This will forward requests to WireMock running on port 8081
-# - Proxy authentication is handled transparently by Spring Cloud Gateway
+# - Proxy authentication is handled transparently by Netflix Zuul
 # - All existing API endpoints (/api/**, /actuator/**, /swagger-ui/**) remain unchanged
+# - Uses Netflix Zuul instead of Spring Cloud Gateway (Spring MVC compatible)
