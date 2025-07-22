@@ -23,20 +23,7 @@
         <springdoc.version>2.2.0</springdoc.version>
         <jtds.version>1.3.1</jtds.version>
         <httpclient.version>4.5.14</httpclient.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot -->
@@ -67,10 +54,11 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Netflix Zuul for proxy functionality (Spring MVC compatible) -->
+        <!-- Jetty Proxy Servlet for declarative proxy functionality -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-proxy</artifactId>
+            <version>11.0.18</version>
         </dependency>
 
         <!-- JDBC Drivers -->

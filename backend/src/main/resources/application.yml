@@ -12,38 +12,17 @@ spring:
     username: sa
     password: password
     driver-class-name: com.sybase.jdbc4.jdbc.SybDriver
-  # Netflix Zuul proxy configuration (Spring MVC compatible)
-  # No spring.cloud.gateway configuration needed
+  # Jetty Proxy Servlet configuration (declarative approach)
+  # No complex framework dependencies needed
 
-# Zuul proxy configuration
-zuul:
-  routes:
-    # Proxy route - forwards /proxy/** to WireMock
-    wiremock-proxy:
-      path: /proxy/**
-      url: http://localhost:${wiremock.server.port}
-      stripPrefix: true  # Remove /proxy prefix before forwarding
-    # Local API routes - ensure they're handled locally, not proxied
-    api:
-      path: /api/**
-      url: forward:/api
-    actuator:
-      path: /actuator/**
-      url: forward:/actuator
-    swagger:
-      path: /swagger-ui/**
-      url: forward:/swagger-ui
-    docs:
-      path: /v3/api-docs/**
-      url: forward:/v3/api-docs
-  # Disable ribbon load balancing for simple forwarding
-  ribbon:
-    eureka:
-      enabled: false
-  # Timeout configuration
-  host:
-    connect-timeout-millis: 5000
-    socket-timeout-millis: 30000
+# Jetty Proxy configuration
+proxy:
+  connect-timeout: 5000    # Connection timeout to WireMock (ms)
+  idle-timeout: 30000      # Idle connection timeout (ms)  
+  timeout: 30000           # Request timeout (ms)
+  preserve-host: false     # Don't preserve original Host header
+  logging:
+    enabled: true          # Enable proxy request logging
 
 server:
   port: 8080
@@ -153,6 +132,6 @@ schema:
 # Proxy Configuration Notes:
 # - Client applications should set proxyUrl to: http://localhost:8080/proxy  
 # - This will forward requests to WireMock running on port 8081
-# - Proxy authentication is handled transparently by Netflix Zuul
+# - Proxy authentication is handled transparently by Jetty ProxyServlet
 # - All existing API endpoints (/api/**, /actuator/**, /swagger-ui/**) remain unchanged
-# - Uses Netflix Zuul instead of Spring Cloud Gateway (Spring MVC compatible)
+# - Uses mature Jetty ProxyServlet with declarative configuration (no custom code needed)
