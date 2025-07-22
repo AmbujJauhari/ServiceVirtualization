@@ -12,6 +12,40 @@ spring:
     username: sa
     password: password
     driver-class-name: com.sybase.jdbc4.jdbc.SybDriver
+  cloud:
+    gateway:
+      routes:
+      # Proxy route - forwards requests from /proxy/** to WireMock
+      - id: wiremock-proxy
+        uri: http://localhost:${wiremock.server.port}
+        predicates:
+        - Path=/proxy/**
+        filters:
+        - name: StripPrefix
+          args:
+            parts: 1  # Remove /proxy prefix before forwarding
+        - name: RewriteLocationResponseHeader
+          args:
+            stripVersionMode: NEVER_STRIP
+            locationHeaderName: Location
+            hostValue: localhost:${server.port}
+            protocolsRegex: http|https
+      # Ensure local API routes are handled by the application (not proxied)
+      - id: local-api
+        uri: forward:///
+        predicates:
+        - Path=/api/**,/actuator/**,/swagger-ui/**,/v3/api-docs/**
+        order: 0  # Higher priority than proxy route
+      # Global CORS and HTTP client configuration  
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
 
 server:
   port: 8080
@@ -117,3 +151,9 @@ schema:
       username: ${SCHEMA_REGISTRY_USERNAME:}
       password: ${SCHEMA_REGISTRY_PASSWORD:}
       api-key: ${SCHEMA_REGISTRY_API_KEY:}
+
+# Proxy Configuration Notes:
+# - Client applications should set proxyUrl to: http://localhost:8080/proxy  
+# - This will forward requests to WireMock running on port 8081
+# - Proxy authentication is handled transparently by Spring Cloud Gateway
+# - All existing API endpoints (/api/**, /actuator/**, /swagger-ui/**) remain unchanged
