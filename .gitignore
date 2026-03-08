@@ -10,6 +10,7 @@
 *.ear
 *.zip
 *.tar.gz
+*.tar
 *.rar
 
 # IDE Files
@@ -47,8 +48,14 @@ yarn-error.log
 /dist
 /build
 
+# Terraform local state and downloaded providers
+deployments/local/cluster-admin/terraform/**/.terraform/
+deployments/local/cluster-admin/terraform/**/.terraform.lock.hcl
+deployments/local/cluster-admin/terraform/**/terraform.tfstate
+deployments/local/cluster-admin/terraform/**/terraform.tfstate.backup
+
 # Temporary files
 *.swp
 *.swo
 *~
-.DS_Store 
+.DS_Store
