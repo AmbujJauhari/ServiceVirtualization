@@ -1,0 +1,134 @@
+# =============================================================================
+# Collateral Team — Tibco EMS Server B
+# =============================================================================
+# External: ssl://serverb.tibco.collateral.service-virtualization.local:443
+# Internal: tcp://collateral-service-virtualization-tibco-serverB.collateral.svc.cluster.local:7222
+#
+# DNS required:
+#   serverb.tibco.collateral.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  tibco:
+    enabled: true
+    instances:
+      serverB:
+        image:
+          repository: "kytay/tibco-ems"
+          tag: "latest"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        certificates:
+          enabled: true
+          password: "changeit"
+
+        config:
+          default:
+            enabled: false
+          custom:
+            tibemsd: |
+              # IMPORTANT: When using a custom config, you MUST include all data
+              # file paths (store, users, groups, etc.) pointing to /data/tibco-ems/.
+              # Instances using config.default.enabled=true get these automatically.
+              server                  = COLLATERAL-EMS-B
+              store                   = /data/tibco-ems
+              users                   = /data/tibco-ems/users.conf
+              groups                  = /data/tibco-ems/groups.conf
+              topics                  = /data/tibco-ems/topics.conf
+              queues                  = /data/tibco-ems/queues.conf
+              acl_list                = /data/tibco-ems/acl.conf
+              factories               = /data/tibco-ems/factories.conf
+              routes                  = /data/tibco-ems/routes.conf
+              bridges                 = /data/tibco-ems/bridges.conf
+              transports              = /data/tibco-ems/transports.conf
+              tibrvcm                 = /data/tibco-ems/tibrvcm.conf
+              durables                = /data/tibco-ems/durables.conf
+              channels                = /data/tibco-ems/channels.conf
+              stores                  = /data/tibco-ems/stores.conf
+              authorization           = disabled
+
+              # When ssl_password is non-empty EMS expects ssl_server_identity to be PKCS12.
+              ssl_server_identity     = /etc/tibco/certs/server.p12
+              ssl_password            = changeit
+              ssl_server_ciphers      = ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
+              ssl_require_client_cert = disabled
+
+              listen                  = tcp://0.0.0.0:7222
+              listen                  = ssl://0.0.0.0:7243
+              health_check_listen     = http://:7080
+          configMapName: ""
+          initContainers:
+            - name: cert-provider
+              image: alpine/openssl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Creating PKCS12 bundle for TIBCO EMS..."
+                  openssl pkcs12 -export \
+                    -in /mnt/wildcard/tls.crt \
+                    -inkey /mnt/wildcard/tls.key \
+                    -out /etc/tibco/certs/server.p12 \
+                    -passout pass:changeit
+                  chmod 640 /etc/tibco/certs/server.p12
+                  echo "Done."
+              volumeMounts:
+                - name: tibco-pki-serverb
+                  mountPath: /etc/tibco/certs
+                - name: collateral-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+          volumes:
+            - name: collateral-tls-secret
+              secret:
+                secretName: collateral-tls-secret
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        env: {}
+
+        service:
+          type: "ClusterIP"
+          tcpPort: 7222
+          sslPort: 7243
+          httpPort: 7080
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+networking:
+  tibco:
+    instances:
+      serverB:
+        enabled: true
+        sniHost: "serverb.tibco.collateral.service-virtualization.local"

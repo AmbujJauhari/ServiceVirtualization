@@ -134,7 +134,9 @@ public class TibcoStubService {
                 .map(existingStub -> {
                     existingStub.setStatus(status);
                     existingStub.setUpdatedAt(LocalDateTime.now());
-                    return tibcoStubRepository.save(existingStub);
+                    TibcoStub updatedStub = tibcoStubRepository.save(existingStub);
+                    updateStubListener(updatedStub);
+                    return updatedStub;
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("TibcoStub not found with id " + id));
     }

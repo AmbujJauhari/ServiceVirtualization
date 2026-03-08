@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.servicevirtualization.test</groupId>
+    <artifactId>ibmmq-tls-test</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>IBM MQ TLS Integration Tests</name>
+    <description>
+        Integration tests validating IBM MQ TLS connectivity through the Istio
+        ingressgateway using SNI-based passthrough routing.
+        Tests cover: TLS connection, SNI routing isolation, and message flow
+        for both margin and collateral team MQ instances.
+    </description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency versions -->
+        <ibmmq.version>9.3.4.1</ibmmq.version>
+        <junit.version>5.10.1</junit.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.14</logback.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- IBM MQ JMS All-Client — includes MQ classes, JMS API, and SSL support -->
+        <dependency>
+            <groupId>com.ibm.mq</groupId>
+            <artifactId>com.ibm.mq.allclient</artifactId>
+            <version>${ibmmq.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.2</version>
+                <configuration>
+                    <!-- Pass JVM args needed for IBM MQ SSL -->
+                    <argLine>
+                        -Dcom.ibm.mq.cfg.preferTLS=true
+                        -Djavax.net.ssl.trustStore=${ssl.trustStorePath}
+                        -Djavax.net.ssl.trustStorePassword=${ssl.trustStorePassword}
+                    </argLine>
+                    <!-- Integration tests are skipped in unit test phase by default -->
+                    <!-- Run with: mvn test -Dintegration.test=true -->
+                    <skipTests>${skipIntegrationTests}</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Run integration tests: mvn test -Pintegration -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <skipIntegrationTests>false</skipIntegrationTests>
+                <ssl.trustStorePath>${project.basedir}/src/test/resources/certs/truststore.jks</ssl.trustStorePath>
+                <ssl.trustStorePassword>changeit</ssl.trustStorePassword>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>

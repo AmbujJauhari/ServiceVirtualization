@@ -1,0 +1,47 @@
+# Exclude target directory but keep the built JAR for COPY instruction
+target/
+!target/*.jar
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude version control
+.git/
+.gitignore
+
+# Exclude documentation
+README.md
+*.md
+docs/
+
+# Exclude test files that don't need to be in container
+src/test/
+
+# Exclude Maven wrapper (if using containerized Maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Exclude temporary files
+*.tmp
+*.log
+*.bak
+
+# Exclude Docker files (don't need them in the image)
+Dockerfile
+.dockerignore
+
+# Exclude environment-specific files
+application-*.properties
+*.env
+
+# Exclude build scripts
+build-*.sh 

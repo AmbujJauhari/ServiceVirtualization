@@ -25,6 +25,9 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
 
   // Error state
   const [error, setError] = useState<string | null>(null);
+  
+  // Server list state for multi-server support
+  const [servers, setServers] = useState<string[]>([]);
 
   // Fetch existing stub for edit mode
   const { data: existingStub, isLoading: isLoadingStub } = useGetActiveMQStubQuery(id ?? '', {
@@ -41,6 +44,8 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const [destinationType, setDestinationType] = useState('queue');
   const [destinationName, setDestinationName] = useState('');
   const [messageSelector, setMessageSelector] = useState('');
+  const [serverName, setServerName] = useState<string>('');
+  const [responseServerName, setResponseServerName] = useState<string>('');
   const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
   const [contentPattern, setContentPattern] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
@@ -58,6 +63,14 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
   const [newHeaderName, setNewHeaderName] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newHeaderType, setNewHeaderType] = useState('string');
+  
+  // Fetch available servers for multi-server support
+  useEffect(() => {
+    fetch('/api/activemq/stubs/servers')
+      .then(res => res.json())
+      .then(data => setServers(data))
+      .catch(err => console.error('Error fetching ActiveMQ servers:', err));
+  }, []);
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -67,6 +80,8 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       setDestinationType(existingStub.destinationType || 'queue');
       setDestinationName(existingStub.destinationName || '');
       setMessageSelector(existingStub.messageSelector || '');
+      setServerName(existingStub.serverName || '');
+      setResponseServerName(existingStub.responseServerName || '');
       setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
       setContentPattern(existingStub.contentPattern || '');
       setCaseSensitive(existingStub.caseSensitive ?? true);
@@ -130,6 +145,8 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
       destinationType,
       destinationName,
       messageSelector,
+      serverName: serverName || undefined,
+      responseServerName: responseServerName || undefined,
       contentMatchType,
       contentPattern,
       caseSensitive,
@@ -254,6 +271,30 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                 />
               </div>
             </div>
+            
+            {/* Server Selection for Multi-Server Support */}
+            {servers.length > 0 && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="serverName">
+                  ActiveMQ Server (Optional)
+                </label>
+                <select
+                  id="serverName"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">-- Default Server --</option>
+                  {servers.map(server => (
+                    <option key={server} value={server}>{server}</option>
+                  ))}
+                </select>
+                <p className="text-gray-600 text-sm mt-1">
+                  Leave blank for single-server mode
+                </p>
+              </div>
+            )}
+            
             <div className="mt-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="messageSelector">
                 Message Selector
@@ -406,6 +447,29 @@ const ActiveMQStubForm: React.FC<ActiveMQStubFormProps> = ({ isEdit = false }) =
                 Destination where the response will be sent. If empty, uses JMSReplyTo from the incoming message.
               </p>
             </div>
+
+            {/* Response Server Selection for Multi-Server Support */}
+            {servers.length > 0 && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseServerName">
+                  Response Server (Optional)
+                </label>
+                <select
+                  id="responseServerName"
+                  value={responseServerName}
+                  onChange={(e) => setResponseServerName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">-- Same as Request Server --</option>
+                  {servers.map(server => (
+                    <option key={server} value={server}>{server}</option>
+                  ))}
+                </select>
+                <p className="text-gray-600 text-sm mt-1">
+                  Leave blank to respond on same server
+                </p>
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="webhookUrl">

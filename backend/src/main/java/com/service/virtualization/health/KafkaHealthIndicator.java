@@ -1,76 +1,72 @@
 package com.service.virtualization.health;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.service.virtualization.kafka.config.KafkaServerConfig;
+import com.service.virtualization.kafka.config.KafkaServerRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Component
+@Profile("!kafka-disabled")
 public class KafkaHealthIndicator implements HealthIndicator {
 
-    @Value("${kafka.bootstrap-servers:localhost:9092}")
-    private String bootstrapServers;
-    
-    @Value("${kafka.connection-timeout:2000}")
-    private int connectionTimeout;
+    private static final int CONNECTION_TIMEOUT_MS = 2000;
+
+    @Autowired
+    private KafkaServerRegistry serverRegistry;
 
     @Override
     public Health health() {
-        try {
-            // Parse the bootstrap servers string
-            String[] servers = bootstrapServers.split(",");
-            boolean anyServerUp = false;
-            StringBuilder details = new StringBuilder();
-            
-            for (String server : servers) {
-                String[] hostPort = server.trim().split(":");
-                if (hostPort.length == 2) {
-                    String host = hostPort[0];
-                    int port = Integer.parseInt(hostPort[1]);
-                    
-                    boolean isUp = checkConnection(host, port);
-                    if (isUp) {
-                        anyServerUp = true;
-                    }
-                    
-                    details.append(server).append(": ").append(isUp ? "UP" : "DOWN").append(", ");
-                }
-            }
-            
-            // Remove trailing comma and space
-            if (details.length() > 0) {
-                details.setLength(details.length() - 2);
-            }
-            
-            if (anyServerUp) {
-                return Health.up()
-                        .withDetail("servers", details.toString())
-                        .build();
-            } else {
-                return Health.down()
-                        .withDetail("servers", details.toString())
-                        .withDetail("error", "No Kafka servers available")
-                        .build();
-            }
-        } catch (Exception e) {
-            return Health.down()
-                    .withDetail("error", e.getMessage())
+        Map<String, KafkaServerConfig> clusters = serverRegistry.getAllClusters();
+
+        if (clusters.isEmpty()) {
+            return Health.unknown()
+                    .withDetail("info", "No Kafka clusters configured (kafka.registry.*)")
                     .build();
         }
+
+        Map<String, String> statuses = new LinkedHashMap<>();
+        boolean anyUp = false;
+
+        for (Map.Entry<String, KafkaServerConfig> entry : clusters.entrySet()) {
+            String clusterName = entry.getKey();
+            KafkaServerConfig cfg = entry.getValue();
+            boolean clusterUp = false;
+
+            // bootstrap-servers may be comma-separated: host1:port1,host2:port2
+            for (String server : cfg.getBootstrapServers().split(",")) {
+                String[] parts = server.trim().split(":");
+                if (parts.length == 2) {
+                    try {
+                        boolean up = checkConnection(parts[0], Integer.parseInt(parts[1]));
+                        if (up) clusterUp = true;
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
+            statuses.put(clusterName, (clusterUp ? "UP" : "DOWN") + " (" + cfg.getBootstrapServers() + ")");
+            if (clusterUp) anyUp = true;
+        }
+
+        Health.Builder builder = anyUp ? Health.up() : Health.down();
+        statuses.forEach(builder::withDetail);
+        return builder.build();
     }
-    
+
     private boolean checkConnection(String host, int port) {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), connectionTimeout);
+            socket.connect(new InetSocketAddress(host, port), CONNECTION_TIMEOUT_MS);
             return socket.isConnected();
-        } catch (SocketTimeoutException e) {
-            return false;
         } catch (Exception e) {
             return false;
         }
     }
-} 
+}

@@ -1,0 +1,49 @@
+# =============================================================================
+# Collateral Team — UI Service
+# =============================================================================
+
+sv:
+  ui:
+    enabled: true
+
+    image:
+      repository: "service-virtualization-ui"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
+
+    replicaCount: 1
+
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 8080
+
+    env:
+      BACKEND_URL: "http://collateral-service-virtualization-backend.collateral.svc.cluster.local:8080"
+
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+    livenessProbe:
+      httpGet:
+        path: "/health"
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 30
+
+    readinessProbe:
+      httpGet:
+        path: "/health"
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+
+networking:
+  ui:
+    enabled: true
+    pathPrefix: "/collateral"

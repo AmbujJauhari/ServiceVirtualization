@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Domain model for Kafka stubs
+ * Domain model for Kafka stubs.
+ * Supports multi-server Kafka configuration.
  */
 @Document(collection = "kafka_stubs")
 public record KafkaStub(
@@ -17,6 +18,11 @@ public record KafkaStub(
     String name,
     String description,
     String userId,
+    
+    // Multi-server support
+    String serverName,         // Which Kafka cluster to listen on
+    String responseServerName, // Which Kafka cluster to respond on (null = same as serverName)
+    
     String requestTopic,
     String responseTopic,
     
@@ -58,6 +64,16 @@ public record KafkaStub(
     List<String> tags
 ) {
     /**
+     * Get the effective server name to respond on.
+     * If responseServerName is set, use it; otherwise use serverName.
+     */
+    public String getEffectiveResponseServerName() {
+        return (responseServerName != null && !responseServerName.trim().isEmpty()) 
+            ? responseServerName 
+            : serverName;
+    }
+
+    /**
      * Default constructor with sensible defaults
      */
     public KafkaStub() {
@@ -66,6 +82,8 @@ public record KafkaStub(
             null, // name
             null, // description
             null, // userId
+            null, // serverName
+            null, // responseServerName
             null, // requestTopic
             null, // responseTopic
             null, // requestContentFormat

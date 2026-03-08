@@ -1,0 +1,272 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrant configuration for K3s Kubernetes cluster
+# This will create a single-node K3s cluster ready for development
+
+Vagrant.configure("2") do |config|
+  # Use Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  config.vm.box_version = "20231215.0.0"
+  
+  # Set hostname
+  config.vm.hostname = "k3s-cluster-vagrant"
+  
+  # Configure network
+  # Bridge adapter names must exactly match what VirtualBox sees on the host.
+  # Run `VBoxManage list bridgedifs | grep "^Name:"` to find your adapter names.
+  # The first name in this list that exists on the host is used automatically.
+  config.vm.network "public_network",
+    ip: "192.168.1.88",
+    bridge: [
+      "Intel(R) Wireless-AC 9560 160MHz",  # this machine's Wi-Fi adapter (confirmed)
+      "Intel(R) Ethernet Connection",
+      "Realtek PCIe GbE Family Controller",
+      "Wi-Fi",
+      "Wireless"
+    ]
+  
+  # Port forwarding for direct access from Windows
+  config.vm.network "forwarded_port", guest: 6443, host: 6443, host_ip: "127.0.0.1"  # K3s API
+  config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"    # HTTP
+  config.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "127.0.0.1"   # HTTPS
+  
+  # VirtualBox specific settings
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "k3s-cluster-vagrant"
+    vb.memory = "8192"  # 8 GB RAM (increase if needed)
+    vb.cpus = 4         # 4 CPU cores (increase if needed)
+    
+    # Enable nested virtualization (if supported)
+    vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    
+    # Performance optimizations
+    vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+  end
+  
+  # Synced folder for kubeconfig export
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+  
+  # Provisioning script to install K3s and configure everything
+  config.vm.provision "shell", inline: <<-SHELL
+    set -e
+    
+    echo "=================================="
+    echo "Starting K3s Installation"
+    echo "=================================="
+    
+    # Update system
+    echo "Updating system packages..."
+    apt-get update
+    apt-get upgrade -y
+    
+    # Install useful utilities
+    echo "Installing utilities..."
+    apt-get install -y curl wget git net-tools htop
+    
+    # Install K3s
+    echo "Installing K3s..."
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644" sh -
+    
+    # Wait for K3s to be ready
+    echo "Waiting for K3s to be ready..."
+    sleep 10
+    
+    # Check K3s status
+    systemctl status k3s --no-pager
+    
+    # Configure kubectl for vagrant user
+    echo "Configuring kubectl for vagrant user..."
+    mkdir -p /home/vagrant/.kube
+    cp /etc/rancher/k3s/k3s.yaml /home/vagrant/.kube/config
+    chown -R vagrant:vagrant /home/vagrant/.kube
+    chmod 600 /home/vagrant/.kube/config
+    
+    # Add kubectl alias to bashrc
+    echo "alias k='kubectl'" >> /home/vagrant/.bashrc
+    
+    # Get the IP address
+    VM_IP=$(hostname -I | awk '{print $1}')
+    echo "VM IP Address: $VM_IP"
+    
+    # Export kubeconfig to shared folder for Windows access
+    echo "Exporting kubeconfig for Windows..."
+    
+    # Create kubeconfig for Windows (using forwarded port)
+    cat > /vagrant/kubeconfig-local.yaml <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://127.0.0.1:6443
+  name: k3s-local
+contexts:
+- context:
+    cluster: k3s-local
+    user: k3s-local
+  name: k3s-local
+current-context: k3s-local
+users:
+- name: k3s-local
+  user:
+    client-certificate-data: $(base64 -w 0 /var/lib/rancher/k3s/server/tls/client-admin.crt)
+    client-key-data: $(base64 -w 0 /var/lib/rancher/k3s/server/tls/client-admin.key)
+EOF
+    
+    # Create kubeconfig for Windows (using VM IP for bridged network)
+    cat > /vagrant/kubeconfig-bridge.yaml <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://$VM_IP:6443
+  name: k3s-bridge
+contexts:
+- context:
+    cluster: k3s-bridge
+    user: k3s-bridge
+  name: k3s-bridge
+current-context: k3s-bridge
+users:
+- name: k3s-bridge
+  user:
+    client-certificate-data: $(base64 -w 0 /var/lib/rancher/k3s/server/tls/client-admin.crt)
+    client-key-data: $(base64 -w 0 /var/lib/rancher/k3s/server/tls/client-admin.key)
+EOF
+    
+    # Create info file
+    cat > /vagrant/cluster-info.txt <<EOF
+================================
+K3s Cluster Information
+================================
+
+Cluster Status: Running
+Hostname: k3s-cluster-vagrant
+VM IP Address: $VM_IP
+
+Kubernetes API:
+  - Via Port Forward: https://127.0.0.1:6443
+  - Via Bridge Network: https://$VM_IP:6443
+
+Kubeconfig Files Created:
+  1. kubeconfig-local.yaml  (Use this for port-forwarded access)
+  2. kubeconfig-bridge.yaml (Use this for direct VM IP access)
+
+To use from Windows PowerShell:
+  
+  # Option 1: Using port-forwarded access (easier, works immediately)
+  \$env:KUBECONFIG = "\$(Get-Location)\kubeconfig-local.yaml"
+  kubectl get nodes
+  
+  # Option 2: Using bridge network (better for production-like testing)
+  \$env:KUBECONFIG = "\$(Get-Location)\kubeconfig-bridge.yaml"
+  kubectl get nodes
+
+To SSH into VM:
+  vagrant ssh
+
+To check cluster inside VM:
+  vagrant ssh
+  kubectl get nodes
+  kubectl get pods --all-namespaces
+
+To stop VM:
+  vagrant halt
+
+To start VM again:
+  vagrant up
+
+To destroy VM (delete everything):
+  vagrant destroy
+
+================================
+Next Steps:
+================================
+
+1. From Windows PowerShell in this directory:
+   
+   # Test connection
+   \$env:KUBECONFIG = "\$(Get-Location)\kubeconfig-local.yaml"
+   kubectl cluster-info
+   kubectl get nodes
+
+2. Deploy your Service Virtualization platform:
+   
+   helm install sv-platform ./helm-charts/service-virtualization
+
+3. Monitor deployment:
+   
+   kubectl get pods -w
+
+================================
+EOF
+    
+    # Display cluster info
+    echo ""
+    echo "=================================="
+    echo "K3s Installation Complete!"
+    echo "=================================="
+    echo ""
+    echo "VM IP Address: $VM_IP"
+    echo ""
+    echo "Kubeconfig files have been created in your project directory:"
+    echo "  - kubeconfig-local.yaml  (for port-forwarded access)"
+    echo "  - kubeconfig-bridge.yaml (for direct VM IP access)"
+    echo ""
+    echo "See cluster-info.txt for complete details and next steps."
+    echo ""
+    echo "To test from inside VM:"
+    echo "  vagrant ssh"
+    echo "  kubectl get nodes"
+    echo ""
+    echo "=================================="
+    
+    # Verify K3s is working
+    k3s kubectl get nodes
+    
+  SHELL
+  
+  # Optional: Install Helm inside VM
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "Installing Helm..."
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    
+    # Configure Helm for vagrant user
+    su - vagrant -c "helm version"
+  SHELL
+  
+  # Message to display after vagrant up completes
+  config.vm.post_up_message = <<-MESSAGE
+  
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                                                              ║
+  ║  K3s Kubernetes Cluster is Ready!                           ║
+  ║                                                              ║
+  ╚══════════════════════════════════════════════════════════════╝
+  
+  Next steps:
+  
+  1. Check cluster-info.txt for complete details
+  
+  2. Test kubectl connection:
+     
+     $env:KUBECONFIG = "$(Get-Location)\\kubeconfig-local.yaml"
+     kubectl get nodes
+  
+  3. Deploy your application:
+     
+     helm install sv-platform ./helm-charts/service-virtualization
+  
+  4. SSH into VM (optional):
+     
+     vagrant ssh
+  
+  Happy Kubernetes-ing! ☸️
+  
+  MESSAGE
+
+end

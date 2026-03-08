@@ -65,7 +65,7 @@ public class KafkaStubListenerService {
      * Kafka listener method
      * Uses a pattern to match multiple topics
      */
-    @KafkaListener(topicPattern = ".*", groupId = "${kafka.consumer.group-id:service-virtualization}")
+    @KafkaListener(topicPattern = ".*")
     public void onMessage(
             @Payload String message,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
@@ -166,10 +166,12 @@ public class KafkaStubListenerService {
             responseTopic,
             stub.responseKey(), // Use responseKey from stub instead of null
             stub.responseContent(),
-            headers
+            headers,
+            stub.getEffectiveResponseServerName() // Multi-cluster support
         );
         
-        logger.info("Response sent to topic: {} with key: {}", responseTopic, stub.responseKey());
+        logger.info("Response sent to topic: {} with key: {} on cluster: {}", 
+                   responseTopic, stub.responseKey(), stub.getEffectiveResponseServerName());
     }
     
     /**

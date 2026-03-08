@@ -1,0 +1,122 @@
+# =============================================================================
+# Margin Team — Tibco EMS Server A
+# =============================================================================
+# Enables:
+#   sv.tibco.instances.serverA       — deploys Tibco EMS Server A pod + service
+#   networking.tibco.instances.serverA — creates TLS PASSTHROUGH VirtualService
+#
+# External clients connect via: ssl://servera.tibco.margin.service-virtualization.local:443
+# Internal backend connects via: tcp://margin-service-virtualization-tibco-serverA.margin.svc.cluster.local:7222
+#
+# DNS required:
+#   servera.tibco.margin.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  tibco:
+    enabled: true
+    instances:
+      serverA:
+        image:
+          repository: "kytay/tibco-ems"
+          tag: "latest"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        # Certificate strategy: init container copies wildcard cert from Secret
+        # into an emptyDir that TIBCO EMS reads via tibemsd.conf ssl_server_identity.
+        # password: used as ssl_password in tibemsd.conf. For unencrypted private keys
+        # any non-empty string works — EMS requires a non-empty value to avoid stdin prompting.
+        certificates:
+          enabled: true
+          password: "changeit"
+
+        config:
+          # Option A (default): generate tibemsd.conf from the fields below.
+          # Option B (bring your own): set default.enabled=false and provide
+          #   configMapName: "<your-configmap>" — the ConfigMap must contain a
+          #   key named "tibemsd.conf". The command is always fixed; only the
+          #   config file contents change.
+          default:
+            enabled: true
+            serverName: "MARGIN-EMS-A"
+            authEnabled: false
+            allowDynamicDestinations: true
+          configMapName: ""
+          initContainers:
+            - name: cert-provider
+              image: busybox:1.36
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Placing wildcard certificate into TIBCO EMS cert directory..."
+                  cp /mnt/wildcard/tls.crt /etc/tibco/certs/tls.crt
+                  cp /mnt/wildcard/tls.key /etc/tibco/certs/tls.key
+                  chmod 644 /etc/tibco/certs/tls.crt
+                  chmod 640 /etc/tibco/certs/tls.key
+                  echo "Done."
+              volumeMounts:
+                - name: tibco-pki-servera
+                  mountPath: /etc/tibco/certs
+                - name: margin-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+          volumes:
+            - name: margin-tls-secret
+              secret:
+                secretName: margin-tls-secret
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        env: {}
+
+        service:
+          type: "ClusterIP"
+          tcpPort: 7222
+          sslPort: 7243
+          httpPort: 7080
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+# =============================================================================
+# Networking: Istio resources for Tibco Server A
+# =============================================================================
+
+networking:
+  tibco:
+    instances:
+      serverA:
+        enabled: true
+        # SNI = the hostname in the client's ssl:// URL
+        sniHost: "servera.tibco.margin.service-virtualization.local"

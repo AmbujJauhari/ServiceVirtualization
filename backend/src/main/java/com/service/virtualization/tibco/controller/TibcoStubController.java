@@ -1,6 +1,7 @@
 package com.service.virtualization.tibco.controller;
 
 import com.service.virtualization.model.StubStatus;
+import com.service.virtualization.tibco.config.TibcoServerRegistry;
 import com.service.virtualization.tibco.model.TibcoStub;
 import com.service.virtualization.tibco.service.TibcoStubService;
 import com.service.virtualization.model.MessageHeader;
@@ -34,9 +35,11 @@ public class TibcoStubController {
     private static final Logger logger = LoggerFactory.getLogger(TibcoStubController.class);
 
     private final TibcoStubService tibcoStubService;
+    private final TibcoServerRegistry tibcoServerRegistry;
 
-    public TibcoStubController(TibcoStubService tibcoStubService) {
+    public TibcoStubController(TibcoStubService tibcoStubService, TibcoServerRegistry tibcoServerRegistry) {
         this.tibcoStubService = tibcoStubService;
+        this.tibcoServerRegistry = tibcoServerRegistry;
     }
 
     @PostMapping
@@ -51,6 +54,13 @@ public class TibcoStubController {
     )
     public ResponseEntity<TibcoStub> createStub(@RequestBody TibcoStub tibcoStub) {
         logger.debug("Creating TIBCO stub: {}", tibcoStub.getName());
+
+        // Validate server names
+        String validationError = validateServerNames(tibcoStub);
+        if (validationError != null) {
+            logger.error("Validation error: {}", validationError);
+            return ResponseEntity.badRequest().build();
+        }
 
         // Create the stub
         TibcoStub createdStub = tibcoStubService.create(tibcoStub);
@@ -73,6 +83,13 @@ public class TibcoStubController {
             @Parameter(description = "TIBCO stub ID") @PathVariable String id,
             @RequestBody TibcoStub tibcoStub) {
         logger.debug("Updating TIBCO stub with ID: {}", id);
+
+        // Validate server names
+        String validationError = validateServerNames(tibcoStub);
+        if (validationError != null) {
+            logger.error("Validation error: {}", validationError);
+            return ResponseEntity.badRequest().build();
+        }
 
         try {
             // Update the stub
@@ -139,6 +156,32 @@ public class TibcoStubController {
             List<TibcoStub> stubs = tibcoStubService.findByStatus(stubStatus);
 
             return ResponseEntity.ok(stubs);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid status value: {}", status);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Update TIBCO stub status",
+            description = "Updates the status of a TIBCO EMS message stub",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "TIBCO stub status updated successfully",
+                            content = @Content(schema = @Schema(implementation = TibcoStub.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid status value"),
+                    @ApiResponse(responseCode = "404", description = "TIBCO stub not found")
+            }
+    )
+    public ResponseEntity<TibcoStub> updateStubStatus(
+            @Parameter(description = "TIBCO stub ID") @PathVariable String id,
+            @Parameter(description = "New status (ACTIVE or INACTIVE)") @RequestParam String status) {
+        logger.debug("Updating status of TIBCO stub with ID: {} to {}", id, status);
+
+        try {
+            StubStatus stubStatus = StubStatus.valueOf(status.toUpperCase());
+            TibcoStub updated = tibcoStubService.updateStatus(id, stubStatus);
+            return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid status value: {}", status);
             return ResponseEntity.badRequest().build();
@@ -236,6 +279,50 @@ public class TibcoStubController {
                     "message", "Error publishing message: " + e.getMessage()
             ));
         }
+    }
+
+    @GetMapping("/servers")
+    @Operation(
+            summary = "Get available TIBCO servers",
+            description = "Retrieves list of configured TIBCO EMS servers from the registry",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "TIBCO servers retrieved successfully")
+            }
+    )
+    public ResponseEntity<List<String>> getAvailableServers() {
+        logger.debug("Getting available TIBCO servers");
+        
+        List<String> serverNames = tibcoServerRegistry.getAvailableServerNames();
+        return ResponseEntity.ok(serverNames);
+    }
+
+    /**
+     * Validates server names in a TIBCO stub.
+     * Returns error message if validation fails, null if valid.
+     */
+    private String validateServerNames(TibcoStub stub) {
+        // If registry is empty, skip validation (legacy single-server mode)
+        if (tibcoServerRegistry.isEmpty()) {
+            return null;
+        }
+
+        // Validate serverName if provided
+        if (stub.getServerName() != null && !stub.getServerName().trim().isEmpty()) {
+            if (!tibcoServerRegistry.hasServer(stub.getServerName())) {
+                return "TIBCO server '" + stub.getServerName() + "' not found in registry. " +
+                       "Available servers: " + tibcoServerRegistry.getAvailableServerNames();
+            }
+        }
+
+        // Validate responseServerName if provided
+        if (stub.getResponseServerName() != null && !stub.getResponseServerName().trim().isEmpty()) {
+            if (!tibcoServerRegistry.hasServer(stub.getResponseServerName())) {
+                return "TIBCO response server '" + stub.getResponseServerName() + "' not found in registry. " +
+                       "Available servers: " + tibcoServerRegistry.getAvailableServerNames();
+            }
+        }
+
+        return null;
     }
 
 } 

@@ -1,6 +1,8 @@
 package com.service.virtualization.tibco.service;
 
+import com.service.virtualization.tibco.config.TibcoServerRegistry;
 import com.service.virtualization.tibco.model.TibcoStub;
+import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
@@ -14,26 +16,31 @@ import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service for handling responses to matched Tibco messages.
+ * Supports multi-server TIBCO configuration.
  * Only active when tibco-disabled profile is NOT active
  */
 @Service
 @Profile("!tibco-disabled")
 public class TibcoResponseService {
     private static final Logger logger = LoggerFactory.getLogger(TibcoResponseService.class);
+    @Autowired
+    private TibcoServerRegistry serverRegistry;
 
     @Autowired
-    @Qualifier("tibcoQueueJmsTemplate")
-    private JmsTemplate queueJmsTemplate;
+    private TibcoWebhookService tibcoWebhookService;
 
-    @Autowired
-    @Qualifier("tibcoTopicJmsTemplate")
-    private JmsTemplate topicJmsTemplate;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
-    @Autowired
-    private TibcoWebhookService TibcoWebhookService;
+    // Cache of JMS templates per server
+    private final Map<String, JmsTemplate> queueTemplates = new ConcurrentHashMap<>();
+    private final Map<String, JmsTemplate> topicTemplates = new ConcurrentHashMap<>();
 
     /**
      * Process and send a response for a matched message.
@@ -50,7 +57,13 @@ public class TibcoResponseService {
             // Process the response based on type
             final Map<String, String> headers = extractHeaders(message);
 
-            sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
+            if (stub.getLatency() != null && stub.getLatency() > 0) {
+                scheduler.schedule(
+                    () -> sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers),
+                    stub.getLatency(), TimeUnit.MILLISECONDS);
+            } else {
+                sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
+            }
         } catch (Exception e) {
             logger.error("Error processing response for stub {}: {}",
                     stub.getId(), e.getMessage(), e);
@@ -69,17 +82,20 @@ public class TibcoResponseService {
     private void sendResponse(TibcoStub stub, String destination, String destinationType,
                               String originalMessageContent, Map<String, String> headers) {
         try {
-            // Determine which JmsTemplate to use based on destination type
+            // Determine which JmsTemplate to use based on destination type and server
             boolean isTopic = "topic".equalsIgnoreCase(destinationType);
-            JmsTemplate jmsTemplate = isTopic ? topicJmsTemplate : queueJmsTemplate;
+            String responseServerName = stub.getResponseServerName();
+            
+            JmsTemplate jmsTemplate = getJmsTemplate(responseServerName, isTopic);
 
-            logger.debug("Sending response to {} {} for stub {}",
-                    isTopic ? "topic" : "queue", destination, stub.getId());
+            logger.debug("Sending response to {} {} on server '{}' for stub {}",
+                    isTopic ? "topic" : "queue", destination, 
+                    responseServerName != null ? responseServerName : "default", stub.getId());
 
             // Check if we should get content from webhook
             String responseContent;
             if (stub.getWebhookUrl() != null && !stub.getWebhookUrl().trim().isEmpty()) {
-                responseContent = TibcoWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
+                responseContent = tibcoWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
             } else {
                 responseContent = stub.getResponseContent();
             }
@@ -152,5 +168,28 @@ public class TibcoResponseService {
         }
 
         return headers;
+    }
+
+    /**
+     * Gets or creates a JmsTemplate for the specified server and destination type.
+     * 
+     * @param serverName The server name (null for default)
+     * @param isTopic True for topic, false for queue
+     * @return JmsTemplate for the server
+     */
+    private JmsTemplate getJmsTemplate(String serverName, boolean isTopic) {
+        Map<String, JmsTemplate> templateCache = isTopic ? topicTemplates : queueTemplates;
+        // ConcurrentHashMap does not permit null keys; use a sentinel for single-server mode.
+        // TibcoServerRegistry.getConnectionFactory(null) resolves to the default factory.
+        String cacheKey = (serverName != null && !serverName.trim().isEmpty()) ? serverName.trim() : "__default__";
+        return templateCache.computeIfAbsent(cacheKey, name -> {
+            String registryKey = "__default__".equals(name) ? null : name;
+            ConnectionFactory connectionFactory = serverRegistry.getConnectionFactory(registryKey);
+            JmsTemplate template = new JmsTemplate();
+            template.setConnectionFactory(connectionFactory);
+            template.setPubSubDomain(isTopic);
+            logger.debug("Created {} JmsTemplate for server '{}'", isTopic ? "topic" : "queue", cacheKey);
+            return template;
+        });
     }
 } 

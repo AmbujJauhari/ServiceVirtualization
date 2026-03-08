@@ -1,0 +1,199 @@
+# =============================================================================
+# Margin Team — Backend Service
+# =============================================================================
+# Enables:
+#   sv.backend       — deploys the Spring Boot backend pod + service
+#   networking.backend — creates HTTP VirtualService routing /margin/api/* → pod:8080
+#
+# Operational configuration is supplied via a ConfigMap (see configMap.data below),
+# which is mounted at /app/config/application.properties inside the pod.
+# Spring Boot auto-discovers this path at startup.
+#
+# The canonical source for the properties is:
+#   deployments/local/teams/teams/margin/backend-application.properties
+# Keep that file and configMap.data in sync.
+#
+# Prerequisites:
+#   1. margin-tls-secret exists in the margin namespace:
+#      kubectl create secret generic margin-tls-secret \
+#        --from-file=tls.crt=deployments/local/cluster-admin/wildcard.crt \
+#        --from-file=tls.key=deployments/local/cluster-admin/wildcard.key \
+#        -n margin
+#   2. MongoDB is running (sv.mongodb.enabled: true in mongodb.yaml) or
+#      MONGODB_URI in configMap.data points to an external instance.
+# =============================================================================
+
+sv:
+  backend:
+    enabled: true
+
+    image:
+      repository: "service-virtualization-backend"
+      tag: "1.0.0-SNAPSHOT"
+      pullPolicy: "IfNotPresent"
+
+    replicaCount: 1
+
+    # Init container: converts PEM certificate → JKS truststore used by all
+    # TLS connections from the backend (IBM MQ, Tibco, etc.)
+    initContainers:
+      - name: truststore-creator
+        image: eclipse-temurin:21-jre-alpine
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            echo "Creating JKS truststore from wildcard certificate..."
+            keytool -import \
+              -file /tmp/tls/tls.crt \
+              -keystore /app/certs/truststore.jks \
+              -storetype JKS \
+              -storepass changeit \
+              -noprompt \
+              -alias sv-wildcard-ca
+            chmod 644 /app/certs/truststore.jks
+            echo "Truststore created: $(keytool -list -keystore /app/certs/truststore.jks -storepass changeit -noprompt)"
+        volumeMounts:
+          - name: margin-tls-secret
+            mountPath: /tmp/tls
+            readOnly: true
+          - name: app-truststore
+            mountPath: /app/certs
+
+    volumes:
+      - name: margin-tls-secret
+        secret:
+          secretName: margin-tls-secret
+      - name: app-truststore
+        emptyDir: {}
+
+    volumeMounts:
+      - name: app-truststore
+        mountPath: /app/certs
+        readOnly: true
+
+    # env: only contains values that MUST be set before Spring or the JVM starts.
+    # All other operational config lives in configMap.data below.
+    env:
+      # Spring profiles must be resolved before Spring reads external config files.
+      SPRING_PROFILES_ACTIVE: "docker,mongodb,activemq-disabled"
+
+      # JVM args must be set before the JVM launcher starts — cannot be in a properties file.
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:+UseG1GC
+        -XX:MaxRAMPercentage=75.0
+        -XX:+ExitOnOutOfMemoryError
+        -Djava.security.egd=file:/dev/./urandom
+        -Djavax.net.ssl.trustStore=/app/certs/truststore.jks
+        -Djavax.net.ssl.trustStorePassword=changeit
+        -Dcom.ibm.mq.cfg.preferTLS=true
+
+    # All other operational properties are in the ConfigMap below.
+    # The Helm template creates a ConfigMap from this data and mounts it
+    # at /app/config/ — Spring Boot auto-reads /app/config/application.properties.
+    #
+    # Keep this in sync with:
+    #   deployments/local/teams/teams/margin/backend-application.properties
+    configMap:
+      data:
+        application.properties: |
+          # --- Spring Auto-configuration Exclusions ---
+          spring.autoconfigure.exclude=\
+            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\
+            org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+
+          # --- MongoDB ---
+          spring.data.mongodb.uri=mongodb://margin-mongodb.margin.svc.cluster.local:27017
+          spring.data.mongodb.database=service_virtualization
+
+          # --- WireMock (embedded REST/SOAP stub engine) ---
+          wiremock.server.host=localhost
+          wiremock.server.port=8081
+
+          # --- HTTP Proxy ---
+          proxy.connect-timeout=5000
+          proxy.timeout=30000
+          proxy.logging.enabled=true
+
+          # --- Kafka Registry (multi-cluster) ---
+          kafka.registry.events.bootstrap-servers=margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092
+          kafka.registry.events.consumer-group-id=sv-margin-events
+          kafka.registry.events.ssl-enabled=false
+
+          kafka.registry.analytics.bootstrap-servers=margin-service-virtualization-kafka-analytics.margin.svc.cluster.local:9092
+          kafka.registry.analytics.consumer-group-id=sv-margin-analytics
+          kafka.registry.analytics.ssl-enabled=false
+
+          # --- IBM MQ Registry ---
+          ibmmq.registry.icg.host=margin-mq-icg.margin.svc.cluster.local
+          ibmmq.registry.icg.port=1414
+          ibmmq.registry.icg.queue.manager=QM_ICG
+          ibmmq.registry.icg.channel=MARGIN.ICG.SVRCONN
+          ibmmq.registry.icg.ssl.enabled=true
+          ibmmq.registry.icg.ssl.cipher.suite=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+          ibmmq.registry.rto.host=margin-mq-rto.margin.svc.cluster.local
+          ibmmq.registry.rto.port=1414
+          ibmmq.registry.rto.queue.manager=QM_RTO
+          ibmmq.registry.rto.channel=MARGIN.RTO.SVRCONN
+          ibmmq.registry.rto.ssl.enabled=true
+          ibmmq.registry.rto.ssl.cipher.suite=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+          # --- TIBCO Registry ---
+          tibco.registry.servera.url=tcp://margin-service-virtualization-tibco-serverA.margin.svc.cluster.local:7222
+          tibco.registry.servera.username=admin
+          tibco.registry.servera.password=admin
+          tibco.registry.servera.enabled=true
+
+          tibco.registry.serverb.url=tcp://margin-service-virtualization-tibco-serverB.margin.svc.cluster.local:7222
+          tibco.registry.serverb.username=admin
+          tibco.registry.serverb.password=admin
+          tibco.registry.serverb.enabled=true
+
+          # --- File Virtualization Service ---
+          virtualization.files.output.directory=/tmp/sv-files
+          virtualization.files.scheduler.enabled=false
+          virtualization.files.scheduler.poll-rate=0
+
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+    livenessProbe:
+      httpGet:
+        path: "/actuator/health"
+        port: 8080
+      initialDelaySeconds: 90
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+
+    readinessProbe:
+      httpGet:
+        path: "/actuator/health"
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+# =============================================================================
+# Networking: Istio resources for backend
+# =============================================================================
+
+networking:
+  backend:
+    enabled: true
+    pathPrefix: "/margin"

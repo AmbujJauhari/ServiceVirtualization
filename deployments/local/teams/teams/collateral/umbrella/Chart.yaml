@@ -1,0 +1,50 @@
+apiVersion: v2
+name: collateral
+description: Collateral Team — Service Virtualization Umbrella Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+# =============================================================================
+# Umbrella Chart
+# =============================================================================
+# Single deployment entry point for the collateral team.
+# It owns two concerns under ONE helm release ("collateral"):
+#
+#   sv subchart         — the product chart (what to deploy), in charts/
+#   templates/          — Istio VS/DR templates owned directly by this chart
+#
+# Deployment (rolling upgrade — add services one values file at a time):
+#
+#   # Step 1: IBM MQ ICG only
+#   helm upgrade --install collateral . -n collateral \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml
+#
+#   # Step 2: Add Tibco Server A
+#   helm upgrade collateral . -n collateral \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml \
+#     -f values/tibco-servera.yaml
+#
+#   # Full deployment (all services)
+#   helm upgrade collateral . -n collateral \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml -f values/ibmmq-rto.yaml \
+#     -f values/tibco-servera.yaml -f values/tibco-serverb.yaml \
+#     -f values/kafka-events.yaml \
+#     -f values/activemq.yaml \
+#     -f values/mongodb.yaml \
+#     -f values/backend.yaml \
+#     -f values/ui.yaml
+#
+# First-time setup (downloads the sv product chart into charts/):
+#   helm dependency update .
+# Re-run only when bumping the product chart version in this file.
+# =============================================================================
+
+dependencies:
+  - name: service-virtualization
+    version: "1.0.0"
+    repository: "file://../../../../../../helm-charts/service-virtualization"
+    alias: sv

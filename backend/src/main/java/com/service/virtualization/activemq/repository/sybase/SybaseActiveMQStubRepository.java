@@ -1,9 +1,14 @@
 package com.service.virtualization.activemq.repository.sybase;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.activemq.repository.ActiveMQStubRepository;
 import com.service.virtualization.model.StubStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -11,149 +16,216 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Sybase implementation of the ActiveMQStubRepository interface.
+ * Stores the entire ActiveMQStub object as JSON in a single {@code stub_data} column,
+ * preserving all fields including serverName, messageSelector, contentMatchType,
+ * webhookUrl, headers, latency, etc.
+ *
+ * Expected DDL:
+ * <pre>
+ *   CREATE TABLE active_mq_stubs (
+ *       id        VARCHAR(36)    DEFAULT NEWID() PRIMARY KEY,
+ *       stub_data NVARCHAR(MAX)  NOT NULL
+ *   );
+ * </pre>
+ */
 @Repository
 @Profile("sybase")
 public class SybaseActiveMQStubRepository implements ActiveMQStubRepository {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(SybaseActiveMQStubRepository.class);
+
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
+
     private static final String TABLE_NAME = "active_mq_stubs";
+    private static final String INSERT_STUB =
+            "INSERT INTO " + TABLE_NAME + " (stub_data) VALUES (?)";
+    private static final String UPDATE_STUB =
+            "UPDATE " + TABLE_NAME + " SET stub_data = ? WHERE id = ?";
+    private static final String SELECT_BY_ID =
+            "SELECT id, stub_data FROM " + TABLE_NAME + " WHERE id = ?";
+    private static final String SELECT_ALL =
+            "SELECT id, stub_data FROM " + TABLE_NAME;
+    private static final String SELECT_BY_STATUS =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.status') = ?";
+    private static final String SELECT_BY_USER_ID =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.userId') = ?";
+    private static final String SELECT_BY_USER_ID_AND_STATUS =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.userId') = ?"
+            + "   AND JSON_VALUE(stub_data, '$.status') = ?";
+    private static final String SELECT_BY_DESTINATION =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.destinationName') = ?";
+    private static final String SELECT_BY_DESTINATION_TYPE_AND_PRIORITY_GT =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.destinationName') = ?"
+            + "   AND JSON_VALUE(stub_data, '$.destinationType') = ?"
+            + "   AND CAST(JSON_VALUE(stub_data, '$.priority') AS INT) > ?";
+    private static final String SELECT_BY_DESTINATION_TYPE_AND_PRIORITY_GTE =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.destinationName') = ?"
+            + "   AND JSON_VALUE(stub_data, '$.destinationType') = ?"
+            + "   AND CAST(JSON_VALUE(stub_data, '$.priority') AS INT) >= ?";
+    private static final String SELECT_BY_DESTINATION_AND_TYPE =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.destinationName') = ?"
+            + "   AND JSON_VALUE(stub_data, '$.destinationType') = ?";
+    private static final String DELETE_BY_ID =
+            "DELETE FROM " + TABLE_NAME + " WHERE id = ?";
 
-    public SybaseActiveMQStubRepository(JdbcTemplate jdbcTemplate) {
+    public SybaseActiveMQStubRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    private final RowMapper<ActiveMQStub> rowMapper = new RowMapper<ActiveMQStub>() {
-        @Override
-        public ActiveMQStub mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ActiveMQStub stub = new ActiveMQStub();
-            stub.setId(rs.getString("id"));
-            stub.setName(rs.getString("name"));
-            stub.setDescription(rs.getString("description"));
-            stub.setUserId(rs.getString("user_id"));
-            stub.setDestinationName(rs.getString("destination_name"));
-            stub.setDestinationType(rs.getString("destination_type"));
-            stub.setPriority(rs.getInt("priority"));
-            stub.setStatus(StubStatus.valueOf(rs.getString("status")));
-            stub.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-            stub.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
-            return stub;
-        }
-    };
-
-    @Override
-    public List<ActiveMQStub> findByStatus(StubStatus status) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE status = ?";
-        return jdbcTemplate.query(sql, rowMapper, status.name());
-    }
-    
-    @Override
-    public List<ActiveMQStub> findByUserId(String userId) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE user_id = ?";
-        return jdbcTemplate.query(sql, rowMapper, userId);
-    }
-    
-    @Override
-    public List<ActiveMQStub> findByUserIdAndStatus(String userId, StubStatus status) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE user_id = ? AND status = ?";
-        return jdbcTemplate.query(sql, rowMapper, userId, status.name());
-    }
-    
-    @Override
-    public List<ActiveMQStub> findByDestinationName(String destinationName) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE destination_name = ?";
-        return jdbcTemplate.query(sql, rowMapper, destinationName);
-    }
-    
-    @Override
-    public List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThan(
-            String destinationName, String destinationType, int priority) {
-        String sql = "SELECT * FROM " + TABLE_NAME + 
-            " WHERE destination_name = ? AND destination_type = ? AND priority > ?";
-        return jdbcTemplate.query(sql, rowMapper, destinationName, destinationType, priority);
-    }
-    
-    @Override
-    public List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThanEqual(
-            String destinationName, String destinationType, int priority) {
-        String sql = "SELECT * FROM " + TABLE_NAME + 
-            " WHERE destination_name = ? AND destination_type = ? AND priority >= ?";
-        return jdbcTemplate.query(sql, rowMapper, destinationName, destinationType, priority);
-    }
-            
-    @Override
-    public ActiveMQStub findFirstByDestinationNameAndDestinationTypeOrderByPriorityDesc(
-            String destinationName, String destinationType) {
-        String sql = "SELECT * FROM " + TABLE_NAME + 
-            " WHERE destination_name = ? AND destination_type = ?" +
-            " ORDER BY priority DESC LIMIT 1";
-        List<ActiveMQStub> results = jdbcTemplate.query(sql, rowMapper, destinationName, destinationType);
-        return results.isEmpty() ? null : results.get(0);
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Write operations
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public ActiveMQStub save(ActiveMQStub stub) {
-        if (stub.getId() == null) {
-            // Insert
-            String sql = "INSERT INTO " + TABLE_NAME + 
-                " (name, description, user_id, destination_name, destination_type, priority, status, created_at, updated_at)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                ps.setString(1, stub.getName());
-                ps.setString(2, stub.getDescription());
-                ps.setString(3, stub.getUserId());
-                ps.setString(4, stub.getDestinationName());
-                ps.setString(5, stub.getDestinationType());
-                ps.setInt(6, stub.getPriority());
-                ps.setString(7, stub.getStatus().name());
-                ps.setTimestamp(8, java.sql.Timestamp.valueOf(stub.getCreatedAt()));
-                ps.setTimestamp(9, java.sql.Timestamp.valueOf(stub.getUpdatedAt()));
-                return ps;
-            }, keyHolder);
-            stub.setId(keyHolder.getKey().toString());
-        } else {
-            // Update
-            String sql = "UPDATE " + TABLE_NAME + 
-                " SET name = ?, description = ?, user_id = ?, destination_name = ?, destination_type = ?," +
-                " priority = ?, status = ?, updated_at = ? WHERE id = ?";
-            jdbcTemplate.update(sql,
-                stub.getName(),
-                stub.getDescription(),
-                stub.getUserId(),
-                stub.getDestinationName(),
-                stub.getDestinationType(),
-                stub.getPriority(),
-                stub.getStatus().name(),
-                java.sql.Timestamp.valueOf(stub.getUpdatedAt()),
-                stub.getId());
+        try {
+            if (stub.getId() == null || stub.getId().isEmpty()) {
+                LocalDateTime now = LocalDateTime.now();
+                if (stub.getCreatedAt() == null) {
+                    stub.setCreatedAt(now);
+                }
+                stub.setUpdatedAt(now);
+
+                String json = objectMapper.writeValueAsString(stub);
+
+                KeyHolder keyHolder = new GeneratedKeyHolder();
+                jdbcTemplate.update(connection -> {
+                    PreparedStatement ps = connection.prepareStatement(
+                            INSERT_STUB, Statement.RETURN_GENERATED_KEYS);
+                    ps.setString(1, json);
+                    return ps;
+                }, keyHolder);
+
+                String generatedId = keyHolder.getKey().toString();
+                stub.setId(generatedId);
+
+                // Embed the generated ID back into the JSON blob
+                String updatedJson = objectMapper.writeValueAsString(stub);
+                jdbcTemplate.update(UPDATE_STUB, updatedJson, generatedId);
+
+                logger.debug("Inserted new ActiveMQ stub with ID: {}", generatedId);
+                return stub;
+            } else {
+                stub.setUpdatedAt(LocalDateTime.now());
+                String json = objectMapper.writeValueAsString(stub);
+                jdbcTemplate.update(UPDATE_STUB, json, stub.getId());
+                logger.debug("Updated ActiveMQ stub with ID: {}", stub.getId());
+                return stub;
+            }
+        } catch (JsonProcessingException e) {
+            logger.error("Error serializing ActiveMQ stub to JSON", e);
+            throw new RuntimeException("Error serializing ActiveMQ stub to JSON", e);
         }
-        return stub;
     }
 
     @Override
     public void delete(ActiveMQStub stub) {
-        String sql = "DELETE FROM " + TABLE_NAME + " WHERE id = ?";
-        jdbcTemplate.update(sql, stub.getId());
+        jdbcTemplate.update(DELETE_BY_ID, stub.getId());
+        logger.debug("Deleted ActiveMQ stub with ID: {}", stub.getId());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Read operations
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public Optional<ActiveMQStub> findById(String id) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE id = ?";
-        List<ActiveMQStub> results = jdbcTemplate.query(sql, rowMapper, id);
-        return Optional.ofNullable(results.isEmpty() ? null : results.get(0));
+        try {
+            ActiveMQStub stub = jdbcTemplate.queryForObject(SELECT_BY_ID, rowMapper(), id);
+            return Optional.ofNullable(stub);
+        } catch (EmptyResultDataAccessException e) {
+            logger.debug("ActiveMQ stub not found with ID: {}", id);
+            return Optional.empty();
+        }
     }
 
     @Override
     public List<ActiveMQStub> findAll() {
-        String sql = "SELECT * FROM " + TABLE_NAME;
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(SELECT_ALL, rowMapper());
     }
-} 
+
+    @Override
+    public List<ActiveMQStub> findByStatus(StubStatus status) {
+        return jdbcTemplate.query(SELECT_BY_STATUS, rowMapper(), status.name());
+    }
+
+    @Override
+    public List<ActiveMQStub> findByUserId(String userId) {
+        return jdbcTemplate.query(SELECT_BY_USER_ID, rowMapper(), userId);
+    }
+
+    @Override
+    public List<ActiveMQStub> findByUserIdAndStatus(String userId, StubStatus status) {
+        return jdbcTemplate.query(SELECT_BY_USER_ID_AND_STATUS, rowMapper(),
+                userId, status.name());
+    }
+
+    @Override
+    public List<ActiveMQStub> findByDestinationName(String destinationName) {
+        return jdbcTemplate.query(SELECT_BY_DESTINATION, rowMapper(), destinationName);
+    }
+
+    @Override
+    public List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThan(
+            String destinationName, String destinationType, int priority) {
+        return jdbcTemplate.query(SELECT_BY_DESTINATION_TYPE_AND_PRIORITY_GT, rowMapper(),
+                destinationName, destinationType, priority);
+    }
+
+    @Override
+    public List<ActiveMQStub> findByDestinationNameAndDestinationTypeAndPriorityGreaterThanEqual(
+            String destinationName, String destinationType, int priority) {
+        return jdbcTemplate.query(SELECT_BY_DESTINATION_TYPE_AND_PRIORITY_GTE, rowMapper(),
+                destinationName, destinationType, priority);
+    }
+
+    /**
+     * Returns the highest-priority stub for a given destination.
+     *
+     * Sybase ASE does not support {@code LIMIT} / {@code FETCH FIRST}.  Rather than
+     * relying on dialect-specific TOP syntax we fetch all matching rows and sort
+     * in Java — the result set is always small (one destination has at most a handful
+     * of stubs) so this carries no meaningful overhead.
+     */
+    @Override
+    public ActiveMQStub findFirstByDestinationNameAndDestinationTypeOrderByPriorityDesc(
+            String destinationName, String destinationType) {
+        List<ActiveMQStub> results = jdbcTemplate.query(
+                SELECT_BY_DESTINATION_AND_TYPE, rowMapper(), destinationName, destinationType);
+        return results.stream()
+                .max(Comparator.comparingInt(ActiveMQStub::getPriority))
+                .orElse(null);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Row mapper
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private RowMapper<ActiveMQStub> rowMapper() {
+        return (rs, rowNum) -> {
+            try {
+                return objectMapper.readValue(rs.getString("stub_data"), ActiveMQStub.class);
+            } catch (JsonProcessingException e) {
+                logger.error("Error deserializing ActiveMQ stub from JSON", e);
+                throw new RuntimeException("Error deserializing ActiveMQ stub from JSON", e);
+            }
+        };
+    }
+}

@@ -25,6 +25,10 @@ export interface TibcoStub {
   description?: string;
   userId?: string;
   
+  // Multi-server support
+  serverName?: string;
+  responseServerName?: string;
+  
   // Flat destination structure to match backend
   destinationType?: string; // "QUEUE" or "TOPIC"
   destinationName: string;
@@ -218,6 +222,11 @@ export const tibcoApi = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['TibcoSchedule']
+    }),
+    
+    // Servers
+    getTibcoServers: builder.query<string[], void>({
+      query: () => '/tibco/stubs/servers'
     })
   }),
 });
@@ -236,4 +245,5 @@ export const {
   useGetTibcoSchedulesQuery,
   useCreateTibcoScheduleMutation,
   useDeleteTibcoScheduleMutation,
+  useGetTibcoServersQuery,
 } = tibcoApi; 

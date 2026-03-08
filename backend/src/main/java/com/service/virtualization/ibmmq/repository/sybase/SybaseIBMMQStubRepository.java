@@ -21,31 +21,46 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- * Sybase implementation of the TibcoStubRepository interface.
- * This repository stores the entire IBMMQStub object as JSON in a single column.
+ * Sybase implementation of the IBMMQStubRepository interface.
+ * Stores the entire IBMMQStub object as JSON in a single {@code stub_data} column.
+ *
+ * Expected DDL:
+ * <pre>
+ *   CREATE TABLE ibmmq_stubs (
+ *       id       VARCHAR(36)    DEFAULT NEWID() PRIMARY KEY,
+ *       stub_data NVARCHAR(MAX) NOT NULL
+ *   );
+ * </pre>
  */
 @Repository
 @Profile("sybase")
 public class SybaseIBMMQStubRepository implements IBMMQStubRepository {
-    private static final Logger logger = LoggerFactory.getLogger(com.service.virtualization.tibco.repository.SybaseTibcoStubRepository.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(SybaseIBMMQStubRepository.class);
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    // SQL statements
     private static final String TABLE_NAME = "ibmmq_stubs";
-    private static final String INSERT_STUB = "INSERT INTO " + TABLE_NAME + " (stub_data) VALUES (?)";
-    private static final String UPDATE_STUB = "UPDATE " + TABLE_NAME + " SET stub_data = ? WHERE id = ?";
-    private static final String SELECT_STUB_BY_ID = "SELECT id, stub_data FROM " + TABLE_NAME + " WHERE id = ?";
-    private static final String SELECT_ALL_STUBS = "SELECT id, stub_data FROM " + TABLE_NAME;
-    private static final String SELECT_STUBS_BY_STATUS = "SELECT id, stub_data FROM " + TABLE_NAME +
-            " WHERE JSON_VALUE(stub_data, '$.status') = ?";
-    private static final String SELECT_STUBS_BY_USER_ID = "SELECT id, stub_data FROM " + TABLE_NAME +
-            " WHERE JSON_VALUE(stub_data, '$.userId') = ?";
-    private static final String DELETE_STUB_BY_ID = "DELETE FROM " + TABLE_NAME + " WHERE id = ?";
-    private static final String COUNT_STUBS_BY_ID = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE id = ?";
+    private static final String INSERT_STUB =
+            "INSERT INTO " + TABLE_NAME + " (stub_data) VALUES (?)";
+    private static final String UPDATE_STUB =
+            "UPDATE " + TABLE_NAME + " SET stub_data = ? WHERE id = ?";
+    private static final String SELECT_BY_ID =
+            "SELECT id, stub_data FROM " + TABLE_NAME + " WHERE id = ?";
+    private static final String SELECT_ALL =
+            "SELECT id, stub_data FROM " + TABLE_NAME;
+    private static final String SELECT_BY_STATUS =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.status') = ?";
+    private static final String SELECT_BY_USER_ID =
+            "SELECT id, stub_data FROM " + TABLE_NAME
+            + " WHERE JSON_VALUE(stub_data, '$.userId') = ?";
+    private static final String DELETE_BY_ID =
+            "DELETE FROM " + TABLE_NAME + " WHERE id = ?";
+    private static final String COUNT_BY_ID =
+            "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE id = ?";
 
     public SybaseIBMMQStubRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
@@ -53,104 +68,96 @@ public class SybaseIBMMQStubRepository implements IBMMQStubRepository {
     }
 
     @Override
-    public IBMMQStub save(IBMMQStub tibcoStub) {
+    public IBMMQStub save(IBMMQStub stub) {
         try {
-            if (tibcoStub.getId() == null || tibcoStub.getId().isEmpty()) {
-                // Create new stub - let database generate ID
+            if (stub.getId() == null || stub.getId().isEmpty()) {
                 LocalDateTime now = LocalDateTime.now();
-                if (tibcoStub.getCreatedAt() == null) {
-                    tibcoStub.setCreatedAt(now);
+                if (stub.getCreatedAt() == null) {
+                    stub.setCreatedAt(now);
                 }
-                tibcoStub.setUpdatedAt(now);
+                stub.setUpdatedAt(now);
 
-                String stubJson = objectMapper.writeValueAsString(tibcoStub);
+                String json = objectMapper.writeValueAsString(stub);
 
-                // Insert without specifying ID - database will generate it
                 KeyHolder keyHolder = new GeneratedKeyHolder();
                 jdbcTemplate.update(connection -> {
                     PreparedStatement ps = connection.prepareStatement(
-                            INSERT_STUB,
-                            Statement.RETURN_GENERATED_KEYS);
-                    ps.setString(1, stubJson);
+                            INSERT_STUB, Statement.RETURN_GENERATED_KEYS);
+                    ps.setString(1, json);
                     return ps;
                 }, keyHolder);
 
-                // Get the generated ID from database
                 String generatedId = keyHolder.getKey().toString();
-                tibcoStub.setId(generatedId);
+                stub.setId(generatedId);
 
-                // Update the JSON with the generated ID
-                String updatedStubJson = objectMapper.writeValueAsString(tibcoStub);
-                jdbcTemplate.update(UPDATE_STUB, updatedStubJson, generatedId);
+                // Embed the generated ID back into the JSON blob
+                String updatedJson = objectMapper.writeValueAsString(stub);
+                jdbcTemplate.update(UPDATE_STUB, updatedJson, generatedId);
 
-                logger.debug("Inserted new TIBCO stub with ID: {}", generatedId);
-                return tibcoStub;
+                logger.debug("Inserted new IBM MQ stub with ID: {}", generatedId);
+                return stub;
             } else {
-                // Update existing stub
-                LocalDateTime now = LocalDateTime.now();
-                tibcoStub.setUpdatedAt(now);
-
-                String stubJson = objectMapper.writeValueAsString(tibcoStub);
-                jdbcTemplate.update(UPDATE_STUB, stubJson, tibcoStub.getId());
-                logger.debug("Updated TIBCO stub with ID: {}", tibcoStub.getId());
-                return tibcoStub;
+                stub.setUpdatedAt(LocalDateTime.now());
+                String json = objectMapper.writeValueAsString(stub);
+                jdbcTemplate.update(UPDATE_STUB, json, stub.getId());
+                logger.debug("Updated IBM MQ stub with ID: {}", stub.getId());
+                return stub;
             }
         } catch (JsonProcessingException e) {
-            logger.error("Error serializing TIBCO stub to JSON", e);
-            throw new RuntimeException("Error serializing TIBCO stub to JSON", e);
+            logger.error("Error serializing IBM MQ stub to JSON", e);
+            throw new RuntimeException("Error serializing IBM MQ stub to JSON", e);
         }
     }
 
     @Override
     public Optional<IBMMQStub> findById(String id) {
         try {
-            IBMMQStub tibcoStub = jdbcTemplate.queryForObject(SELECT_STUB_BY_ID, getRowMapper(), id);
-            return Optional.ofNullable(tibcoStub);
+            IBMMQStub stub = jdbcTemplate.queryForObject(SELECT_BY_ID, rowMapper(), id);
+            return Optional.ofNullable(stub);
         } catch (EmptyResultDataAccessException e) {
-            logger.debug("TIBCO stub not found with ID: {}", id);
+            logger.debug("IBM MQ stub not found with ID: {}", id);
             return Optional.empty();
         }
     }
 
     @Override
     public List<IBMMQStub> findAll() {
-        return jdbcTemplate.query(SELECT_ALL_STUBS, getRowMapper());
+        return jdbcTemplate.query(SELECT_ALL, rowMapper());
     }
 
     @Override
     public List<IBMMQStub> findByStatus(StubStatus status) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_STATUS, getRowMapper(), status.name());
+        return jdbcTemplate.query(SELECT_BY_STATUS, rowMapper(), status.name());
     }
 
     @Override
     public List<IBMMQStub> findByUserId(String userId) {
-        return jdbcTemplate.query(SELECT_STUBS_BY_USER_ID, getRowMapper(), userId);
+        return jdbcTemplate.query(SELECT_BY_USER_ID, rowMapper(), userId);
     }
 
     @Override
     public void deleteById(String id) {
-        int rowsAffected = jdbcTemplate.update(DELETE_STUB_BY_ID, id);
-        if (rowsAffected > 0) {
-            logger.debug("Deleted TIBCO stub with ID: {}", id);
+        int rows = jdbcTemplate.update(DELETE_BY_ID, id);
+        if (rows > 0) {
+            logger.debug("Deleted IBM MQ stub with ID: {}", id);
         } else {
-            logger.debug("No TIBCO stub found to delete with ID: {}", id);
+            logger.debug("No IBM MQ stub found to delete with ID: {}", id);
         }
     }
 
     @Override
     public boolean existsById(String id) {
-        Integer count = jdbcTemplate.queryForObject(COUNT_STUBS_BY_ID, Integer.class, id);
+        Integer count = jdbcTemplate.queryForObject(COUNT_BY_ID, Integer.class, id);
         return count != null && count > 0;
     }
 
-    private RowMapper<IBMMQStub> getRowMapper() {
+    private RowMapper<IBMMQStub> rowMapper() {
         return (rs, rowNum) -> {
             try {
-                String stubJson = rs.getString("stub_data");
-                return objectMapper.readValue(stubJson, IBMMQStub.class);
+                return objectMapper.readValue(rs.getString("stub_data"), IBMMQStub.class);
             } catch (JsonProcessingException e) {
-                logger.error("Error deserializing TIBCO stub from JSON", e);
-                throw new RuntimeException("Error deserializing TIBCO stub from JSON", e);
+                logger.error("Error deserializing IBM MQ stub from JSON", e);
+                throw new RuntimeException("Error deserializing IBM MQ stub from JSON", e);
             }
         };
     }

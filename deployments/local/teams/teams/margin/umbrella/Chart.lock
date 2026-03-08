@@ -1,0 +1,6 @@
+dependencies:
+- name: service-virtualization
+  repository: file://../../../../../../helm-charts/service-virtualization
+  version: 1.0.0
+digest: sha256:4a21270bc69612faae3d67239a271d3a1f73841cd59aa7a7e478bd49e70553e8
+generated: "2026-03-03T19:33:40.8122656+08:00"

@@ -6,7 +6,7 @@ import './index.css';
 import './styles/darkMode.css';
 import App from './App';
 import { store } from './app/store';
-import config from './config/configLoader';
+import { getBasePath } from './config/configLoader';
 
 // Initialize dark mode from localStorage if present
 const initDarkMode = () => {
@@ -18,10 +18,7 @@ const initDarkMode = () => {
 // Call the init function before rendering
 initDarkMode();
 
-// Log configuration in development mode
-if (process.env.NODE_ENV === 'development') {
-  console.log('Application config:', config);
-}
+// Configuration is now ultra-minimal - no logging needed
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -30,7 +27,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
+      <BrowserRouter basename={getBasePath()}>
         <App />
       </BrowserRouter>
     </Provider>

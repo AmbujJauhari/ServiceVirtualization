@@ -1,0 +1,55 @@
+apiVersion: v2
+name: margin
+description: Margin Team — Service Virtualization Umbrella Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+# =============================================================================
+# Umbrella Chart
+# =============================================================================
+# This chart is the single deployment entry point for the margin team.
+# It owns two concerns under ONE helm release ("margin"):
+#
+#   sv subchart         — the product chart (what to deploy), in charts/
+#   templates/          — Istio VS/DR templates owned directly by this chart
+#
+# Because the sv subchart and the umbrella templates share the same release
+# name, service names derived from {{ .Release.Name }} are automatically
+# consistent. No hardcoded service names exist anywhere.
+#
+# Deployment (rolling upgrade — add services one values file at a time):
+#
+#   # Step 1: IBM MQ
+#   helm upgrade --install margin . -n margin \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml \
+#     -f values/ibmmq-rto.yaml
+#
+#   # Step 2: Add Tibco
+#   helm upgrade margin . -n margin \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml -f values/ibmmq-rto.yaml \
+#     -f values/tibco-servera.yaml -f values/tibco-serverb.yaml
+#
+#   # Full deployment (all services)
+#   helm upgrade margin . -n margin \
+#     -f values/sv-global.yaml \
+#     -f values/ibmmq-icg.yaml -f values/ibmmq-rto.yaml \
+#     -f values/tibco-servera.yaml -f values/tibco-serverb.yaml \
+#     -f values/kafka-events.yaml -f values/kafka-analytics.yaml \
+#     -f values/activemq.yaml \
+#     -f values/mongodb.yaml \
+#     -f values/backend.yaml \
+#     -f values/ui.yaml
+#
+# First-time setup (downloads the sv product chart into charts/):
+#   helm dependency update .
+# Re-run only when bumping the product chart version in this file.
+# =============================================================================
+
+dependencies:
+  - name: service-virtualization
+    version: "1.0.0"
+    repository: "file://../../../../../../helm-charts/service-virtualization"
+    alias: sv

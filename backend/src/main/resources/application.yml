@@ -2,48 +2,26 @@ spring:
   application:
     name: service-virtualization
   profiles:
-    default: mongodb # Default to MongoDB storage
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017
-      database: service_virtualization
+    # Default profile activates MongoDB repository implementations.
+    # Teams override this via SPRING_PROFILES_ACTIVE env var or spring.profiles.active
+    # in their mounted /app/config/application.properties.
+    default: mongodb
   datasource:
-    url: jdbc:sybase:Tds:localhost:5000/service_virtualization
-    username: sa
-    password: password
+    # Driver class name kept here so the Sybase JPA auto-configuration can reference it.
+    # Teams that do NOT use Sybase must exclude DataSource auto-configuration:
+    #   spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,...
     driver-class-name: com.sybase.jdbc4.jdbc.SybDriver
-  # Spring Boot RestTemplate Proxy (pure library approach)
-  # Uses Spring Boot's built-in HTTP client library
-
-# RestTemplate Proxy configuration
-proxy:
-  connect-timeout: 5000    # Connection timeout to WireMock (ms)
-  timeout: 30000           # Request timeout (ms)
-  logging:
-    enabled: true          # Enable proxy request logging
 
 server:
   port: 8080
   servlet:
     context-path: /
 
-# Wiremock configuration
-wiremock:
-  server:
-    host: localhost
-    port: 8081
-
-# Database configuration
+# Database selector — controls which repository implementation is chosen at runtime.
 database:
-  primary: mongodb # Options: mongodb, sybase
-  # Use both or one - configuration controls which one is used
+  primary: mongodb
 
-# REST API paths
-rest:
-  api-path: /api
-  proxy-path: /proxy
-
-# Swagger/OpenAPI
+# Swagger / OpenAPI
 springdoc:
   api-docs:
     path: /api-docs
@@ -51,7 +29,7 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# Logging
+# Logging — sensible product defaults; teams may override in their properties file.
 logging:
   level:
     root: INFO
@@ -72,65 +50,4 @@ management:
     defaults:
       enabled: true
     jms:
-      enabled: false  # Disable JMS health check to avoid javax/jakarta conflicts
-
-# External Service Connection Properties (for health checks)
-# Kafka
-kafka:
-  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-  connection-timeout: ${KAFKA_CONNECTION_TIMEOUT:2000}
-
-# IBM MQ
-ibmmq:
-  host: ${IBMMQ_HOST:localhost}
-  port: ${IBMMQ_PORT:1414}
-  queue-manager: ${IBMMQ_QUEUE_MANAGER:QM1}
-  channel: ${IBMMQ_CHANNEL:DEV.APP.SVRCONN}
-  connection-timeout: ${IBMMQ_CONNECTION_TIMEOUT:2000}
-
-# Tibco EMS
-tibco:
-  enabled: true
-  url: tcp://localhost:7222
-  username: admin
-  password: admin
-  connection:
-    cache-size: 10
-
-# ActiveMQ
-activemq:
-  broker-url: ${ACTIVEMQ_BROKER_URL:tcp://localhost:61616}
-  username: ${ACTIVEMQ_USERNAME:admin}
-  password: ${ACTIVEMQ_PASSWORD:admin}
-  port: ${ACTIVEMQ_PORT:61616}
-  connection-timeout: ${ACTIVEMQ_CONNECTION_TIMEOUT:2000}
-
-# File Service Configuration
-virtualization:
-  files:
-    output.directory: ${FILES_OUTPUT_DIR:./file-output}
-    scheduler:
-      enabled: ${FILES_SCHEDULER_ENABLED:true}
-      poll-rate: ${FILES_SCHEDULER_POLL_RATE:60000}
-
-# Schema Registry Configuration
-schema:
-  registry:
-    url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
-    auth:
-      # Auth types: none, basic, apikey, bearer
-      # Use 'none' for non-RBAC Schema Registries (local/development)
-      # Use 'basic' for username/password authentication
-      # Use 'apikey' or 'bearer' for token-based authentication
-      type: ${SCHEMA_REGISTRY_AUTH_TYPE:none}
-      username: ${SCHEMA_REGISTRY_USERNAME:}
-      password: ${SCHEMA_REGISTRY_PASSWORD:}
-      api-key: ${SCHEMA_REGISTRY_API_KEY:}
-
-# Proxy Configuration Notes:
-# - Client applications should set proxyUrl to: http://localhost:8080/proxy  
-# - This will forward requests to WireMock running on port 8081
-# - Proxy authentication is handled transparently by Spring RestTemplate
-# - All existing API endpoints (/api/**, /actuator/**, /swagger-ui/**) remain unchanged
-# - Uses Spring Boot's built-in RestTemplate library (pure library approach)
-# - Features: Simple, reliable, production-ready, no external dependencies
+      enabled: false

@@ -1,0 +1,43 @@
+apiVersion: v2
+name: service-virtualization
+description: Enterprise Service Virtualization Platform - Core Application Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - service-virtualization
+  - testing
+  - mocking
+  - messaging
+  - enterprise
+  - tibco
+  - kafka
+  - activemq
+  - ibmmq
+  - rest
+  - soap
+  - mongodb
+  - backend
+  - ui
+
+home: https://github.com/your-org/service-virtualization-platform
+sources:
+  - https://github.com/your-org/service-virtualization-platform
+
+maintainers:
+  - name: Service Virtualization Team
+    email: sv-team@company.com
+
+# =============================================================================
+# Dependencies
+# =============================================================================
+# This chart has NO dependencies - it's a pure application chart.
+# Teams compose this with their own networking charts using umbrella charts.
+# See: k3s/02-team-setup/margin/ and k3s/02-team-setup/collateral/
+# =============================================================================
+dependencies: []
+
+annotations:
+  category: Testing
+  licenses: Apache-2.0

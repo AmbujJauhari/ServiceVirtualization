@@ -1,23 +1,11 @@
--- Update existing tables to use database-generated UUIDs for new records
--- This migration ensures that new records will have auto-generated IDs
-
--- Update Kafka stubs table to use auto-generated UUIDs
-ALTER TABLE kafka_stubs ADD CONSTRAINT DF_kafka_stubs_id DEFAULT NEWID() FOR id;
-
--- Update SOAP stubs table to use auto-generated UUIDs  
-ALTER TABLE soap_stubs ADD CONSTRAINT DF_soap_stubs_id DEFAULT NEWID() FOR id;
-
--- Update REST stubs table to use auto-generated UUIDs
-ALTER TABLE rest_stubs ADD CONSTRAINT DF_rest_stubs_id DEFAULT NEWID() FOR id;
-
--- Update TIBCO stubs table to use auto-generated UUIDs
-ALTER TABLE tibco_stubs ADD CONSTRAINT DF_tibco_stubs_id DEFAULT NEWID() FOR id;
-
--- Update ActiveMQ stubs table to use auto-generated UUIDs
-ALTER TABLE active_mq_stubs ADD CONSTRAINT DF_active_mq_stubs_id DEFAULT NEWID() FOR id;
-
--- Update IBM MQ stubs table to use auto-generated UUIDs
-ALTER TABLE ibmmq_stubs ADD CONSTRAINT DF_ibmmq_stubs_id DEFAULT NEWID() FOR id;
-
--- Note: Existing records will keep their current IDs
--- Only new records (where ID is not explicitly provided) will get auto-generated UUIDs 
+-- V3: DEFAULT NEWID() constraints
+--
+-- All tables created in V1 (kafka_stubs) and V2 (soap_stubs) already include
+-- DEFAULT NEWID() in their CREATE TABLE statements, so no ALTER TABLE is required
+-- for those tables.
+--
+-- Tables for rest_stubs (V4), tibco_stubs (V5), active_mq_stubs and ibmmq_stubs (V6)
+-- are created in later migrations and also include DEFAULT NEWID() at creation time.
+--
+-- This migration is intentionally a no-op; it is kept so that Flyway's version
+-- history remains gapless for installations that may have recorded its checksum.

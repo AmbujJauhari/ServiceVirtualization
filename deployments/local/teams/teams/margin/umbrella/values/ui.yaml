@@ -1,0 +1,69 @@
+# =============================================================================
+# Margin Team — UI Service
+# =============================================================================
+# Enables:
+#   sv.ui       — deploys the React/Nginx UI pod + service
+#   networking.ui — creates HTTP VirtualService routing /margin/* → pod:80
+#
+# Access via Istio:
+#   http://<ingress-ip>/margin/
+#   (Istio rewrites /margin/* → /* before forwarding to the UI pod)
+# =============================================================================
+
+sv:
+  ui:
+    enabled: true
+
+    image:
+      # Local k3s: build and import with:
+      #   cd UI && npm run build && docker build -t service-virtualization-ui:latest .
+      #   docker save service-virtualization-ui:latest -o ui.tar
+      #   vagrant ssh -- sudo k3s ctr images import /vagrant/ui.tar
+      repository: "service-virtualization-ui"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
+
+    replicaCount: 1
+
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 8080
+
+    # BACKEND_URL is used by nginx as a proxy_pass fallback for bare /api/* calls
+    # when running without Istio (local docker run). In Istio deployments the
+    # browser sends the full prefixed path (/margin/api/*) which Istio routes
+    # directly — nginx proxy_pass is never triggered.
+    env:
+      BACKEND_URL: "http://margin-service-virtualization-backend.margin.svc.cluster.local:8080"
+
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+    livenessProbe:
+      httpGet:
+        path: "/health"
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 30
+
+    readinessProbe:
+      httpGet:
+        path: "/health"
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+
+# =============================================================================
+# Networking: Istio resources for UI
+# =============================================================================
+
+networking:
+  ui:
+    enabled: true
+    pathPrefix: "/margin"

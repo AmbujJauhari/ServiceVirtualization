@@ -1,0 +1,175 @@
+# =============================================================================
+# Collateral Team - IBM MQ VirtualServices (all instances) — Azure AKS
+# =============================================================================
+#
+# This file contains ALL VirtualServices for IBM MQ in the collateral namespace:
+#   - TCP listener routing  (SNI hostname → MQ port 1414, TLS terminated at gateway)
+#   - Web console routing   (HTTP path prefix → console port 9443)
+#
+# TCP routing (TLS SIMPLE mode):
+#   The Istio Gateway terminates TLS on port 443 using the shared wildcard cert
+#   (gateway-tls-cert Secret in istio-ingress namespace).  After termination the
+#   inner stream is plain TCP.  Istio selects the correct pod using the SNI
+#   hostname recorded during the TLS handshake.
+#   IBM MQ pods require NO TLS configuration of their own.
+#
+# Console routing (HTTP):
+#   The IBM MQ web console always runs on port 9443 of the pod, exposed by the
+#   Service on the same port.  Path-prefix rewriting routes browser traffic on
+#   port 80 to the correct instance.
+#
+# Hostname pattern (TCP):  {instance}.ibmmq.collateral.service-virtualization.com
+# Path pattern (console):  /{team}/mq-{instance}/
+#
+# Prerequisites:
+#   - Shared gateway deployed by cluster-admin (istio-ingress/shared-gateway)
+#   - Wildcard TLS cert covering *.service-virtualization.com in Secret gateway-tls-cert
+#   - DNS/GSLB → icg.ibmmq.collateral.service-virtualization.com  →  <aks-ingress-gateway-ip>
+#   - DNS/GSLB → rto.ibmmq.collateral.service-virtualization.com  →  <aks-ingress-gateway-ip>
+#
+# Apply with:
+#   kubectl apply -f deployments/azure/teams/collateral/networking/istio/ibmmq-tcp-vs.yaml \
+#     --namespace collateral
+#
+# Release name convention: collateral-app
+# Service name pattern:    {release-name}-mq-{instance-name}
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# [TCP] ICG MQ listener  →  collateral-app-mq-icg:1414
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: collateral-ibmmq-icg-tcp-vs
+  namespace: collateral
+  labels:
+    app.kubernetes.io/name: collateral-networking
+    app.kubernetes.io/component: virtualservice
+    team: collateral
+    service: ibmmq-icg
+    environment: azure
+  annotations:
+    description: "Routes icg.ibmmq.collateral.service-virtualization.com:443 (TLS terminated at gateway) to IBM MQ ICG pod on plain TCP port 1414"
+spec:
+  hosts:
+  - "icg.ibmmq.collateral.service-virtualization.com"
+  gateways:
+  - istio-ingress/shared-gateway
+  tcp:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: collateral-app-mq-icg.collateral.svc.cluster.local
+        port:
+          number: 1414
+
+---
+# -----------------------------------------------------------------------------
+# [TCP] RTO MQ listener  →  collateral-app-mq-rto:1414
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: collateral-ibmmq-rto-tcp-vs
+  namespace: collateral
+  labels:
+    app.kubernetes.io/name: collateral-networking
+    app.kubernetes.io/component: virtualservice
+    team: collateral
+    service: ibmmq-rto
+    environment: azure
+  annotations:
+    description: "Routes rto.ibmmq.collateral.service-virtualization.com:443 (TLS terminated at gateway) to IBM MQ RTO pod on plain TCP port 1414"
+spec:
+  hosts:
+  - "rto.ibmmq.collateral.service-virtualization.com"
+  gateways:
+  - istio-ingress/shared-gateway
+  tcp:
+  - match:
+    - port: 443
+    route:
+    - destination:
+        host: collateral-app-mq-rto.collateral.svc.cluster.local
+        port:
+          number: 1414
+
+---
+# -----------------------------------------------------------------------------
+# [HTTP] ICG web console  →  /collateral/mq-icg/*  →  collateral-app-mq-icg:9443
+# The IBM MQ web console always listens on 9443 regardless of the MQ port.
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: collateral-ibmmq-icg-console-vs
+  namespace: collateral
+  labels:
+    app.kubernetes.io/name: collateral-networking
+    app.kubernetes.io/component: virtualservice
+    team: collateral
+    service: ibmmq-icg
+    environment: azure
+  annotations:
+    description: "Routes /collateral/mq-icg/* to IBM MQ ICG web console on port 9443"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/collateral/mq-icg/"
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: collateral-app-mq-icg.collateral.svc.cluster.local
+        port:
+          number: 9443
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+
+---
+# -----------------------------------------------------------------------------
+# [HTTP] RTO web console  →  /collateral/mq-rto/*  →  collateral-app-mq-rto:9443
+# The IBM MQ web console always listens on 9443 regardless of the MQ port.
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: collateral-ibmmq-rto-console-vs
+  namespace: collateral
+  labels:
+    app.kubernetes.io/name: collateral-networking
+    app.kubernetes.io/component: virtualservice
+    team: collateral
+    service: ibmmq-rto
+    environment: azure
+  annotations:
+    description: "Routes /collateral/mq-rto/* to IBM MQ RTO web console on port 9443"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/collateral/mq-rto/"
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: collateral-app-mq-rto.collateral.svc.cluster.local
+        port:
+          number: 9443
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s

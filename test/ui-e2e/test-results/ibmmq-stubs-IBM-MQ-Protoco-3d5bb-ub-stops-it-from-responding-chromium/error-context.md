@@ -1,0 +1,3344 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button "Status" [ref=e7] [cursor=pointer]:
+        - generic [ref=e10]: Status
+      - button "Toggle dark mode" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+    - banner [ref=e14]:
+      - heading "IBM MQ Management" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Configure and manage IBM MQ messaging services
+    - main [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - link [ref=e21] [cursor=pointer]:
+            - /url: /
+            - img [ref=e22]
+          - button "Create Stub" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+            - text: Create Stub
+        - generic [ref=e27]:
+          - navigation [ref=e29]:
+            - button "Stubs" [ref=e30] [cursor=pointer]
+            - button "On-Demand Publish" [ref=e31] [cursor=pointer]
+          - tabpanel [ref=e33]:
+            - generic [ref=e35]:
+              - textbox "Filter stubs by name, description, queue, or content pattern..." [ref=e37]
+              - table [ref=e39]:
+                - rowgroup [ref=e40]:
+                  - row "Name Destination Information Response Configuration Content Matching Priority Status Actions" [ref=e41]:
+                    - columnheader "Name" [ref=e42]
+                    - columnheader "Destination Information" [ref=e43]
+                    - columnheader "Response Configuration" [ref=e44]
+                    - columnheader "Content Matching" [ref=e45]
+                    - columnheader "Priority" [ref=e46]
+                    - columnheader "Status" [ref=e47]
+                    - columnheader "Actions" [ref=e48]
+                - rowgroup [ref=e49]:
+                  - 'row "Basic IBM MQ Queue Stub 1772958981848 Destination Type: queue Destination: DEV.QUEUE.1772958981848 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e50]':
+                    - cell "Basic IBM MQ Queue Stub 1772958981848" [ref=e51]:
+                      - generic [ref=e52]: Basic IBM MQ Queue Stub 1772958981848
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772958981848" [ref=e53]':
+                      - generic [ref=e54]: "Destination Type: queue"
+                      - generic [ref=e55]: "Destination: DEV.QUEUE.1772958981848"
+                    - cell "Uses JMSReplyTo0" [ref=e56]
+                    - cell "None" [ref=e57]:
+                      - generic [ref=e59]: None
+                    - cell "0" [ref=e60]
+                    - cell "Active" [ref=e61]:
+                      - button "Active" [ref=e62] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e63]:
+                      - generic [ref=e64]:
+                        - link "Edit" [ref=e65] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35075e5484560b6e6e09/edit
+                        - button "Delete" [ref=e66] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772958984881 Destination Type: topic Destination: DEV.TOPIC.1772958984881 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e67]':
+                    - cell "IBM MQ Topic Stub 1772958984881" [ref=e68]:
+                      - generic [ref=e69]: IBM MQ Topic Stub 1772958984881
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772958984881" [ref=e70]':
+                      - generic [ref=e71]: "Destination Type: topic"
+                      - generic [ref=e72]: "Destination: DEV.TOPIC.1772958984881"
+                    - cell "Uses JMSReplyTo0" [ref=e73]
+                    - cell "None" [ref=e74]:
+                      - generic [ref=e76]: None
+                    - cell "0" [ref=e77]
+                    - cell "Active" [ref=e78]:
+                      - button "Active" [ref=e79] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e80]:
+                      - generic [ref=e81]:
+                        - link "Edit" [ref=e82] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35095e5484560b6e6e0a/edit
+                        - button "Delete" [ref=e83] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772958998006 Destination Type: topic Destination: DEV.TOPIC.1772958998006 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e84]':
+                    - cell "IBM MQ Topic Stub 1772958998006" [ref=e85]:
+                      - generic [ref=e86]: IBM MQ Topic Stub 1772958998006
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772958998006" [ref=e87]':
+                      - generic [ref=e88]: "Destination Type: topic"
+                      - generic [ref=e89]: "Destination: DEV.TOPIC.1772958998006"
+                    - cell "Uses JMSReplyTo0" [ref=e90]
+                    - cell "None" [ref=e91]:
+                      - generic [ref=e93]: None
+                    - cell "0" [ref=e94]
+                    - cell "Active" [ref=e95]:
+                      - button "Active" [ref=e96] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e97]:
+                      - generic [ref=e98]:
+                        - link "Edit" [ref=e99] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35175e5484560b6e6e0b/edit
+                        - button "Delete" [ref=e100] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772959007488 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772959007488 Uses JMSReplyTo0 Contains Pattern: correlationId-1772959007488 0 Active Edit Delete" [ref=e101]':
+                    - cell "IBMMQ Contains Stub 1772959007488" [ref=e102]:
+                      - generic [ref=e103]: IBMMQ Contains Stub 1772959007488
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772959007488" [ref=e104]':
+                      - generic [ref=e105]: "Destination Type: queue"
+                      - generic [ref=e106]: "Destination: DEV.QUEUE.CONTAINS.1772959007488"
+                    - cell "Uses JMSReplyTo0" [ref=e107]
+                    - 'cell "Contains Pattern: correlationId-1772959007488" [ref=e108]':
+                      - generic [ref=e109]:
+                        - generic [ref=e110]: Contains
+                        - generic [ref=e111]: "Pattern: correlationId-1772959007488"
+                    - cell "0" [ref=e112]
+                    - cell "Active" [ref=e113]:
+                      - button "Active" [ref=e114] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e115]:
+                      - generic [ref=e116]:
+                        - link "Edit" [ref=e117] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35205e5484560b6e6e0c/edit
+                        - button "Delete" [ref=e118] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772959021890 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772959021890 Uses JMSReplyTo0 Contains Pattern: correlationId-1772959021890 0 Active Edit Delete" [ref=e119]':
+                    - cell "IBMMQ Contains Stub 1772959021890" [ref=e120]:
+                      - generic [ref=e121]: IBMMQ Contains Stub 1772959021890
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772959021890" [ref=e122]':
+                      - generic [ref=e123]: "Destination Type: queue"
+                      - generic [ref=e124]: "Destination: DEV.QUEUE.CONTAINS.1772959021890"
+                    - cell "Uses JMSReplyTo0" [ref=e125]
+                    - 'cell "Contains Pattern: correlationId-1772959021890" [ref=e126]':
+                      - generic [ref=e127]:
+                        - generic [ref=e128]: Contains
+                        - generic [ref=e129]: "Pattern: correlationId-1772959021890"
+                    - cell "0" [ref=e130]
+                    - cell "Active" [ref=e131]:
+                      - button "Active" [ref=e132] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e133]:
+                      - generic [ref=e134]:
+                        - link "Edit" [ref=e135] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad352f5e5484560b6e6e0d/edit
+                        - button "Delete" [ref=e136] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772959030064 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772959030064 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772959030064\"} 0 Active Edit Delete" [ref=e137]':
+                    - cell "IBMMQ Exact Stub 1772959030064" [ref=e138]:
+                      - generic [ref=e139]: IBMMQ Exact Stub 1772959030064
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772959030064" [ref=e140]':
+                      - generic [ref=e141]: "Destination Type: queue"
+                      - generic [ref=e142]: "Destination: DEV.QUEUE.EXACT.1772959030064"
+                    - cell "Uses JMSReplyTo0" [ref=e143]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772959030064\"}" [ref=e144]':
+                      - generic [ref=e145]:
+                        - generic [ref=e146]: Exact
+                        - generic [ref=e147]: "Pattern: {\"requestId\":\"1772959030064\"}"
+                    - cell "0" [ref=e148]
+                    - cell "Active" [ref=e149]:
+                      - button "Active" [ref=e150] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e151]:
+                      - generic [ref=e152]:
+                        - link "Edit" [ref=e153] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35375e5484560b6e6e0e/edit
+                        - button "Delete" [ref=e154] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772959040290 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772959040290 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772959040290\"} 0 Active Edit Delete" [ref=e155]':
+                    - cell "IBMMQ Exact Stub 1772959040290" [ref=e156]:
+                      - generic [ref=e157]: IBMMQ Exact Stub 1772959040290
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772959040290" [ref=e158]':
+                      - generic [ref=e159]: "Destination Type: queue"
+                      - generic [ref=e160]: "Destination: DEV.QUEUE.EXACT.1772959040290"
+                    - cell "Uses JMSReplyTo0" [ref=e161]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772959040290\"}" [ref=e162]':
+                      - generic [ref=e163]:
+                        - generic [ref=e164]: Exact
+                        - generic [ref=e165]: "Pattern: {\"requestId\":\"1772959040290\"}"
+                    - cell "0" [ref=e166]
+                    - cell "Active" [ref=e167]:
+                      - button "Active" [ref=e168] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e169]:
+                      - generic [ref=e170]:
+                        - link "Edit" [ref=e171] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35425e5484560b6e6e0f/edit
+                        - button "Delete" [ref=e172] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772959050845 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772959050845 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e173]':
+                    - cell "IBMMQ Regex Stub 1772959050845" [ref=e174]:
+                      - generic [ref=e175]: IBMMQ Regex Stub 1772959050845
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772959050845" [ref=e176]':
+                      - generic [ref=e177]: "Destination Type: queue"
+                      - generic [ref=e178]: "Destination: DEV.QUEUE.REGEX.1772959050845"
+                    - cell "Uses JMSReplyTo0" [ref=e179]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e180]':
+                      - generic [ref=e181]:
+                        - generic [ref=e182]: Regex
+                        - generic [ref=e183]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e184]
+                    - cell "Active" [ref=e185]:
+                      - button "Active" [ref=e186] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e187]:
+                      - generic [ref=e188]:
+                        - link "Edit" [ref=e189] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad354d5e5484560b6e6e10/edit
+                        - button "Delete" [ref=e190] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772959060956 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772959060956 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e191]':
+                    - cell "IBMMQ Regex Stub 1772959060956" [ref=e192]:
+                      - generic [ref=e193]: IBMMQ Regex Stub 1772959060956
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772959060956" [ref=e194]':
+                      - generic [ref=e195]: "Destination Type: queue"
+                      - generic [ref=e196]: "Destination: DEV.QUEUE.REGEX.1772959060956"
+                    - cell "Uses JMSReplyTo0" [ref=e197]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e198]':
+                      - generic [ref=e199]:
+                        - generic [ref=e200]: Regex
+                        - generic [ref=e201]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e202]
+                    - cell "Active" [ref=e203]:
+                      - button "Active" [ref=e204] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e205]:
+                      - generic [ref=e206]:
+                        - link "Edit" [ref=e207] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35565e5484560b6e6e11/edit
+                        - button "Delete" [ref=e208] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772959069161 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772959069161 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e209]':
+                    - cell "IBMMQ Priority Stub 1772959069161" [ref=e210]:
+                      - generic [ref=e211]: IBMMQ Priority Stub 1772959069161
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772959069161" [ref=e212]':
+                      - generic [ref=e213]: "Destination Type: queue"
+                      - generic [ref=e214]: "Destination: DEV.QUEUE.PRIO.1772959069161"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e215]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e216]: "Latency: 200ms"
+                    - cell "None" [ref=e217]:
+                      - generic [ref=e219]: None
+                    - cell "10" [ref=e220]
+                    - cell "Active" [ref=e221]:
+                      - button "Active" [ref=e222] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e223]:
+                      - generic [ref=e224]:
+                        - link "Edit" [ref=e225] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad355e5e5484560b6e6e12/edit
+                        - button "Delete" [ref=e226] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772959071721 Destination Type: queue Destination: DEV.QUEUE.SEL.1772959071721 Selector: JMSCorrelationID=''CID-1772959071721'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e227]':
+                    - cell "IBMMQ Selector Stub 1772959071721" [ref=e228]:
+                      - generic [ref=e229]: IBMMQ Selector Stub 1772959071721
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772959071721 Selector: JMSCorrelationID=''CID-1772959071721''" [ref=e230]':
+                      - generic [ref=e231]: "Destination Type: queue"
+                      - generic [ref=e232]: "Destination: DEV.QUEUE.SEL.1772959071721"
+                      - generic [ref=e233]: "Selector: JMSCorrelationID='CID-1772959071721'"
+                    - cell "Uses JMSReplyTo0" [ref=e234]
+                    - cell "None" [ref=e235]:
+                      - generic [ref=e237]: None
+                    - cell "0" [ref=e238]
+                    - cell "Active" [ref=e239]:
+                      - button "Active" [ref=e240] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e241]:
+                      - generic [ref=e242]:
+                        - link "Edit" [ref=e243] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35605e5484560b6e6e13/edit
+                        - button "Delete" [ref=e244] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772959073906 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772959073906 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e245]':
+                    - cell "IBMMQ Toggle Stub 1772959073906" [ref=e246]:
+                      - generic [ref=e247]: IBMMQ Toggle Stub 1772959073906
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772959073906" [ref=e248]':
+                      - generic [ref=e249]: "Destination Type: queue"
+                      - generic [ref=e250]: "Destination: DEV.QUEUE.TOGGLE.1772959073906"
+                    - cell "Uses JMSReplyTo0" [ref=e251]
+                    - cell "None" [ref=e252]:
+                      - generic [ref=e254]: None
+                    - cell "0" [ref=e255]
+                    - cell "Active" [ref=e256]:
+                      - button "Active" [ref=e257] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e258]:
+                      - generic [ref=e259]:
+                        - link "Edit" [ref=e260] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35635e5484560b6e6e14/edit
+                        - button "Delete" [ref=e261] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772959076837 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772959076837 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e262]':
+                    - cell "IBMMQ Edit Stub 1772959076837" [ref=e263]:
+                      - generic [ref=e264]: IBMMQ Edit Stub 1772959076837
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772959076837" [ref=e265]':
+                      - generic [ref=e266]: "Destination Type: queue"
+                      - generic [ref=e267]: "Destination: DEV.QUEUE.EDIT.1772959076837"
+                    - cell "Uses JMSReplyTo0" [ref=e268]
+                    - cell "None" [ref=e269]:
+                      - generic [ref=e271]: None
+                    - cell "0" [ref=e272]
+                    - cell "Active" [ref=e273]:
+                      - button "Active" [ref=e274] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e275]:
+                      - generic [ref=e276]:
+                        - link "Edit" [ref=e277] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35655e5484560b6e6e15/edit
+                        - button "Delete" [ref=e278] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772959082638 Destination Type: queue Destination: DEV.QUEUE.SA.1772959082638 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e279]':
+                    - cell "SearchA IBMMQ 1772959082638" [ref=e280]:
+                      - generic [ref=e281]: SearchA IBMMQ 1772959082638
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772959082638" [ref=e282]':
+                      - generic [ref=e283]: "Destination Type: queue"
+                      - generic [ref=e284]: "Destination: DEV.QUEUE.SA.1772959082638"
+                    - cell "Uses JMSReplyTo0" [ref=e285]
+                    - cell "None" [ref=e286]:
+                      - generic [ref=e288]: None
+                    - cell "0" [ref=e289]
+                    - cell "Active" [ref=e290]:
+                      - button "Active" [ref=e291] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e292]:
+                      - generic [ref=e293]:
+                        - link "Edit" [ref=e294] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad356c5e5484560b6e6e17/edit
+                        - button "Delete" [ref=e295] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772959082638 Destination Type: queue Destination: DEV.QUEUE.SB.1772959082638 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e296]':
+                    - cell "SearchB IBMMQ 1772959082638" [ref=e297]:
+                      - generic [ref=e298]: SearchB IBMMQ 1772959082638
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772959082638" [ref=e299]':
+                      - generic [ref=e300]: "Destination Type: queue"
+                      - generic [ref=e301]: "Destination: DEV.QUEUE.SB.1772959082638"
+                    - cell "Uses JMSReplyTo0" [ref=e302]
+                    - cell "None" [ref=e303]:
+                      - generic [ref=e305]: None
+                    - cell "0" [ref=e306]
+                    - cell "Active" [ref=e307]:
+                      - button "Active" [ref=e308] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e309]:
+                      - generic [ref=e310]:
+                        - link "Edit" [ref=e311] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad356d5e5484560b6e6e18/edit
+                        - button "Delete" [ref=e312] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772959087294 Destination Type: queue Destination: DEV.QUEUE.INACT.1772959087294 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e313]':
+                    - cell "IBMMQ Inactive Stub 1772959087294" [ref=e314]:
+                      - generic [ref=e315]: IBMMQ Inactive Stub 1772959087294
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772959087294" [ref=e316]':
+                      - generic [ref=e317]: "Destination Type: queue"
+                      - generic [ref=e318]: "Destination: DEV.QUEUE.INACT.1772959087294"
+                    - cell "Uses JMSReplyTo0" [ref=e319]
+                    - cell "None" [ref=e320]:
+                      - generic [ref=e322]: None
+                    - cell "0" [ref=e323]
+                    - cell "Active" [ref=e324]:
+                      - button "Active" [ref=e325] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e326]:
+                      - generic [ref=e327]:
+                        - link "Edit" [ref=e328] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35715e5484560b6e6e19/edit
+                        - button "Delete" [ref=e329] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772959096777 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772959096777 0 Active Edit Delete" [ref=e330]':
+                    - cell "IBMMQ Delivery Basic 1772959096777" [ref=e331]:
+                      - generic [ref=e332]: IBMMQ Delivery Basic 1772959096777
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e333]':
+                      - generic [ref=e334]: "Destination Type: queue"
+                      - generic [ref=e335]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e336]:
+                      - generic [ref=e337]:
+                        - generic [ref=e338]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772959096777" [ref=e339]':
+                      - generic [ref=e340]:
+                        - generic [ref=e341]: Contains
+                        - generic [ref=e342]: "Pattern: hello-1772959096777"
+                    - cell "0" [ref=e343]
+                    - cell "Active" [ref=e344]:
+                      - button "Active" [ref=e345] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e346]:
+                      - generic [ref=e347]:
+                        - link "Edit" [ref=e348] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad357a5e5484560b6e6e1a/edit
+                        - button "Delete" [ref=e349] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772959114608 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772959114608 0 Active Edit Delete" [ref=e350]':
+                    - cell "IBMMQ Delivery Basic 1772959114608" [ref=e351]:
+                      - generic [ref=e352]: IBMMQ Delivery Basic 1772959114608
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e353]':
+                      - generic [ref=e354]: "Destination Type: queue"
+                      - generic [ref=e355]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e356]:
+                      - generic [ref=e357]:
+                        - generic [ref=e358]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772959114608" [ref=e359]':
+                      - generic [ref=e360]:
+                        - generic [ref=e361]: Contains
+                        - generic [ref=e362]: "Pattern: hello-1772959114608"
+                    - cell "0" [ref=e363]
+                    - cell "Active" [ref=e364]:
+                      - button "Active" [ref=e365] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e366]:
+                      - generic [ref=e367]:
+                        - link "Edit" [ref=e368] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad358b5e5484560b6e6e1b/edit
+                        - button "Delete" [ref=e369] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772959130493 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772959130493 0 Active Edit Delete" [ref=e370]':
+                    - cell "IBMMQ Contains Delivery 1772959130493" [ref=e371]:
+                      - generic [ref=e372]: IBMMQ Contains Delivery 1772959130493
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e373]':
+                      - generic [ref=e374]: "Destination Type: queue"
+                      - generic [ref=e375]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e376]:
+                      - generic [ref=e377]:
+                        - generic [ref=e378]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772959130493" [ref=e379]':
+                      - generic [ref=e380]:
+                        - generic [ref=e381]: Contains
+                        - generic [ref=e382]: "Pattern: MATCH-TOKEN-1772959130493"
+                    - cell "0" [ref=e383]
+                    - cell "Active" [ref=e384]:
+                      - button "Active" [ref=e385] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e386]:
+                      - generic [ref=e387]:
+                        - link "Edit" [ref=e388] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad359c5e5484560b6e6e1c/edit
+                        - button "Delete" [ref=e389] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772959154736 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772959154736 0 Active Edit Delete" [ref=e390]':
+                    - cell "IBMMQ Contains Delivery 1772959154736" [ref=e391]:
+                      - generic [ref=e392]: IBMMQ Contains Delivery 1772959154736
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e393]':
+                      - generic [ref=e394]: "Destination Type: queue"
+                      - generic [ref=e395]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e396]:
+                      - generic [ref=e397]:
+                        - generic [ref=e398]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772959154736" [ref=e399]':
+                      - generic [ref=e400]:
+                        - generic [ref=e401]: Contains
+                        - generic [ref=e402]: "Pattern: MATCH-TOKEN-1772959154736"
+                    - cell "0" [ref=e403]
+                    - cell "Active" [ref=e404]:
+                      - button "Active" [ref=e405] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e406]:
+                      - generic [ref=e407]:
+                        - link "Edit" [ref=e408] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35b45e5484560b6e6e1d/edit
+                        - button "Delete" [ref=e409] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772959178940 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772959178940 0 Active Edit Delete" [ref=e410]':
+                    - cell "IBMMQ Exact Delivery 1772959178940" [ref=e411]:
+                      - generic [ref=e412]: IBMMQ Exact Delivery 1772959178940
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e413]':
+                      - generic [ref=e414]: "Destination Type: queue"
+                      - generic [ref=e415]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e416]:
+                      - generic [ref=e417]:
+                        - generic [ref=e418]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772959178940" [ref=e419]':
+                      - generic [ref=e420]:
+                        - generic [ref=e421]: Exact
+                        - generic [ref=e422]: "Pattern: exact-body-1772959178940"
+                    - cell "0" [ref=e423]
+                    - cell "Active" [ref=e424]:
+                      - button "Active" [ref=e425] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e426]:
+                      - generic [ref=e427]:
+                        - link "Edit" [ref=e428] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35cd5e5484560b6e6e1e/edit
+                        - button "Delete" [ref=e429] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772959206939 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772959206939 0 Active Edit Delete" [ref=e430]':
+                    - cell "IBMMQ Exact Delivery 1772959206939" [ref=e431]:
+                      - generic [ref=e432]: IBMMQ Exact Delivery 1772959206939
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e433]':
+                      - generic [ref=e434]: "Destination Type: queue"
+                      - generic [ref=e435]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e436]:
+                      - generic [ref=e437]:
+                        - generic [ref=e438]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772959206939" [ref=e439]':
+                      - generic [ref=e440]:
+                        - generic [ref=e441]: Exact
+                        - generic [ref=e442]: "Pattern: exact-body-1772959206939"
+                    - cell "0" [ref=e443]
+                    - cell "Active" [ref=e444]:
+                      - button "Active" [ref=e445] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e446]:
+                      - generic [ref=e447]:
+                        - link "Edit" [ref=e448] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35e85e5484560b6e6e1f/edit
+                        - button "Delete" [ref=e449] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772959225453 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772959225453-\\d+.* 0 Active Edit Delete" [ref=e450]':
+                    - cell "IBMMQ Regex Delivery 1772959225453" [ref=e451]:
+                      - generic [ref=e452]: IBMMQ Regex Delivery 1772959225453
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e453]':
+                      - generic [ref=e454]: "Destination Type: queue"
+                      - generic [ref=e455]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e456]:
+                      - generic [ref=e457]:
+                        - generic [ref=e458]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772959225453-\\d+.*" [ref=e459]':
+                      - generic [ref=e460]:
+                        - generic [ref=e461]: Regex
+                        - generic [ref=e462]: "Pattern: .*orderId-1772959225453-\\d+.*"
+                    - cell "0" [ref=e463]
+                    - cell "Active" [ref=e464]:
+                      - button "Active" [ref=e465] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e466]:
+                      - generic [ref=e467]:
+                        - link "Edit" [ref=e468] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad35fa5e5484560b6e6e20/edit
+                        - button "Delete" [ref=e469] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772959243106 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772959243106-\\d+.* 0 Active Edit Delete" [ref=e470]':
+                    - cell "IBMMQ Regex Delivery 1772959243106" [ref=e471]:
+                      - generic [ref=e472]: IBMMQ Regex Delivery 1772959243106
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e473]':
+                      - generic [ref=e474]: "Destination Type: queue"
+                      - generic [ref=e475]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e476]:
+                      - generic [ref=e477]:
+                        - generic [ref=e478]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772959243106-\\d+.*" [ref=e479]':
+                      - generic [ref=e480]:
+                        - generic [ref=e481]: Regex
+                        - generic [ref=e482]: "Pattern: .*orderId-1772959243106-\\d+.*"
+                    - cell "0" [ref=e483]
+                    - cell "Active" [ref=e484]:
+                      - button "Active" [ref=e485] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e486]:
+                      - generic [ref=e487]:
+                        - link "Edit" [ref=e488] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad360c5e5484560b6e6e21/edit
+                        - button "Delete" [ref=e489] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772959263437 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772959263437 0 Active Edit Delete" [ref=e490]':
+                    - cell "IBMMQ Inactive Delivery 1772959263437" [ref=e491]:
+                      - generic [ref=e492]: IBMMQ Inactive Delivery 1772959263437
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e493]':
+                      - generic [ref=e494]: "Destination Type: queue"
+                      - generic [ref=e495]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e496]:
+                      - generic [ref=e497]:
+                        - generic [ref=e498]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772959263437" [ref=e499]':
+                      - generic [ref=e500]:
+                        - generic [ref=e501]: Contains
+                        - generic [ref=e502]: "Pattern: inactive-trigger-1772959263437"
+                    - cell "0" [ref=e503]
+                    - cell "Active" [ref=e504]:
+                      - button "Active" [ref=e505] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e506]:
+                      - generic [ref=e507]:
+                        - link "Edit" [ref=e508] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad36205e5484560b6e6e22/edit
+                        - button "Delete" [ref=e509] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772959284286 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772959284286 0 Active Edit Delete" [ref=e510]':
+                    - cell "IBMMQ Inactive Delivery 1772959284286" [ref=e511]:
+                      - generic [ref=e512]: IBMMQ Inactive Delivery 1772959284286
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e513]':
+                      - generic [ref=e514]: "Destination Type: queue"
+                      - generic [ref=e515]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e516]:
+                      - generic [ref=e517]:
+                        - generic [ref=e518]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772959284286" [ref=e519]':
+                      - generic [ref=e520]:
+                        - generic [ref=e521]: Contains
+                        - generic [ref=e522]: "Pattern: inactive-trigger-1772959284286"
+                    - cell "0" [ref=e523]
+                    - cell "Active" [ref=e524]:
+                      - button "Active" [ref=e525] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e526]:
+                      - generic [ref=e527]:
+                        - link "Edit" [ref=e528] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad36355e5484560b6e6e23/edit
+                        - button "Delete" [ref=e529] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772959304958 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729593049... 0 Active Edit Delete" [ref=e530]':
+                    - cell "IBMMQ Deactivate Delivery 1772959304958" [ref=e531]:
+                      - generic [ref=e532]: IBMMQ Deactivate Delivery 1772959304958
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e533]':
+                      - generic [ref=e534]: "Destination Type: queue"
+                      - generic [ref=e535]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e536]:
+                      - generic [ref=e537]:
+                        - generic [ref=e538]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729593049..." [ref=e539]':
+                      - generic [ref=e540]:
+                        - generic [ref=e541]: Contains
+                        - generic [ref=e542]: "Pattern: deactivate-trigger-17729593049..."
+                    - cell "0" [ref=e543]
+                    - cell "Active" [ref=e544]:
+                      - button "Active" [ref=e545] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e546]:
+                      - generic [ref=e547]:
+                        - link "Edit" [ref=e548] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad364a5e5484560b6e6e24/edit
+                        - button "Delete" [ref=e549] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772959318936 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729593189... 0 Active Edit Delete" [ref=e550]':
+                    - cell "IBMMQ Deactivate Delivery 1772959318936" [ref=e551]:
+                      - generic [ref=e552]: IBMMQ Deactivate Delivery 1772959318936
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e553]':
+                      - generic [ref=e554]: "Destination Type: queue"
+                      - generic [ref=e555]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e556]:
+                      - generic [ref=e557]:
+                        - generic [ref=e558]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729593189..." [ref=e559]':
+                      - generic [ref=e560]:
+                        - generic [ref=e561]: Contains
+                        - generic [ref=e562]: "Pattern: deactivate-trigger-17729593189..."
+                    - cell "0" [ref=e563]
+                    - cell "Active" [ref=e564]:
+                      - button "Active" [ref=e565] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e566]:
+                      - generic [ref=e567]:
+                        - link "Edit" [ref=e568] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad36585e5484560b6e6e25/edit
+                        - button "Delete" [ref=e569] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772959337371 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772959337371 0 Active Edit Delete" [ref=e570]':
+                    - cell "IBMMQ Edit Delivery 1772959337371" [ref=e571]:
+                      - generic [ref=e572]: IBMMQ Edit Delivery 1772959337371
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e573]':
+                      - generic [ref=e574]: "Destination Type: queue"
+                      - generic [ref=e575]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e576]:
+                      - generic [ref=e577]:
+                        - generic [ref=e578]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772959337371" [ref=e579]':
+                      - generic [ref=e580]:
+                        - generic [ref=e581]: Contains
+                        - generic [ref=e582]: "Pattern: edit-trigger-1772959337371"
+                    - cell "0" [ref=e583]
+                    - cell "Active" [ref=e584]:
+                      - button "Active" [ref=e585] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e586]:
+                      - generic [ref=e587]:
+                        - link "Edit" [ref=e588] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad366c5e5484560b6e6e26/edit
+                        - button "Delete" [ref=e589] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772959358738 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772959358738 0 Active Edit Delete" [ref=e590]':
+                    - cell "IBMMQ Edit Delivery 1772959358738" [ref=e591]:
+                      - generic [ref=e592]: IBMMQ Edit Delivery 1772959358738
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e593]':
+                      - generic [ref=e594]: "Destination Type: queue"
+                      - generic [ref=e595]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e596]:
+                      - generic [ref=e597]:
+                        - generic [ref=e598]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772959358738" [ref=e599]':
+                      - generic [ref=e600]:
+                        - generic [ref=e601]: Contains
+                        - generic [ref=e602]: "Pattern: edit-trigger-1772959358738"
+                    - cell "0" [ref=e603]
+                    - cell "Active" [ref=e604]:
+                      - button "Active" [ref=e605] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e606]:
+                      - generic [ref=e607]:
+                        - link "Edit" [ref=e608] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad36805e5484560b6e6e27/edit
+                        - button "Delete" [ref=e609] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772962796268 Destination Type: queue Destination: DEV.QUEUE.1772962796268 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e610]':
+                    - cell "Basic IBM MQ Queue Stub 1772962796268" [ref=e611]:
+                      - generic [ref=e612]: Basic IBM MQ Queue Stub 1772962796268
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772962796268" [ref=e613]':
+                      - generic [ref=e614]: "Destination Type: queue"
+                      - generic [ref=e615]: "Destination: DEV.QUEUE.1772962796268"
+                    - cell "Uses JMSReplyTo0" [ref=e616]
+                    - cell "None" [ref=e617]:
+                      - generic [ref=e619]: None
+                    - cell "0" [ref=e620]
+                    - cell "Active" [ref=e621]:
+                      - button "Active" [ref=e622] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e623]:
+                      - generic [ref=e624]:
+                        - link "Edit" [ref=e625] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad43ee5e5484560b6e6e28/edit
+                        - button "Delete" [ref=e626] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772962799892 Destination Type: topic Destination: DEV.TOPIC.1772962799892 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e627]':
+                    - cell "IBM MQ Topic Stub 1772962799892" [ref=e628]:
+                      - generic [ref=e629]: IBM MQ Topic Stub 1772962799892
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772962799892" [ref=e630]':
+                      - generic [ref=e631]: "Destination Type: topic"
+                      - generic [ref=e632]: "Destination: DEV.TOPIC.1772962799892"
+                    - cell "Uses JMSReplyTo0" [ref=e633]
+                    - cell "None" [ref=e634]:
+                      - generic [ref=e636]: None
+                    - cell "0" [ref=e637]
+                    - cell "Active" [ref=e638]:
+                      - button "Active" [ref=e639] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e640]:
+                      - generic [ref=e641]:
+                        - link "Edit" [ref=e642] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad43f15e5484560b6e6e29/edit
+                        - button "Delete" [ref=e643] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772962803358 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772962803358 Uses JMSReplyTo0 Contains Pattern: correlationId-1772962803358 0 Active Edit Delete" [ref=e644]':
+                    - cell "IBMMQ Contains Stub 1772962803358" [ref=e645]:
+                      - generic [ref=e646]: IBMMQ Contains Stub 1772962803358
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772962803358" [ref=e647]':
+                      - generic [ref=e648]: "Destination Type: queue"
+                      - generic [ref=e649]: "Destination: DEV.QUEUE.CONTAINS.1772962803358"
+                    - cell "Uses JMSReplyTo0" [ref=e650]
+                    - 'cell "Contains Pattern: correlationId-1772962803358" [ref=e651]':
+                      - generic [ref=e652]:
+                        - generic [ref=e653]: Contains
+                        - generic [ref=e654]: "Pattern: correlationId-1772962803358"
+                    - cell "0" [ref=e655]
+                    - cell "Active" [ref=e656]:
+                      - button "Active" [ref=e657] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e658]:
+                      - generic [ref=e659]:
+                        - link "Edit" [ref=e660] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad43f45e5484560b6e6e2a/edit
+                        - button "Delete" [ref=e661] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772962806145 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772962806145 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772962806145\"} 0 Active Edit Delete" [ref=e662]':
+                    - cell "IBMMQ Exact Stub 1772962806145" [ref=e663]:
+                      - generic [ref=e664]: IBMMQ Exact Stub 1772962806145
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772962806145" [ref=e665]':
+                      - generic [ref=e666]: "Destination Type: queue"
+                      - generic [ref=e667]: "Destination: DEV.QUEUE.EXACT.1772962806145"
+                    - cell "Uses JMSReplyTo0" [ref=e668]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772962806145\"}" [ref=e669]':
+                      - generic [ref=e670]:
+                        - generic [ref=e671]: Exact
+                        - generic [ref=e672]: "Pattern: {\"requestId\":\"1772962806145\"}"
+                    - cell "0" [ref=e673]
+                    - cell "Active" [ref=e674]:
+                      - button "Active" [ref=e675] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e676]:
+                      - generic [ref=e677]:
+                        - link "Edit" [ref=e678] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad43f75e5484560b6e6e2b/edit
+                        - button "Delete" [ref=e679] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772962809802 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772962809802 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e680]':
+                    - cell "IBMMQ Regex Stub 1772962809802" [ref=e681]:
+                      - generic [ref=e682]: IBMMQ Regex Stub 1772962809802
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772962809802" [ref=e683]':
+                      - generic [ref=e684]: "Destination Type: queue"
+                      - generic [ref=e685]: "Destination: DEV.QUEUE.REGEX.1772962809802"
+                    - cell "Uses JMSReplyTo0" [ref=e686]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e687]':
+                      - generic [ref=e688]:
+                        - generic [ref=e689]: Regex
+                        - generic [ref=e690]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e691]
+                    - cell "Active" [ref=e692]:
+                      - button "Active" [ref=e693] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e694]:
+                      - generic [ref=e695]:
+                        - link "Edit" [ref=e696] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad43fb5e5484560b6e6e2c/edit
+                        - button "Delete" [ref=e697] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772962817597 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772962817597 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e698]':
+                    - cell "IBMMQ Priority Stub 1772962817597" [ref=e699]:
+                      - generic [ref=e700]: IBMMQ Priority Stub 1772962817597
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772962817597" [ref=e701]':
+                      - generic [ref=e702]: "Destination Type: queue"
+                      - generic [ref=e703]: "Destination: DEV.QUEUE.PRIO.1772962817597"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e704]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e705]: "Latency: 200ms"
+                    - cell "None" [ref=e706]:
+                      - generic [ref=e708]: None
+                    - cell "10" [ref=e709]
+                    - cell "Active" [ref=e710]:
+                      - button "Active" [ref=e711] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e712]:
+                      - generic [ref=e713]:
+                        - link "Edit" [ref=e714] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44035e5484560b6e6e2d/edit
+                        - button "Delete" [ref=e715] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772962821055 Destination Type: queue Destination: DEV.QUEUE.SEL.1772962821055 Selector: JMSCorrelationID=''CID-1772962821055'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e716]':
+                    - cell "IBMMQ Selector Stub 1772962821055" [ref=e717]:
+                      - generic [ref=e718]: IBMMQ Selector Stub 1772962821055
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772962821055 Selector: JMSCorrelationID=''CID-1772962821055''" [ref=e719]':
+                      - generic [ref=e720]: "Destination Type: queue"
+                      - generic [ref=e721]: "Destination: DEV.QUEUE.SEL.1772962821055"
+                      - generic [ref=e722]: "Selector: JMSCorrelationID='CID-1772962821055'"
+                    - cell "Uses JMSReplyTo0" [ref=e723]
+                    - cell "None" [ref=e724]:
+                      - generic [ref=e726]: None
+                    - cell "0" [ref=e727]
+                    - cell "Active" [ref=e728]:
+                      - button "Active" [ref=e729] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e730]:
+                      - generic [ref=e731]:
+                        - link "Edit" [ref=e732] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44065e5484560b6e6e2e/edit
+                        - button "Delete" [ref=e733] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772962823688 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772962823688 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e734]':
+                    - cell "IBMMQ Toggle Stub 1772962823688" [ref=e735]:
+                      - generic [ref=e736]: IBMMQ Toggle Stub 1772962823688
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772962823688" [ref=e737]':
+                      - generic [ref=e738]: "Destination Type: queue"
+                      - generic [ref=e739]: "Destination: DEV.QUEUE.TOGGLE.1772962823688"
+                    - cell "Uses JMSReplyTo0" [ref=e740]
+                    - cell "None" [ref=e741]:
+                      - generic [ref=e743]: None
+                    - cell "0" [ref=e744]
+                    - cell "Active" [ref=e745]:
+                      - button "Active" [ref=e746] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e747]:
+                      - generic [ref=e748]:
+                        - link "Edit" [ref=e749] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44095e5484560b6e6e2f/edit
+                        - button "Delete" [ref=e750] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772962827489 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772962827489 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e751]':
+                    - cell "IBMMQ Edit Stub 1772962827489" [ref=e752]:
+                      - generic [ref=e753]: IBMMQ Edit Stub 1772962827489
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772962827489" [ref=e754]':
+                      - generic [ref=e755]: "Destination Type: queue"
+                      - generic [ref=e756]: "Destination: DEV.QUEUE.EDIT.1772962827489"
+                    - cell "Uses JMSReplyTo0" [ref=e757]
+                    - cell "None" [ref=e758]:
+                      - generic [ref=e760]: None
+                    - cell "0" [ref=e761]
+                    - cell "Active" [ref=e762]:
+                      - button "Active" [ref=e763] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e764]:
+                      - generic [ref=e765]:
+                        - link "Edit" [ref=e766] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad440c5e5484560b6e6e30/edit
+                        - button "Delete" [ref=e767] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772962832941 Destination Type: queue Destination: DEV.QUEUE.SA.1772962832941 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e768]':
+                    - cell "SearchA IBMMQ 1772962832941" [ref=e769]:
+                      - generic [ref=e770]: SearchA IBMMQ 1772962832941
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772962832941" [ref=e771]':
+                      - generic [ref=e772]: "Destination Type: queue"
+                      - generic [ref=e773]: "Destination: DEV.QUEUE.SA.1772962832941"
+                    - cell "Uses JMSReplyTo0" [ref=e774]
+                    - cell "None" [ref=e775]:
+                      - generic [ref=e777]: None
+                    - cell "0" [ref=e778]
+                    - cell "Active" [ref=e779]:
+                      - button "Active" [ref=e780] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e781]:
+                      - generic [ref=e782]:
+                        - link "Edit" [ref=e783] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44125e5484560b6e6e32/edit
+                        - button "Delete" [ref=e784] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772962832941 Destination Type: queue Destination: DEV.QUEUE.SB.1772962832941 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e785]':
+                    - cell "SearchB IBMMQ 1772962832941" [ref=e786]:
+                      - generic [ref=e787]: SearchB IBMMQ 1772962832941
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772962832941" [ref=e788]':
+                      - generic [ref=e789]: "Destination Type: queue"
+                      - generic [ref=e790]: "Destination: DEV.QUEUE.SB.1772962832941"
+                    - cell "Uses JMSReplyTo0" [ref=e791]
+                    - cell "None" [ref=e792]:
+                      - generic [ref=e794]: None
+                    - cell "0" [ref=e795]
+                    - cell "Active" [ref=e796]:
+                      - button "Active" [ref=e797] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e798]:
+                      - generic [ref=e799]:
+                        - link "Edit" [ref=e800] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44135e5484560b6e6e33/edit
+                        - button "Delete" [ref=e801] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772962837313 Destination Type: queue Destination: DEV.QUEUE.INACT.1772962837313 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e802]':
+                    - cell "IBMMQ Inactive Stub 1772962837313" [ref=e803]:
+                      - generic [ref=e804]: IBMMQ Inactive Stub 1772962837313
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772962837313" [ref=e805]':
+                      - generic [ref=e806]: "Destination Type: queue"
+                      - generic [ref=e807]: "Destination: DEV.QUEUE.INACT.1772962837313"
+                    - cell "Uses JMSReplyTo0" [ref=e808]
+                    - cell "None" [ref=e809]:
+                      - generic [ref=e811]: None
+                    - cell "0" [ref=e812]
+                    - cell "Active" [ref=e813]:
+                      - button "Active" [ref=e814] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e815]:
+                      - generic [ref=e816]:
+                        - link "Edit" [ref=e817] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44175e5484560b6e6e34/edit
+                        - button "Delete" [ref=e818] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772962846474 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772962846474 0 Active Edit Delete" [ref=e819]':
+                    - cell "IBMMQ Delivery Basic 1772962846474" [ref=e820]:
+                      - generic [ref=e821]: IBMMQ Delivery Basic 1772962846474
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e822]':
+                      - generic [ref=e823]: "Destination Type: queue"
+                      - generic [ref=e824]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e825]:
+                      - generic [ref=e826]:
+                        - generic [ref=e827]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772962846474" [ref=e828]':
+                      - generic [ref=e829]:
+                        - generic [ref=e830]: Contains
+                        - generic [ref=e831]: "Pattern: hello-1772962846474"
+                    - cell "0" [ref=e832]
+                    - cell "Active" [ref=e833]:
+                      - button "Active" [ref=e834] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e835]:
+                      - generic [ref=e836]:
+                        - link "Edit" [ref=e837] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44205e5484560b6e6e35/edit
+                        - button "Delete" [ref=e838] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772962866485 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772962866485 0 Active Edit Delete" [ref=e839]':
+                    - cell "IBMMQ Delivery Basic 1772962866485" [ref=e840]:
+                      - generic [ref=e841]: IBMMQ Delivery Basic 1772962866485
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e842]':
+                      - generic [ref=e843]: "Destination Type: queue"
+                      - generic [ref=e844]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e845]:
+                      - generic [ref=e846]:
+                        - generic [ref=e847]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772962866485" [ref=e848]':
+                      - generic [ref=e849]:
+                        - generic [ref=e850]: Contains
+                        - generic [ref=e851]: "Pattern: hello-1772962866485"
+                    - cell "0" [ref=e852]
+                    - cell "Active" [ref=e853]:
+                      - button "Active" [ref=e854] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e855]:
+                      - generic [ref=e856]:
+                        - link "Edit" [ref=e857] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44345e5484560b6e6e36/edit
+                        - button "Delete" [ref=e858] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772962885728 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772962885728 0 Active Edit Delete" [ref=e859]':
+                    - cell "IBMMQ Contains Delivery 1772962885728" [ref=e860]:
+                      - generic [ref=e861]: IBMMQ Contains Delivery 1772962885728
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e862]':
+                      - generic [ref=e863]: "Destination Type: queue"
+                      - generic [ref=e864]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e865]:
+                      - generic [ref=e866]:
+                        - generic [ref=e867]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772962885728" [ref=e868]':
+                      - generic [ref=e869]:
+                        - generic [ref=e870]: Contains
+                        - generic [ref=e871]: "Pattern: MATCH-TOKEN-1772962885728"
+                    - cell "0" [ref=e872]
+                    - cell "Active" [ref=e873]:
+                      - button "Active" [ref=e874] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e875]:
+                      - generic [ref=e876]:
+                        - link "Edit" [ref=e877] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44475e5484560b6e6e37/edit
+                        - button "Delete" [ref=e878] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772962909524 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772962909524 0 Active Edit Delete" [ref=e879]':
+                    - cell "IBMMQ Contains Delivery 1772962909524" [ref=e880]:
+                      - generic [ref=e881]: IBMMQ Contains Delivery 1772962909524
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e882]':
+                      - generic [ref=e883]: "Destination Type: queue"
+                      - generic [ref=e884]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e885]:
+                      - generic [ref=e886]:
+                        - generic [ref=e887]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772962909524" [ref=e888]':
+                      - generic [ref=e889]:
+                        - generic [ref=e890]: Contains
+                        - generic [ref=e891]: "Pattern: MATCH-TOKEN-1772962909524"
+                    - cell "0" [ref=e892]
+                    - cell "Active" [ref=e893]:
+                      - button "Active" [ref=e894] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e895]:
+                      - generic [ref=e896]:
+                        - link "Edit" [ref=e897] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad445e5e5484560b6e6e38/edit
+                        - button "Delete" [ref=e898] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772962944758 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772962944758 0 Active Edit Delete" [ref=e899]':
+                    - cell "IBMMQ Exact Delivery 1772962944758" [ref=e900]:
+                      - generic [ref=e901]: IBMMQ Exact Delivery 1772962944758
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e902]':
+                      - generic [ref=e903]: "Destination Type: queue"
+                      - generic [ref=e904]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e905]:
+                      - generic [ref=e906]:
+                        - generic [ref=e907]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772962944758" [ref=e908]':
+                      - generic [ref=e909]:
+                        - generic [ref=e910]: Exact
+                        - generic [ref=e911]: "Pattern: exact-body-1772962944758"
+                    - cell "0" [ref=e912]
+                    - cell "Active" [ref=e913]:
+                      - button "Active" [ref=e914] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e915]:
+                      - generic [ref=e916]:
+                        - link "Edit" [ref=e917] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44825e5484560b6e6e39/edit
+                        - button "Delete" [ref=e918] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772962969872 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772962969872 0 Active Edit Delete" [ref=e919]':
+                    - cell "IBMMQ Exact Delivery 1772962969872" [ref=e920]:
+                      - generic [ref=e921]: IBMMQ Exact Delivery 1772962969872
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e922]':
+                      - generic [ref=e923]: "Destination Type: queue"
+                      - generic [ref=e924]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e925]:
+                      - generic [ref=e926]:
+                        - generic [ref=e927]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772962969872" [ref=e928]':
+                      - generic [ref=e929]:
+                        - generic [ref=e930]: Exact
+                        - generic [ref=e931]: "Pattern: exact-body-1772962969872"
+                    - cell "0" [ref=e932]
+                    - cell "Active" [ref=e933]:
+                      - button "Active" [ref=e934] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e935]:
+                      - generic [ref=e936]:
+                        - link "Edit" [ref=e937] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad449b5e5484560b6e6e3a/edit
+                        - button "Delete" [ref=e938] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772962996356 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772962996356-\\d+.* 0 Active Edit Delete" [ref=e939]':
+                    - cell "IBMMQ Regex Delivery 1772962996356" [ref=e940]:
+                      - generic [ref=e941]: IBMMQ Regex Delivery 1772962996356
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e942]':
+                      - generic [ref=e943]: "Destination Type: queue"
+                      - generic [ref=e944]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e945]:
+                      - generic [ref=e946]:
+                        - generic [ref=e947]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772962996356-\\d+.*" [ref=e948]':
+                      - generic [ref=e949]:
+                        - generic [ref=e950]: Regex
+                        - generic [ref=e951]: "Pattern: .*orderId-1772962996356-\\d+.*"
+                    - cell "0" [ref=e952]
+                    - cell "Active" [ref=e953]:
+                      - button "Active" [ref=e954] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e955]:
+                      - generic [ref=e956]:
+                        - link "Edit" [ref=e957] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44b55e5484560b6e6e3b/edit
+                        - button "Delete" [ref=e958] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772963022343 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772963022343-\\d+.* 0 Active Edit Delete" [ref=e959]':
+                    - cell "IBMMQ Regex Delivery 1772963022343" [ref=e960]:
+                      - generic [ref=e961]: IBMMQ Regex Delivery 1772963022343
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e962]':
+                      - generic [ref=e963]: "Destination Type: queue"
+                      - generic [ref=e964]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e965]:
+                      - generic [ref=e966]:
+                        - generic [ref=e967]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772963022343-\\d+.*" [ref=e968]':
+                      - generic [ref=e969]:
+                        - generic [ref=e970]: Regex
+                        - generic [ref=e971]: "Pattern: .*orderId-1772963022343-\\d+.*"
+                    - cell "0" [ref=e972]
+                    - cell "Active" [ref=e973]:
+                      - button "Active" [ref=e974] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e975]:
+                      - generic [ref=e976]:
+                        - link "Edit" [ref=e977] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44cf5e5484560b6e6e3c/edit
+                        - button "Delete" [ref=e978] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772963049986 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772963049986 0 Active Edit Delete" [ref=e979]':
+                    - cell "IBMMQ Inactive Delivery 1772963049986" [ref=e980]:
+                      - generic [ref=e981]: IBMMQ Inactive Delivery 1772963049986
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e982]':
+                      - generic [ref=e983]: "Destination Type: queue"
+                      - generic [ref=e984]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e985]:
+                      - generic [ref=e986]:
+                        - generic [ref=e987]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772963049986" [ref=e988]':
+                      - generic [ref=e989]:
+                        - generic [ref=e990]: Contains
+                        - generic [ref=e991]: "Pattern: inactive-trigger-1772963049986"
+                    - cell "0" [ref=e992]
+                    - cell "Active" [ref=e993]:
+                      - button "Active" [ref=e994] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e995]:
+                      - generic [ref=e996]:
+                        - link "Edit" [ref=e997] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad44eb5e5484560b6e6e3d/edit
+                        - button "Delete" [ref=e998] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772963079436 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772963079436 0 Active Edit Delete" [ref=e999]':
+                    - cell "IBMMQ Inactive Delivery 1772963079436" [ref=e1000]:
+                      - generic [ref=e1001]: IBMMQ Inactive Delivery 1772963079436
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1002]':
+                      - generic [ref=e1003]: "Destination Type: queue"
+                      - generic [ref=e1004]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1005]:
+                      - generic [ref=e1006]:
+                        - generic [ref=e1007]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772963079436" [ref=e1008]':
+                      - generic [ref=e1009]:
+                        - generic [ref=e1010]: Contains
+                        - generic [ref=e1011]: "Pattern: inactive-trigger-1772963079436"
+                    - cell "0" [ref=e1012]
+                    - cell "Active" [ref=e1013]:
+                      - button "Active" [ref=e1014] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1015]:
+                      - generic [ref=e1016]:
+                        - link "Edit" [ref=e1017] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad45085e5484560b6e6e3e/edit
+                        - button "Delete" [ref=e1018] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772963102011 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729631020... 0 Active Edit Delete" [ref=e1019]':
+                    - cell "IBMMQ Deactivate Delivery 1772963102011" [ref=e1020]:
+                      - generic [ref=e1021]: IBMMQ Deactivate Delivery 1772963102011
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1022]':
+                      - generic [ref=e1023]: "Destination Type: queue"
+                      - generic [ref=e1024]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1025]:
+                      - generic [ref=e1026]:
+                        - generic [ref=e1027]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729631020..." [ref=e1028]':
+                      - generic [ref=e1029]:
+                        - generic [ref=e1030]: Contains
+                        - generic [ref=e1031]: "Pattern: deactivate-trigger-17729631020..."
+                    - cell "0" [ref=e1032]
+                    - cell "Active" [ref=e1033]:
+                      - button "Active" [ref=e1034] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1035]:
+                      - generic [ref=e1036]:
+                        - link "Edit" [ref=e1037] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad451f5e5484560b6e6e3f/edit
+                        - button "Delete" [ref=e1038] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772963123068 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729631230... 0 Active Edit Delete" [ref=e1039]':
+                    - cell "IBMMQ Deactivate Delivery 1772963123068" [ref=e1040]:
+                      - generic [ref=e1041]: IBMMQ Deactivate Delivery 1772963123068
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1042]':
+                      - generic [ref=e1043]: "Destination Type: queue"
+                      - generic [ref=e1044]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1045]:
+                      - generic [ref=e1046]:
+                        - generic [ref=e1047]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729631230..." [ref=e1048]':
+                      - generic [ref=e1049]:
+                        - generic [ref=e1050]: Contains
+                        - generic [ref=e1051]: "Pattern: deactivate-trigger-17729631230..."
+                    - cell "0" [ref=e1052]
+                    - cell "Active" [ref=e1053]:
+                      - button "Active" [ref=e1054] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1055]:
+                      - generic [ref=e1056]:
+                        - link "Edit" [ref=e1057] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad45355e5484560b6e6e40/edit
+                        - button "Delete" [ref=e1058] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772963143106 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772963143106 0 Active Edit Delete" [ref=e1059]':
+                    - cell "IBMMQ Edit Delivery 1772963143106" [ref=e1060]:
+                      - generic [ref=e1061]: IBMMQ Edit Delivery 1772963143106
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1062]':
+                      - generic [ref=e1063]: "Destination Type: queue"
+                      - generic [ref=e1064]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1065]:
+                      - generic [ref=e1066]:
+                        - generic [ref=e1067]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772963143106" [ref=e1068]':
+                      - generic [ref=e1069]:
+                        - generic [ref=e1070]: Contains
+                        - generic [ref=e1071]: "Pattern: edit-trigger-1772963143106"
+                    - cell "0" [ref=e1072]
+                    - cell "Active" [ref=e1073]:
+                      - button "Active" [ref=e1074] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1075]:
+                      - generic [ref=e1076]:
+                        - link "Edit" [ref=e1077] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad45485e5484560b6e6e41/edit
+                        - button "Delete" [ref=e1078] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772963164404 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772963164404 0 Active Edit Delete" [ref=e1079]':
+                    - cell "IBMMQ Edit Delivery 1772963164404" [ref=e1080]:
+                      - generic [ref=e1081]: IBMMQ Edit Delivery 1772963164404
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1082]':
+                      - generic [ref=e1083]: "Destination Type: queue"
+                      - generic [ref=e1084]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1085]:
+                      - generic [ref=e1086]:
+                        - generic [ref=e1087]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772963164404" [ref=e1088]':
+                      - generic [ref=e1089]:
+                        - generic [ref=e1090]: Contains
+                        - generic [ref=e1091]: "Pattern: edit-trigger-1772963164404"
+                    - cell "0" [ref=e1092]
+                    - cell "Active" [ref=e1093]:
+                      - button "Active" [ref=e1094] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1095]:
+                      - generic [ref=e1096]:
+                        - link "Edit" [ref=e1097] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad455e5e5484560b6e6e42/edit
+                        - button "Delete" [ref=e1098] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772965304603 Destination Type: queue Destination: DEV.QUEUE.1772965304603 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1099]':
+                    - cell "Basic IBM MQ Queue Stub 1772965304603" [ref=e1100]:
+                      - generic [ref=e1101]: Basic IBM MQ Queue Stub 1772965304603
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772965304603" [ref=e1102]':
+                      - generic [ref=e1103]: "Destination Type: queue"
+                      - generic [ref=e1104]: "Destination: DEV.QUEUE.1772965304603"
+                    - cell "Uses JMSReplyTo0" [ref=e1105]
+                    - cell "None" [ref=e1106]:
+                      - generic [ref=e1108]: None
+                    - cell "0" [ref=e1109]
+                    - cell "Active" [ref=e1110]:
+                      - button "Active" [ref=e1111] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1112]:
+                      - generic [ref=e1113]:
+                        - link "Edit" [ref=e1114] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dba2501806d93a9de18/edit
+                        - button "Delete" [ref=e1115] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772965308226 Destination Type: topic Destination: DEV.TOPIC.1772965308226 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1116]':
+                    - cell "IBM MQ Topic Stub 1772965308226" [ref=e1117]:
+                      - generic [ref=e1118]: IBM MQ Topic Stub 1772965308226
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772965308226" [ref=e1119]':
+                      - generic [ref=e1120]: "Destination Type: topic"
+                      - generic [ref=e1121]: "Destination: DEV.TOPIC.1772965308226"
+                    - cell "Uses JMSReplyTo0" [ref=e1122]
+                    - cell "None" [ref=e1123]:
+                      - generic [ref=e1125]: None
+                    - cell "0" [ref=e1126]
+                    - cell "Active" [ref=e1127]:
+                      - button "Active" [ref=e1128] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1129]:
+                      - generic [ref=e1130]:
+                        - link "Edit" [ref=e1131] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dbd2501806d93a9de19/edit
+                        - button "Delete" [ref=e1132] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772965316478 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772965316478 Uses JMSReplyTo0 Contains Pattern: correlationId-1772965316478 0 Active Edit Delete" [ref=e1133]':
+                    - cell "IBMMQ Contains Stub 1772965316478" [ref=e1134]:
+                      - generic [ref=e1135]: IBMMQ Contains Stub 1772965316478
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772965316478" [ref=e1136]':
+                      - generic [ref=e1137]: "Destination Type: queue"
+                      - generic [ref=e1138]: "Destination: DEV.QUEUE.CONTAINS.1772965316478"
+                    - cell "Uses JMSReplyTo0" [ref=e1139]
+                    - 'cell "Contains Pattern: correlationId-1772965316478" [ref=e1140]':
+                      - generic [ref=e1141]:
+                        - generic [ref=e1142]: Contains
+                        - generic [ref=e1143]: "Pattern: correlationId-1772965316478"
+                    - cell "0" [ref=e1144]
+                    - cell "Active" [ref=e1145]:
+                      - button "Active" [ref=e1146] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1147]:
+                      - generic [ref=e1148]:
+                        - link "Edit" [ref=e1149] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dc62501806d93a9de1a/edit
+                        - button "Delete" [ref=e1150] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772965320990 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772965320990 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772965320990\"} 0 Active Edit Delete" [ref=e1151]':
+                    - cell "IBMMQ Exact Stub 1772965320990" [ref=e1152]:
+                      - generic [ref=e1153]: IBMMQ Exact Stub 1772965320990
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772965320990" [ref=e1154]':
+                      - generic [ref=e1155]: "Destination Type: queue"
+                      - generic [ref=e1156]: "Destination: DEV.QUEUE.EXACT.1772965320990"
+                    - cell "Uses JMSReplyTo0" [ref=e1157]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772965320990\"}" [ref=e1158]':
+                      - generic [ref=e1159]:
+                        - generic [ref=e1160]: Exact
+                        - generic [ref=e1161]: "Pattern: {\"requestId\":\"1772965320990\"}"
+                    - cell "0" [ref=e1162]
+                    - cell "Active" [ref=e1163]:
+                      - button "Active" [ref=e1164] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1165]:
+                      - generic [ref=e1166]:
+                        - link "Edit" [ref=e1167] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dcb2501806d93a9de1b/edit
+                        - button "Delete" [ref=e1168] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772965324736 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772965324736 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e1169]':
+                    - cell "IBMMQ Regex Stub 1772965324736" [ref=e1170]:
+                      - generic [ref=e1171]: IBMMQ Regex Stub 1772965324736
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772965324736" [ref=e1172]':
+                      - generic [ref=e1173]: "Destination Type: queue"
+                      - generic [ref=e1174]: "Destination: DEV.QUEUE.REGEX.1772965324736"
+                    - cell "Uses JMSReplyTo0" [ref=e1175]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e1176]':
+                      - generic [ref=e1177]:
+                        - generic [ref=e1178]: Regex
+                        - generic [ref=e1179]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e1180]
+                    - cell "Active" [ref=e1181]:
+                      - button "Active" [ref=e1182] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1183]:
+                      - generic [ref=e1184]:
+                        - link "Edit" [ref=e1185] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dce2501806d93a9de1c/edit
+                        - button "Delete" [ref=e1186] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772965328274 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772965328274 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e1187]':
+                    - cell "IBMMQ Priority Stub 1772965328274" [ref=e1188]:
+                      - generic [ref=e1189]: IBMMQ Priority Stub 1772965328274
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772965328274" [ref=e1190]':
+                      - generic [ref=e1191]: "Destination Type: queue"
+                      - generic [ref=e1192]: "Destination: DEV.QUEUE.PRIO.1772965328274"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e1193]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e1194]: "Latency: 200ms"
+                    - cell "None" [ref=e1195]:
+                      - generic [ref=e1197]: None
+                    - cell "10" [ref=e1198]
+                    - cell "Active" [ref=e1199]:
+                      - button "Active" [ref=e1200] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1201]:
+                      - generic [ref=e1202]:
+                        - link "Edit" [ref=e1203] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dd22501806d93a9de1d/edit
+                        - button "Delete" [ref=e1204] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772965331992 Destination Type: queue Destination: DEV.QUEUE.SEL.1772965331992 Selector: JMSCorrelationID=''CID-1772965331992'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1205]':
+                    - cell "IBMMQ Selector Stub 1772965331992" [ref=e1206]:
+                      - generic [ref=e1207]: IBMMQ Selector Stub 1772965331992
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772965331992 Selector: JMSCorrelationID=''CID-1772965331992''" [ref=e1208]':
+                      - generic [ref=e1209]: "Destination Type: queue"
+                      - generic [ref=e1210]: "Destination: DEV.QUEUE.SEL.1772965331992"
+                      - generic [ref=e1211]: "Selector: JMSCorrelationID='CID-1772965331992'"
+                    - cell "Uses JMSReplyTo0" [ref=e1212]
+                    - cell "None" [ref=e1213]:
+                      - generic [ref=e1215]: None
+                    - cell "0" [ref=e1216]
+                    - cell "Active" [ref=e1217]:
+                      - button "Active" [ref=e1218] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1219]:
+                      - generic [ref=e1220]:
+                        - link "Edit" [ref=e1221] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dd52501806d93a9de1e/edit
+                        - button "Delete" [ref=e1222] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772965335278 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772965335278 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1223]':
+                    - cell "IBMMQ Toggle Stub 1772965335278" [ref=e1224]:
+                      - generic [ref=e1225]: IBMMQ Toggle Stub 1772965335278
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772965335278" [ref=e1226]':
+                      - generic [ref=e1227]: "Destination Type: queue"
+                      - generic [ref=e1228]: "Destination: DEV.QUEUE.TOGGLE.1772965335278"
+                    - cell "Uses JMSReplyTo0" [ref=e1229]
+                    - cell "None" [ref=e1230]:
+                      - generic [ref=e1232]: None
+                    - cell "0" [ref=e1233]
+                    - cell "Active" [ref=e1234]:
+                      - button "Active" [ref=e1235] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1236]:
+                      - generic [ref=e1237]:
+                        - link "Edit" [ref=e1238] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4dd82501806d93a9de1f/edit
+                        - button "Delete" [ref=e1239] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772965338109 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772965338109 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1240]':
+                    - cell "IBMMQ Edit Stub 1772965338109" [ref=e1241]:
+                      - generic [ref=e1242]: IBMMQ Edit Stub 1772965338109
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772965338109" [ref=e1243]':
+                      - generic [ref=e1244]: "Destination Type: queue"
+                      - generic [ref=e1245]: "Destination: DEV.QUEUE.EDIT.1772965338109"
+                    - cell "Uses JMSReplyTo0" [ref=e1246]
+                    - cell "None" [ref=e1247]:
+                      - generic [ref=e1249]: None
+                    - cell "0" [ref=e1250]
+                    - cell "Active" [ref=e1251]:
+                      - button "Active" [ref=e1252] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1253]:
+                      - generic [ref=e1254]:
+                        - link "Edit" [ref=e1255] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4ddb2501806d93a9de20/edit
+                        - button "Delete" [ref=e1256] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772965400662 Destination Type: queue Destination: DEV.QUEUE.SA.1772965400662 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1257]':
+                    - cell "SearchA IBMMQ 1772965400662" [ref=e1258]:
+                      - generic [ref=e1259]: SearchA IBMMQ 1772965400662
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772965400662" [ref=e1260]':
+                      - generic [ref=e1261]: "Destination Type: queue"
+                      - generic [ref=e1262]: "Destination: DEV.QUEUE.SA.1772965400662"
+                    - cell "Uses JMSReplyTo0" [ref=e1263]
+                    - cell "None" [ref=e1264]:
+                      - generic [ref=e1266]: None
+                    - cell "0" [ref=e1267]
+                    - cell "Active" [ref=e1268]:
+                      - button "Active" [ref=e1269] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1270]:
+                      - generic [ref=e1271]:
+                        - link "Edit" [ref=e1272] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e1a2501806d93a9de23/edit
+                        - button "Delete" [ref=e1273] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772965400662 Destination Type: queue Destination: DEV.QUEUE.SB.1772965400662 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1274]':
+                    - cell "SearchB IBMMQ 1772965400662" [ref=e1275]:
+                      - generic [ref=e1276]: SearchB IBMMQ 1772965400662
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772965400662" [ref=e1277]':
+                      - generic [ref=e1278]: "Destination Type: queue"
+                      - generic [ref=e1279]: "Destination: DEV.QUEUE.SB.1772965400662"
+                    - cell "Uses JMSReplyTo0" [ref=e1280]
+                    - cell "None" [ref=e1281]:
+                      - generic [ref=e1283]: None
+                    - cell "0" [ref=e1284]
+                    - cell "Active" [ref=e1285]:
+                      - button "Active" [ref=e1286] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1287]:
+                      - generic [ref=e1288]:
+                        - link "Edit" [ref=e1289] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e1b2501806d93a9de24/edit
+                        - button "Delete" [ref=e1290] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772965404850 Destination Type: queue Destination: DEV.QUEUE.INACT.1772965404850 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1291]':
+                    - cell "IBMMQ Inactive Stub 1772965404850" [ref=e1292]:
+                      - generic [ref=e1293]: IBMMQ Inactive Stub 1772965404850
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772965404850" [ref=e1294]':
+                      - generic [ref=e1295]: "Destination Type: queue"
+                      - generic [ref=e1296]: "Destination: DEV.QUEUE.INACT.1772965404850"
+                    - cell "Uses JMSReplyTo0" [ref=e1297]
+                    - cell "None" [ref=e1298]:
+                      - generic [ref=e1300]: None
+                    - cell "0" [ref=e1301]
+                    - cell "Active" [ref=e1302]:
+                      - button "Active" [ref=e1303] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1304]:
+                      - generic [ref=e1305]:
+                        - link "Edit" [ref=e1306] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e1e2501806d93a9de25/edit
+                        - button "Delete" [ref=e1307] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772965413000 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772965413000 0 Active Edit Delete" [ref=e1308]':
+                    - cell "IBMMQ Delivery Basic 1772965413000" [ref=e1309]:
+                      - generic [ref=e1310]: IBMMQ Delivery Basic 1772965413000
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1311]':
+                      - generic [ref=e1312]: "Destination Type: queue"
+                      - generic [ref=e1313]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1314]:
+                      - generic [ref=e1315]:
+                        - generic [ref=e1316]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772965413000" [ref=e1317]':
+                      - generic [ref=e1318]:
+                        - generic [ref=e1319]: Contains
+                        - generic [ref=e1320]: "Pattern: hello-1772965413000"
+                    - cell "0" [ref=e1321]
+                    - cell "Active" [ref=e1322]:
+                      - button "Active" [ref=e1323] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1324]:
+                      - generic [ref=e1325]:
+                        - link "Edit" [ref=e1326] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e272501806d93a9de26/edit
+                        - button "Delete" [ref=e1327] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772965436716 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772965436716 0 Active Edit Delete" [ref=e1328]':
+                    - cell "IBMMQ Delivery Basic 1772965436716" [ref=e1329]:
+                      - generic [ref=e1330]: IBMMQ Delivery Basic 1772965436716
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1331]':
+                      - generic [ref=e1332]: "Destination Type: queue"
+                      - generic [ref=e1333]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1334]:
+                      - generic [ref=e1335]:
+                        - generic [ref=e1336]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772965436716" [ref=e1337]':
+                      - generic [ref=e1338]:
+                        - generic [ref=e1339]: Contains
+                        - generic [ref=e1340]: "Pattern: hello-1772965436716"
+                    - cell "0" [ref=e1341]
+                    - cell "Active" [ref=e1342]:
+                      - button "Active" [ref=e1343] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1344]:
+                      - generic [ref=e1345]:
+                        - link "Edit" [ref=e1346] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e3e2501806d93a9de27/edit
+                        - button "Delete" [ref=e1347] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772965454756 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772965454756 0 Active Edit Delete" [ref=e1348]':
+                    - cell "IBMMQ Contains Delivery 1772965454756" [ref=e1349]:
+                      - generic [ref=e1350]: IBMMQ Contains Delivery 1772965454756
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1351]':
+                      - generic [ref=e1352]: "Destination Type: queue"
+                      - generic [ref=e1353]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1354]:
+                      - generic [ref=e1355]:
+                        - generic [ref=e1356]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772965454756" [ref=e1357]':
+                      - generic [ref=e1358]:
+                        - generic [ref=e1359]: Contains
+                        - generic [ref=e1360]: "Pattern: MATCH-TOKEN-1772965454756"
+                    - cell "0" [ref=e1361]
+                    - cell "Active" [ref=e1362]:
+                      - button "Active" [ref=e1363] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1364]:
+                      - generic [ref=e1365]:
+                        - link "Edit" [ref=e1366] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e512501806d93a9de28/edit
+                        - button "Delete" [ref=e1367] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772965472484 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772965472484 0 Active Edit Delete" [ref=e1368]':
+                    - cell "IBMMQ Contains Delivery 1772965472484" [ref=e1369]:
+                      - generic [ref=e1370]: IBMMQ Contains Delivery 1772965472484
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1371]':
+                      - generic [ref=e1372]: "Destination Type: queue"
+                      - generic [ref=e1373]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1374]:
+                      - generic [ref=e1375]:
+                        - generic [ref=e1376]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772965472484" [ref=e1377]':
+                      - generic [ref=e1378]:
+                        - generic [ref=e1379]: Contains
+                        - generic [ref=e1380]: "Pattern: MATCH-TOKEN-1772965472484"
+                    - cell "0" [ref=e1381]
+                    - cell "Active" [ref=e1382]:
+                      - button "Active" [ref=e1383] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1384]:
+                      - generic [ref=e1385]:
+                        - link "Edit" [ref=e1386] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e622501806d93a9de29/edit
+                        - button "Delete" [ref=e1387] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772965493213 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772965493213 0 Active Edit Delete" [ref=e1388]':
+                    - cell "IBMMQ Exact Delivery 1772965493213" [ref=e1389]:
+                      - generic [ref=e1390]: IBMMQ Exact Delivery 1772965493213
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1391]':
+                      - generic [ref=e1392]: "Destination Type: queue"
+                      - generic [ref=e1393]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1394]:
+                      - generic [ref=e1395]:
+                        - generic [ref=e1396]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772965493213" [ref=e1397]':
+                      - generic [ref=e1398]:
+                        - generic [ref=e1399]: Exact
+                        - generic [ref=e1400]: "Pattern: exact-body-1772965493213"
+                    - cell "0" [ref=e1401]
+                    - cell "Active" [ref=e1402]:
+                      - button "Active" [ref=e1403] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1404]:
+                      - generic [ref=e1405]:
+                        - link "Edit" [ref=e1406] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e762501806d93a9de2a/edit
+                        - button "Delete" [ref=e1407] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772965507235 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772965507235 0 Active Edit Delete" [ref=e1408]':
+                    - cell "IBMMQ Exact Delivery 1772965507235" [ref=e1409]:
+                      - generic [ref=e1410]: IBMMQ Exact Delivery 1772965507235
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1411]':
+                      - generic [ref=e1412]: "Destination Type: queue"
+                      - generic [ref=e1413]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1414]:
+                      - generic [ref=e1415]:
+                        - generic [ref=e1416]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772965507235" [ref=e1417]':
+                      - generic [ref=e1418]:
+                        - generic [ref=e1419]: Exact
+                        - generic [ref=e1420]: "Pattern: exact-body-1772965507235"
+                    - cell "0" [ref=e1421]
+                    - cell "Active" [ref=e1422]:
+                      - button "Active" [ref=e1423] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1424]:
+                      - generic [ref=e1425]:
+                        - link "Edit" [ref=e1426] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e852501806d93a9de2b/edit
+                        - button "Delete" [ref=e1427] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772965522193 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772965522193-\\d+.* 0 Active Edit Delete" [ref=e1428]':
+                    - cell "IBMMQ Regex Delivery 1772965522193" [ref=e1429]:
+                      - generic [ref=e1430]: IBMMQ Regex Delivery 1772965522193
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1431]':
+                      - generic [ref=e1432]: "Destination Type: queue"
+                      - generic [ref=e1433]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1434]:
+                      - generic [ref=e1435]:
+                        - generic [ref=e1436]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772965522193-\\d+.*" [ref=e1437]':
+                      - generic [ref=e1438]:
+                        - generic [ref=e1439]: Regex
+                        - generic [ref=e1440]: "Pattern: .*orderId-1772965522193-\\d+.*"
+                    - cell "0" [ref=e1441]
+                    - cell "Active" [ref=e1442]:
+                      - button "Active" [ref=e1443] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1444]:
+                      - generic [ref=e1445]:
+                        - link "Edit" [ref=e1446] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4e932501806d93a9de2c/edit
+                        - button "Delete" [ref=e1447] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772965536239 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772965536239-\\d+.* 0 Active Edit Delete" [ref=e1448]':
+                    - cell "IBMMQ Regex Delivery 1772965536239" [ref=e1449]:
+                      - generic [ref=e1450]: IBMMQ Regex Delivery 1772965536239
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1451]':
+                      - generic [ref=e1452]: "Destination Type: queue"
+                      - generic [ref=e1453]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1454]:
+                      - generic [ref=e1455]:
+                        - generic [ref=e1456]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772965536239-\\d+.*" [ref=e1457]':
+                      - generic [ref=e1458]:
+                        - generic [ref=e1459]: Regex
+                        - generic [ref=e1460]: "Pattern: .*orderId-1772965536239-\\d+.*"
+                    - cell "0" [ref=e1461]
+                    - cell "Active" [ref=e1462]:
+                      - button "Active" [ref=e1463] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1464]:
+                      - generic [ref=e1465]:
+                        - link "Edit" [ref=e1466] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4ea22501806d93a9de2d/edit
+                        - button "Delete" [ref=e1467] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772965552240 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772965552240 0 Inactive Edit Delete" [ref=e1468]':
+                    - cell "IBMMQ Inactive Delivery 1772965552240" [ref=e1469]:
+                      - generic [ref=e1470]: IBMMQ Inactive Delivery 1772965552240
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1471]':
+                      - generic [ref=e1472]: "Destination Type: queue"
+                      - generic [ref=e1473]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1474]:
+                      - generic [ref=e1475]:
+                        - generic [ref=e1476]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772965552240" [ref=e1477]':
+                      - generic [ref=e1478]:
+                        - generic [ref=e1479]: Contains
+                        - generic [ref=e1480]: "Pattern: inactive-trigger-1772965552240"
+                    - cell "0" [ref=e1481]
+                    - cell "Inactive" [ref=e1482]:
+                      - button "Inactive" [ref=e1483] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1484]:
+                      - generic [ref=e1485]:
+                        - link "Edit" [ref=e1486] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4eb22501806d93a9de2e/edit
+                        - button "Delete" [ref=e1487] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772965564872 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772965564872 0 Inactive Edit Delete" [ref=e1488]':
+                    - cell "IBMMQ Inactive Delivery 1772965564872" [ref=e1489]:
+                      - generic [ref=e1490]: IBMMQ Inactive Delivery 1772965564872
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1491]':
+                      - generic [ref=e1492]: "Destination Type: queue"
+                      - generic [ref=e1493]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1494]:
+                      - generic [ref=e1495]:
+                        - generic [ref=e1496]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772965564872" [ref=e1497]':
+                      - generic [ref=e1498]:
+                        - generic [ref=e1499]: Contains
+                        - generic [ref=e1500]: "Pattern: inactive-trigger-1772965564872"
+                    - cell "0" [ref=e1501]
+                    - cell "Inactive" [ref=e1502]:
+                      - button "Inactive" [ref=e1503] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1504]:
+                      - generic [ref=e1505]:
+                        - link "Edit" [ref=e1506] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4ebe2501806d93a9de2f/edit
+                        - button "Delete" [ref=e1507] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772965581336 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729655813... 0 Active Edit Delete" [ref=e1508]':
+                    - cell "IBMMQ Deactivate Delivery 1772965581336" [ref=e1509]:
+                      - generic [ref=e1510]: IBMMQ Deactivate Delivery 1772965581336
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1511]':
+                      - generic [ref=e1512]: "Destination Type: queue"
+                      - generic [ref=e1513]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1514]:
+                      - generic [ref=e1515]:
+                        - generic [ref=e1516]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729655813..." [ref=e1517]':
+                      - generic [ref=e1518]:
+                        - generic [ref=e1519]: Contains
+                        - generic [ref=e1520]: "Pattern: deactivate-trigger-17729655813..."
+                    - cell "0" [ref=e1521]
+                    - cell "Active" [ref=e1522]:
+                      - button "Active" [ref=e1523] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1524]:
+                      - generic [ref=e1525]:
+                        - link "Edit" [ref=e1526] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4ecf2501806d93a9de30/edit
+                        - button "Delete" [ref=e1527] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772965598637 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729655986... 0 Active Edit Delete" [ref=e1528]':
+                    - cell "IBMMQ Deactivate Delivery 1772965598637" [ref=e1529]:
+                      - generic [ref=e1530]: IBMMQ Deactivate Delivery 1772965598637
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1531]':
+                      - generic [ref=e1532]: "Destination Type: queue"
+                      - generic [ref=e1533]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1534]:
+                      - generic [ref=e1535]:
+                        - generic [ref=e1536]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729655986..." [ref=e1537]':
+                      - generic [ref=e1538]:
+                        - generic [ref=e1539]: Contains
+                        - generic [ref=e1540]: "Pattern: deactivate-trigger-17729655986..."
+                    - cell "0" [ref=e1541]
+                    - cell "Active" [ref=e1542]:
+                      - button "Active" [ref=e1543] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1544]:
+                      - generic [ref=e1545]:
+                        - link "Edit" [ref=e1546] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4ee02501806d93a9de31/edit
+                        - button "Delete" [ref=e1547] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772965613398 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772965613398 0 Active Edit Delete" [ref=e1548]':
+                    - cell "IBMMQ Edit Delivery 1772965613398" [ref=e1549]:
+                      - generic [ref=e1550]: IBMMQ Edit Delivery 1772965613398
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1551]':
+                      - generic [ref=e1552]: "Destination Type: queue"
+                      - generic [ref=e1553]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1554]:
+                      - generic [ref=e1555]:
+                        - generic [ref=e1556]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772965613398" [ref=e1557]':
+                      - generic [ref=e1558]:
+                        - generic [ref=e1559]: Contains
+                        - generic [ref=e1560]: "Pattern: edit-trigger-1772965613398"
+                    - cell "0" [ref=e1561]
+                    - cell "Active" [ref=e1562]:
+                      - button "Active" [ref=e1563] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1564]:
+                      - generic [ref=e1565]:
+                        - link "Edit" [ref=e1566] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4eef2501806d93a9de32/edit
+                        - button "Delete" [ref=e1567] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772965628570 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772965628570 0 Active Edit Delete" [ref=e1568]':
+                    - cell "IBMMQ Edit Delivery 1772965628570" [ref=e1569]:
+                      - generic [ref=e1570]: IBMMQ Edit Delivery 1772965628570
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1571]':
+                      - generic [ref=e1572]: "Destination Type: queue"
+                      - generic [ref=e1573]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1574]:
+                      - generic [ref=e1575]:
+                        - generic [ref=e1576]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772965628570" [ref=e1577]':
+                      - generic [ref=e1578]:
+                        - generic [ref=e1579]: Contains
+                        - generic [ref=e1580]: "Pattern: edit-trigger-1772965628570"
+                    - cell "0" [ref=e1581]
+                    - cell "Active" [ref=e1582]:
+                      - button "Active" [ref=e1583] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1584]:
+                      - generic [ref=e1585]:
+                        - link "Edit" [ref=e1586] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad4efe2501806d93a9de33/edit
+                        - button "Delete" [ref=e1587] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772966955406 Destination Type: queue Destination: DEV.QUEUE.1772966955406 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1588]':
+                    - cell "Basic IBM MQ Queue Stub 1772966955406" [ref=e1589]:
+                      - generic [ref=e1590]: Basic IBM MQ Queue Stub 1772966955406
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772966955406" [ref=e1591]':
+                      - generic [ref=e1592]: "Destination Type: queue"
+                      - generic [ref=e1593]: "Destination: DEV.QUEUE.1772966955406"
+                    - cell "Uses JMSReplyTo0" [ref=e1594]
+                    - cell "None" [ref=e1595]:
+                      - generic [ref=e1597]: None
+                    - cell "0" [ref=e1598]
+                    - cell "Active" [ref=e1599]:
+                      - button "Active" [ref=e1600] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1601]:
+                      - generic [ref=e1602]:
+                        - link "Edit" [ref=e1603] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad542d2501806d93a9de34/edit
+                        - button "Delete" [ref=e1604] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772966959357 Destination Type: topic Destination: DEV.TOPIC.1772966959357 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1605]':
+                    - cell "IBM MQ Topic Stub 1772966959357" [ref=e1606]:
+                      - generic [ref=e1607]: IBM MQ Topic Stub 1772966959357
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772966959357" [ref=e1608]':
+                      - generic [ref=e1609]: "Destination Type: topic"
+                      - generic [ref=e1610]: "Destination: DEV.TOPIC.1772966959357"
+                    - cell "Uses JMSReplyTo0" [ref=e1611]
+                    - cell "None" [ref=e1612]:
+                      - generic [ref=e1614]: None
+                    - cell "0" [ref=e1615]
+                    - cell "Active" [ref=e1616]:
+                      - button "Active" [ref=e1617] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1618]:
+                      - generic [ref=e1619]:
+                        - link "Edit" [ref=e1620] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54312501806d93a9de35/edit
+                        - button "Delete" [ref=e1621] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772966962896 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772966962896 Uses JMSReplyTo0 Contains Pattern: correlationId-1772966962896 0 Active Edit Delete" [ref=e1622]':
+                    - cell "IBMMQ Contains Stub 1772966962896" [ref=e1623]:
+                      - generic [ref=e1624]: IBMMQ Contains Stub 1772966962896
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772966962896" [ref=e1625]':
+                      - generic [ref=e1626]: "Destination Type: queue"
+                      - generic [ref=e1627]: "Destination: DEV.QUEUE.CONTAINS.1772966962896"
+                    - cell "Uses JMSReplyTo0" [ref=e1628]
+                    - 'cell "Contains Pattern: correlationId-1772966962896" [ref=e1629]':
+                      - generic [ref=e1630]:
+                        - generic [ref=e1631]: Contains
+                        - generic [ref=e1632]: "Pattern: correlationId-1772966962896"
+                    - cell "0" [ref=e1633]
+                    - cell "Active" [ref=e1634]:
+                      - button "Active" [ref=e1635] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1636]:
+                      - generic [ref=e1637]:
+                        - link "Edit" [ref=e1638] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54342501806d93a9de36/edit
+                        - button "Delete" [ref=e1639] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772966966806 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772966966806 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772966966806\"} 0 Active Edit Delete" [ref=e1640]':
+                    - cell "IBMMQ Exact Stub 1772966966806" [ref=e1641]:
+                      - generic [ref=e1642]: IBMMQ Exact Stub 1772966966806
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772966966806" [ref=e1643]':
+                      - generic [ref=e1644]: "Destination Type: queue"
+                      - generic [ref=e1645]: "Destination: DEV.QUEUE.EXACT.1772966966806"
+                    - cell "Uses JMSReplyTo0" [ref=e1646]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772966966806\"}" [ref=e1647]':
+                      - generic [ref=e1648]:
+                        - generic [ref=e1649]: Exact
+                        - generic [ref=e1650]: "Pattern: {\"requestId\":\"1772966966806\"}"
+                    - cell "0" [ref=e1651]
+                    - cell "Active" [ref=e1652]:
+                      - button "Active" [ref=e1653] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1654]:
+                      - generic [ref=e1655]:
+                        - link "Edit" [ref=e1656] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54382501806d93a9de37/edit
+                        - button "Delete" [ref=e1657] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772966969837 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772966969837 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e1658]':
+                    - cell "IBMMQ Regex Stub 1772966969837" [ref=e1659]:
+                      - generic [ref=e1660]: IBMMQ Regex Stub 1772966969837
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772966969837" [ref=e1661]':
+                      - generic [ref=e1662]: "Destination Type: queue"
+                      - generic [ref=e1663]: "Destination: DEV.QUEUE.REGEX.1772966969837"
+                    - cell "Uses JMSReplyTo0" [ref=e1664]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e1665]':
+                      - generic [ref=e1666]:
+                        - generic [ref=e1667]: Regex
+                        - generic [ref=e1668]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e1669]
+                    - cell "Active" [ref=e1670]:
+                      - button "Active" [ref=e1671] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1672]:
+                      - generic [ref=e1673]:
+                        - link "Edit" [ref=e1674] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad543b2501806d93a9de38/edit
+                        - button "Delete" [ref=e1675] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772966973634 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772966973634 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e1676]':
+                    - cell "IBMMQ Priority Stub 1772966973634" [ref=e1677]:
+                      - generic [ref=e1678]: IBMMQ Priority Stub 1772966973634
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772966973634" [ref=e1679]':
+                      - generic [ref=e1680]: "Destination Type: queue"
+                      - generic [ref=e1681]: "Destination: DEV.QUEUE.PRIO.1772966973634"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e1682]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e1683]: "Latency: 200ms"
+                    - cell "None" [ref=e1684]:
+                      - generic [ref=e1686]: None
+                    - cell "10" [ref=e1687]
+                    - cell "Active" [ref=e1688]:
+                      - button "Active" [ref=e1689] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1690]:
+                      - generic [ref=e1691]:
+                        - link "Edit" [ref=e1692] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad543f2501806d93a9de39/edit
+                        - button "Delete" [ref=e1693] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772966976393 Destination Type: queue Destination: DEV.QUEUE.SEL.1772966976393 Selector: JMSCorrelationID=''CID-1772966976393'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1694]':
+                    - cell "IBMMQ Selector Stub 1772966976393" [ref=e1695]:
+                      - generic [ref=e1696]: IBMMQ Selector Stub 1772966976393
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772966976393 Selector: JMSCorrelationID=''CID-1772966976393''" [ref=e1697]':
+                      - generic [ref=e1698]: "Destination Type: queue"
+                      - generic [ref=e1699]: "Destination: DEV.QUEUE.SEL.1772966976393"
+                      - generic [ref=e1700]: "Selector: JMSCorrelationID='CID-1772966976393'"
+                    - cell "Uses JMSReplyTo0" [ref=e1701]
+                    - cell "None" [ref=e1702]:
+                      - generic [ref=e1704]: None
+                    - cell "0" [ref=e1705]
+                    - cell "Active" [ref=e1706]:
+                      - button "Active" [ref=e1707] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1708]:
+                      - generic [ref=e1709]:
+                        - link "Edit" [ref=e1710] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54422501806d93a9de3a/edit
+                        - button "Delete" [ref=e1711] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772966979640 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772966979640 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1712]':
+                    - cell "IBMMQ Toggle Stub 1772966979640" [ref=e1713]:
+                      - generic [ref=e1714]: IBMMQ Toggle Stub 1772966979640
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772966979640" [ref=e1715]':
+                      - generic [ref=e1716]: "Destination Type: queue"
+                      - generic [ref=e1717]: "Destination: DEV.QUEUE.TOGGLE.1772966979640"
+                    - cell "Uses JMSReplyTo0" [ref=e1718]
+                    - cell "None" [ref=e1719]:
+                      - generic [ref=e1721]: None
+                    - cell "0" [ref=e1722]
+                    - cell "Active" [ref=e1723]:
+                      - button "Active" [ref=e1724] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1725]:
+                      - generic [ref=e1726]:
+                        - link "Edit" [ref=e1727] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54452501806d93a9de3b/edit
+                        - button "Delete" [ref=e1728] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772966988528 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772966988528 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1729]':
+                    - cell "IBMMQ Edit Stub 1772966988528" [ref=e1730]:
+                      - generic [ref=e1731]: IBMMQ Edit Stub 1772966988528
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772966988528" [ref=e1732]':
+                      - generic [ref=e1733]: "Destination Type: queue"
+                      - generic [ref=e1734]: "Destination: DEV.QUEUE.EDIT.1772966988528"
+                    - cell "Uses JMSReplyTo0" [ref=e1735]
+                    - cell "None" [ref=e1736]:
+                      - generic [ref=e1738]: None
+                    - cell "0" [ref=e1739]
+                    - cell "Active" [ref=e1740]:
+                      - button "Active" [ref=e1741] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1742]:
+                      - generic [ref=e1743]:
+                        - link "Edit" [ref=e1744] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad544d2501806d93a9de3c/edit
+                        - button "Delete" [ref=e1745] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772967051478 Destination Type: queue Destination: DEV.QUEUE.SA.1772967051478 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1746]':
+                    - cell "SearchA IBMMQ 1772967051478" [ref=e1747]:
+                      - generic [ref=e1748]: SearchA IBMMQ 1772967051478
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772967051478" [ref=e1749]':
+                      - generic [ref=e1750]: "Destination Type: queue"
+                      - generic [ref=e1751]: "Destination: DEV.QUEUE.SA.1772967051478"
+                    - cell "Uses JMSReplyTo0" [ref=e1752]
+                    - cell "None" [ref=e1753]:
+                      - generic [ref=e1755]: None
+                    - cell "0" [ref=e1756]
+                    - cell "Active" [ref=e1757]:
+                      - button "Active" [ref=e1758] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1759]:
+                      - generic [ref=e1760]:
+                        - link "Edit" [ref=e1761] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad548d2501806d93a9de3f/edit
+                        - button "Delete" [ref=e1762] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772967051478 Destination Type: queue Destination: DEV.QUEUE.SB.1772967051478 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1763]':
+                    - cell "SearchB IBMMQ 1772967051478" [ref=e1764]:
+                      - generic [ref=e1765]: SearchB IBMMQ 1772967051478
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772967051478" [ref=e1766]':
+                      - generic [ref=e1767]: "Destination Type: queue"
+                      - generic [ref=e1768]: "Destination: DEV.QUEUE.SB.1772967051478"
+                    - cell "Uses JMSReplyTo0" [ref=e1769]
+                    - cell "None" [ref=e1770]:
+                      - generic [ref=e1772]: None
+                    - cell "0" [ref=e1773]
+                    - cell "Active" [ref=e1774]:
+                      - button "Active" [ref=e1775] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1776]:
+                      - generic [ref=e1777]:
+                        - link "Edit" [ref=e1778] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad548d2501806d93a9de40/edit
+                        - button "Delete" [ref=e1779] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772967061144 Destination Type: queue Destination: DEV.QUEUE.INACT.1772967061144 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1780]':
+                    - cell "IBMMQ Inactive Stub 1772967061144" [ref=e1781]:
+                      - generic [ref=e1782]: IBMMQ Inactive Stub 1772967061144
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772967061144" [ref=e1783]':
+                      - generic [ref=e1784]: "Destination Type: queue"
+                      - generic [ref=e1785]: "Destination: DEV.QUEUE.INACT.1772967061144"
+                    - cell "Uses JMSReplyTo0" [ref=e1786]
+                    - cell "None" [ref=e1787]:
+                      - generic [ref=e1789]: None
+                    - cell "0" [ref=e1790]
+                    - cell "Active" [ref=e1791]:
+                      - button "Active" [ref=e1792] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1793]:
+                      - generic [ref=e1794]:
+                        - link "Edit" [ref=e1795] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54972501806d93a9de41/edit
+                        - button "Delete" [ref=e1796] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772967078954 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772967078954 0 Active Edit Delete" [ref=e1797]':
+                    - cell "IBMMQ Delivery Basic 1772967078954" [ref=e1798]:
+                      - generic [ref=e1799]: IBMMQ Delivery Basic 1772967078954
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1800]':
+                      - generic [ref=e1801]: "Destination Type: queue"
+                      - generic [ref=e1802]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1803]:
+                      - generic [ref=e1804]:
+                        - generic [ref=e1805]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772967078954" [ref=e1806]':
+                      - generic [ref=e1807]:
+                        - generic [ref=e1808]: Contains
+                        - generic [ref=e1809]: "Pattern: hello-1772967078954"
+                    - cell "0" [ref=e1810]
+                    - cell "Active" [ref=e1811]:
+                      - button "Active" [ref=e1812] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1813]:
+                      - generic [ref=e1814]:
+                        - link "Edit" [ref=e1815] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54a82501806d93a9de42/edit
+                        - button "Delete" [ref=e1816] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772967089302 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772967089302 0 Active Edit Delete" [ref=e1817]':
+                    - cell "IBMMQ Contains Delivery 1772967089302" [ref=e1818]:
+                      - generic [ref=e1819]: IBMMQ Contains Delivery 1772967089302
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1820]':
+                      - generic [ref=e1821]: "Destination Type: queue"
+                      - generic [ref=e1822]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1823]:
+                      - generic [ref=e1824]:
+                        - generic [ref=e1825]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772967089302" [ref=e1826]':
+                      - generic [ref=e1827]:
+                        - generic [ref=e1828]: Contains
+                        - generic [ref=e1829]: "Pattern: MATCH-TOKEN-1772967089302"
+                    - cell "0" [ref=e1830]
+                    - cell "Active" [ref=e1831]:
+                      - button "Active" [ref=e1832] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1833]:
+                      - generic [ref=e1834]:
+                        - link "Edit" [ref=e1835] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54b22501806d93a9de43/edit
+                        - button "Delete" [ref=e1836] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772967102598 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772967102598 0 Active Edit Delete" [ref=e1837]':
+                    - cell "IBMMQ Exact Delivery 1772967102598" [ref=e1838]:
+                      - generic [ref=e1839]: IBMMQ Exact Delivery 1772967102598
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1840]':
+                      - generic [ref=e1841]: "Destination Type: queue"
+                      - generic [ref=e1842]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1843]:
+                      - generic [ref=e1844]:
+                        - generic [ref=e1845]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772967102598" [ref=e1846]':
+                      - generic [ref=e1847]:
+                        - generic [ref=e1848]: Exact
+                        - generic [ref=e1849]: "Pattern: exact-body-1772967102598"
+                    - cell "0" [ref=e1850]
+                    - cell "Active" [ref=e1851]:
+                      - button "Active" [ref=e1852] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1853]:
+                      - generic [ref=e1854]:
+                        - link "Edit" [ref=e1855] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54c02501806d93a9de44/edit
+                        - button "Delete" [ref=e1856] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772967119592 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772967119592-\\d+.* 0 Active Edit Delete" [ref=e1857]':
+                    - cell "IBMMQ Regex Delivery 1772967119592" [ref=e1858]:
+                      - generic [ref=e1859]: IBMMQ Regex Delivery 1772967119592
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1860]':
+                      - generic [ref=e1861]: "Destination Type: queue"
+                      - generic [ref=e1862]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1863]:
+                      - generic [ref=e1864]:
+                        - generic [ref=e1865]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772967119592-\\d+.*" [ref=e1866]':
+                      - generic [ref=e1867]:
+                        - generic [ref=e1868]: Regex
+                        - generic [ref=e1869]: "Pattern: .*orderId-1772967119592-\\d+.*"
+                    - cell "0" [ref=e1870]
+                    - cell "Active" [ref=e1871]:
+                      - button "Active" [ref=e1872] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1873]:
+                      - generic [ref=e1874]:
+                        - link "Edit" [ref=e1875] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54d12501806d93a9de45/edit
+                        - button "Delete" [ref=e1876] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772967131817 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772967131817 0 Active Edit Delete" [ref=e1877]':
+                    - cell "IBMMQ Inactive Delivery 1772967131817" [ref=e1878]:
+                      - generic [ref=e1879]: IBMMQ Inactive Delivery 1772967131817
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1880]':
+                      - generic [ref=e1881]: "Destination Type: queue"
+                      - generic [ref=e1882]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1883]:
+                      - generic [ref=e1884]:
+                        - generic [ref=e1885]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772967131817" [ref=e1886]':
+                      - generic [ref=e1887]:
+                        - generic [ref=e1888]: Contains
+                        - generic [ref=e1889]: "Pattern: inactive-trigger-1772967131817"
+                    - cell "0" [ref=e1890]
+                    - cell "Active" [ref=e1891]:
+                      - button "Active" [ref=e1892] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1893]:
+                      - generic [ref=e1894]:
+                        - link "Edit" [ref=e1895] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54dd2501806d93a9de46/edit
+                        - button "Delete" [ref=e1896] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772967158489 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772967158489 0 Active Edit Delete" [ref=e1897]':
+                    - cell "IBMMQ Inactive Delivery 1772967158489" [ref=e1898]:
+                      - generic [ref=e1899]: IBMMQ Inactive Delivery 1772967158489
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1900]':
+                      - generic [ref=e1901]: "Destination Type: queue"
+                      - generic [ref=e1902]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1903]:
+                      - generic [ref=e1904]:
+                        - generic [ref=e1905]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772967158489" [ref=e1906]':
+                      - generic [ref=e1907]:
+                        - generic [ref=e1908]: Contains
+                        - generic [ref=e1909]: "Pattern: inactive-trigger-1772967158489"
+                    - cell "0" [ref=e1910]
+                    - cell "Active" [ref=e1911]:
+                      - button "Active" [ref=e1912] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1913]:
+                      - generic [ref=e1914]:
+                        - link "Edit" [ref=e1915] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad54f82501806d93a9de47/edit
+                        - button "Delete" [ref=e1916] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772967191097 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729671910... 0 Inactive Edit Delete" [ref=e1917]':
+                    - cell "IBMMQ Deactivate Delivery 1772967191097" [ref=e1918]:
+                      - generic [ref=e1919]: IBMMQ Deactivate Delivery 1772967191097
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1920]':
+                      - generic [ref=e1921]: "Destination Type: queue"
+                      - generic [ref=e1922]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1923]:
+                      - generic [ref=e1924]:
+                        - generic [ref=e1925]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729671910..." [ref=e1926]':
+                      - generic [ref=e1927]:
+                        - generic [ref=e1928]: Contains
+                        - generic [ref=e1929]: "Pattern: deactivate-trigger-17729671910..."
+                    - cell "0" [ref=e1930]
+                    - cell "Inactive" [ref=e1931]:
+                      - button "Inactive" [ref=e1932] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1933]:
+                      - generic [ref=e1934]:
+                        - link "Edit" [ref=e1935] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad55182501806d93a9de48/edit
+                        - button "Delete" [ref=e1936] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772967211515 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729672115... 0 Inactive Edit Delete" [ref=e1937]':
+                    - cell "IBMMQ Deactivate Delivery 1772967211515" [ref=e1938]:
+                      - generic [ref=e1939]: IBMMQ Deactivate Delivery 1772967211515
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1940]':
+                      - generic [ref=e1941]: "Destination Type: queue"
+                      - generic [ref=e1942]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1943]:
+                      - generic [ref=e1944]:
+                        - generic [ref=e1945]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729672115..." [ref=e1946]':
+                      - generic [ref=e1947]:
+                        - generic [ref=e1948]: Contains
+                        - generic [ref=e1949]: "Pattern: deactivate-trigger-17729672115..."
+                    - cell "0" [ref=e1950]
+                    - cell "Inactive" [ref=e1951]:
+                      - button "Inactive" [ref=e1952] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1953]:
+                      - generic [ref=e1954]:
+                        - link "Edit" [ref=e1955] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad552f2501806d93a9de49/edit
+                        - button "Delete" [ref=e1956] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772967238214 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772967238214 0 Active Edit Delete" [ref=e1957]':
+                    - cell "IBMMQ Edit Delivery 1772967238214" [ref=e1958]:
+                      - generic [ref=e1959]: IBMMQ Edit Delivery 1772967238214
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e1960]':
+                      - generic [ref=e1961]: "Destination Type: queue"
+                      - generic [ref=e1962]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e1963]:
+                      - generic [ref=e1964]:
+                        - generic [ref=e1965]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772967238214" [ref=e1966]':
+                      - generic [ref=e1967]:
+                        - generic [ref=e1968]: Contains
+                        - generic [ref=e1969]: "Pattern: edit-trigger-1772967238214"
+                    - cell "0" [ref=e1970]
+                    - cell "Active" [ref=e1971]:
+                      - button "Active" [ref=e1972] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1973]:
+                      - generic [ref=e1974]:
+                        - link "Edit" [ref=e1975] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad55472501806d93a9de4a/edit
+                        - button "Delete" [ref=e1976] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772969474855 Destination Type: queue Destination: DEV.QUEUE.1772969474855 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1977]':
+                    - cell "Basic IBM MQ Queue Stub 1772969474855" [ref=e1978]:
+                      - generic [ref=e1979]: Basic IBM MQ Queue Stub 1772969474855
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772969474855" [ref=e1980]':
+                      - generic [ref=e1981]: "Destination Type: queue"
+                      - generic [ref=e1982]: "Destination: DEV.QUEUE.1772969474855"
+                    - cell "Uses JMSReplyTo0" [ref=e1983]
+                    - cell "None" [ref=e1984]:
+                      - generic [ref=e1986]: None
+                    - cell "0" [ref=e1987]
+                    - cell "Active" [ref=e1988]:
+                      - button "Active" [ref=e1989] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e1990]:
+                      - generic [ref=e1991]:
+                        - link "Edit" [ref=e1992] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e042501806d93a9de4b/edit
+                        - button "Delete" [ref=e1993] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772969477929 Destination Type: topic Destination: DEV.TOPIC.1772969477929 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e1994]':
+                    - cell "IBM MQ Topic Stub 1772969477929" [ref=e1995]:
+                      - generic [ref=e1996]: IBM MQ Topic Stub 1772969477929
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772969477929" [ref=e1997]':
+                      - generic [ref=e1998]: "Destination Type: topic"
+                      - generic [ref=e1999]: "Destination: DEV.TOPIC.1772969477929"
+                    - cell "Uses JMSReplyTo0" [ref=e2000]
+                    - cell "None" [ref=e2001]:
+                      - generic [ref=e2003]: None
+                    - cell "0" [ref=e2004]
+                    - cell "Active" [ref=e2005]:
+                      - button "Active" [ref=e2006] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2007]:
+                      - generic [ref=e2008]:
+                        - link "Edit" [ref=e2009] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e072501806d93a9de4c/edit
+                        - button "Delete" [ref=e2010] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772969480790 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772969480790 Uses JMSReplyTo0 Contains Pattern: correlationId-1772969480790 0 Active Edit Delete" [ref=e2011]':
+                    - cell "IBMMQ Contains Stub 1772969480790" [ref=e2012]:
+                      - generic [ref=e2013]: IBMMQ Contains Stub 1772969480790
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772969480790" [ref=e2014]':
+                      - generic [ref=e2015]: "Destination Type: queue"
+                      - generic [ref=e2016]: "Destination: DEV.QUEUE.CONTAINS.1772969480790"
+                    - cell "Uses JMSReplyTo0" [ref=e2017]
+                    - 'cell "Contains Pattern: correlationId-1772969480790" [ref=e2018]':
+                      - generic [ref=e2019]:
+                        - generic [ref=e2020]: Contains
+                        - generic [ref=e2021]: "Pattern: correlationId-1772969480790"
+                    - cell "0" [ref=e2022]
+                    - cell "Active" [ref=e2023]:
+                      - button "Active" [ref=e2024] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2025]:
+                      - generic [ref=e2026]:
+                        - link "Edit" [ref=e2027] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e0a2501806d93a9de4d/edit
+                        - button "Delete" [ref=e2028] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772969483826 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772969483826 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772969483826\"} 0 Active Edit Delete" [ref=e2029]':
+                    - cell "IBMMQ Exact Stub 1772969483826" [ref=e2030]:
+                      - generic [ref=e2031]: IBMMQ Exact Stub 1772969483826
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772969483826" [ref=e2032]':
+                      - generic [ref=e2033]: "Destination Type: queue"
+                      - generic [ref=e2034]: "Destination: DEV.QUEUE.EXACT.1772969483826"
+                    - cell "Uses JMSReplyTo0" [ref=e2035]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772969483826\"}" [ref=e2036]':
+                      - generic [ref=e2037]:
+                        - generic [ref=e2038]: Exact
+                        - generic [ref=e2039]: "Pattern: {\"requestId\":\"1772969483826\"}"
+                    - cell "0" [ref=e2040]
+                    - cell "Active" [ref=e2041]:
+                      - button "Active" [ref=e2042] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2043]:
+                      - generic [ref=e2044]:
+                        - link "Edit" [ref=e2045] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e0d2501806d93a9de4e/edit
+                        - button "Delete" [ref=e2046] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772969486831 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772969486831 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e2047]':
+                    - cell "IBMMQ Regex Stub 1772969486831" [ref=e2048]:
+                      - generic [ref=e2049]: IBMMQ Regex Stub 1772969486831
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772969486831" [ref=e2050]':
+                      - generic [ref=e2051]: "Destination Type: queue"
+                      - generic [ref=e2052]: "Destination: DEV.QUEUE.REGEX.1772969486831"
+                    - cell "Uses JMSReplyTo0" [ref=e2053]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e2054]':
+                      - generic [ref=e2055]:
+                        - generic [ref=e2056]: Regex
+                        - generic [ref=e2057]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e2058]
+                    - cell "Active" [ref=e2059]:
+                      - button "Active" [ref=e2060] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2061]:
+                      - generic [ref=e2062]:
+                        - link "Edit" [ref=e2063] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e102501806d93a9de4f/edit
+                        - button "Delete" [ref=e2064] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772969489616 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772969489616 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e2065]':
+                    - cell "IBMMQ Priority Stub 1772969489616" [ref=e2066]:
+                      - generic [ref=e2067]: IBMMQ Priority Stub 1772969489616
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772969489616" [ref=e2068]':
+                      - generic [ref=e2069]: "Destination Type: queue"
+                      - generic [ref=e2070]: "Destination: DEV.QUEUE.PRIO.1772969489616"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e2071]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e2072]: "Latency: 200ms"
+                    - cell "None" [ref=e2073]:
+                      - generic [ref=e2075]: None
+                    - cell "10" [ref=e2076]
+                    - cell "Active" [ref=e2077]:
+                      - button "Active" [ref=e2078] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2079]:
+                      - generic [ref=e2080]:
+                        - link "Edit" [ref=e2081] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e122501806d93a9de50/edit
+                        - button "Delete" [ref=e2082] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772969492058 Destination Type: queue Destination: DEV.QUEUE.SEL.1772969492058 Selector: JMSCorrelationID=''CID-1772969492058'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2083]':
+                    - cell "IBMMQ Selector Stub 1772969492058" [ref=e2084]:
+                      - generic [ref=e2085]: IBMMQ Selector Stub 1772969492058
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772969492058 Selector: JMSCorrelationID=''CID-1772969492058''" [ref=e2086]':
+                      - generic [ref=e2087]: "Destination Type: queue"
+                      - generic [ref=e2088]: "Destination: DEV.QUEUE.SEL.1772969492058"
+                      - generic [ref=e2089]: "Selector: JMSCorrelationID='CID-1772969492058'"
+                    - cell "Uses JMSReplyTo0" [ref=e2090]
+                    - cell "None" [ref=e2091]:
+                      - generic [ref=e2093]: None
+                    - cell "0" [ref=e2094]
+                    - cell "Active" [ref=e2095]:
+                      - button "Active" [ref=e2096] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2097]:
+                      - generic [ref=e2098]:
+                        - link "Edit" [ref=e2099] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e152501806d93a9de51/edit
+                        - button "Delete" [ref=e2100] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772969495264 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772969495264 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2101]':
+                    - cell "IBMMQ Toggle Stub 1772969495264" [ref=e2102]:
+                      - generic [ref=e2103]: IBMMQ Toggle Stub 1772969495264
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772969495264" [ref=e2104]':
+                      - generic [ref=e2105]: "Destination Type: queue"
+                      - generic [ref=e2106]: "Destination: DEV.QUEUE.TOGGLE.1772969495264"
+                    - cell "Uses JMSReplyTo0" [ref=e2107]
+                    - cell "None" [ref=e2108]:
+                      - generic [ref=e2110]: None
+                    - cell "0" [ref=e2111]
+                    - cell "Active" [ref=e2112]:
+                      - button "Active" [ref=e2113] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2114]:
+                      - generic [ref=e2115]:
+                        - link "Edit" [ref=e2116] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e182501806d93a9de52/edit
+                        - button "Delete" [ref=e2117] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772969498257 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772969498257 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2118]':
+                    - cell "IBMMQ Edit Stub 1772969498257" [ref=e2119]:
+                      - generic [ref=e2120]: IBMMQ Edit Stub 1772969498257
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772969498257" [ref=e2121]':
+                      - generic [ref=e2122]: "Destination Type: queue"
+                      - generic [ref=e2123]: "Destination: DEV.QUEUE.EDIT.1772969498257"
+                    - cell "Uses JMSReplyTo0" [ref=e2124]
+                    - cell "None" [ref=e2125]:
+                      - generic [ref=e2127]: None
+                    - cell "0" [ref=e2128]
+                    - cell "Active" [ref=e2129]:
+                      - button "Active" [ref=e2130] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2131]:
+                      - generic [ref=e2132]:
+                        - link "Edit" [ref=e2133] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e1b2501806d93a9de53/edit
+                        - button "Delete" [ref=e2134] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772969540547 Destination Type: queue Destination: DEV.QUEUE.SA.1772969540547 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2135]':
+                    - cell "SearchA IBMMQ 1772969540547" [ref=e2136]:
+                      - generic [ref=e2137]: SearchA IBMMQ 1772969540547
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772969540547" [ref=e2138]':
+                      - generic [ref=e2139]: "Destination Type: queue"
+                      - generic [ref=e2140]: "Destination: DEV.QUEUE.SA.1772969540547"
+                    - cell "Uses JMSReplyTo0" [ref=e2141]
+                    - cell "None" [ref=e2142]:
+                      - generic [ref=e2144]: None
+                    - cell "0" [ref=e2145]
+                    - cell "Active" [ref=e2146]:
+                      - button "Active" [ref=e2147] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2148]:
+                      - generic [ref=e2149]:
+                        - link "Edit" [ref=e2150] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e462501806d93a9de55/edit
+                        - button "Delete" [ref=e2151] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772969540547 Destination Type: queue Destination: DEV.QUEUE.SB.1772969540547 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2152]':
+                    - cell "SearchB IBMMQ 1772969540547" [ref=e2153]:
+                      - generic [ref=e2154]: SearchB IBMMQ 1772969540547
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772969540547" [ref=e2155]':
+                      - generic [ref=e2156]: "Destination Type: queue"
+                      - generic [ref=e2157]: "Destination: DEV.QUEUE.SB.1772969540547"
+                    - cell "Uses JMSReplyTo0" [ref=e2158]
+                    - cell "None" [ref=e2159]:
+                      - generic [ref=e2161]: None
+                    - cell "0" [ref=e2162]
+                    - cell "Active" [ref=e2163]:
+                      - button "Active" [ref=e2164] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2165]:
+                      - generic [ref=e2166]:
+                        - link "Edit" [ref=e2167] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e462501806d93a9de56/edit
+                        - button "Delete" [ref=e2168] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772969544331 Destination Type: queue Destination: DEV.QUEUE.INACT.1772969544331 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2169]':
+                    - cell "IBMMQ Inactive Stub 1772969544331" [ref=e2170]:
+                      - generic [ref=e2171]: IBMMQ Inactive Stub 1772969544331
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772969544331" [ref=e2172]':
+                      - generic [ref=e2173]: "Destination Type: queue"
+                      - generic [ref=e2174]: "Destination: DEV.QUEUE.INACT.1772969544331"
+                    - cell "Uses JMSReplyTo0" [ref=e2175]
+                    - cell "None" [ref=e2176]:
+                      - generic [ref=e2178]: None
+                    - cell "0" [ref=e2179]
+                    - cell "Active" [ref=e2180]:
+                      - button "Active" [ref=e2181] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2182]:
+                      - generic [ref=e2183]:
+                        - link "Edit" [ref=e2184] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e492501806d93a9de57/edit
+                        - button "Delete" [ref=e2185] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772969549284 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772969549284 0 Active Edit Delete" [ref=e2186]':
+                    - cell "IBMMQ Delivery Basic 1772969549284" [ref=e2187]:
+                      - generic [ref=e2188]: IBMMQ Delivery Basic 1772969549284
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2189]':
+                      - generic [ref=e2190]: "Destination Type: queue"
+                      - generic [ref=e2191]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2192]:
+                      - generic [ref=e2193]:
+                        - generic [ref=e2194]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772969549284" [ref=e2195]':
+                      - generic [ref=e2196]:
+                        - generic [ref=e2197]: Contains
+                        - generic [ref=e2198]: "Pattern: hello-1772969549284"
+                    - cell "0" [ref=e2199]
+                    - cell "Active" [ref=e2200]:
+                      - button "Active" [ref=e2201] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2202]:
+                      - generic [ref=e2203]:
+                        - link "Edit" [ref=e2204] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e4f2501806d93a9de58/edit
+                        - button "Delete" [ref=e2205] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772969557865 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772969557865 0 Active Edit Delete" [ref=e2206]':
+                    - cell "IBMMQ Contains Delivery 1772969557865" [ref=e2207]:
+                      - generic [ref=e2208]: IBMMQ Contains Delivery 1772969557865
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2209]':
+                      - generic [ref=e2210]: "Destination Type: queue"
+                      - generic [ref=e2211]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2212]:
+                      - generic [ref=e2213]:
+                        - generic [ref=e2214]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772969557865" [ref=e2215]':
+                      - generic [ref=e2216]:
+                        - generic [ref=e2217]: Contains
+                        - generic [ref=e2218]: "Pattern: MATCH-TOKEN-1772969557865"
+                    - cell "0" [ref=e2219]
+                    - cell "Active" [ref=e2220]:
+                      - button "Active" [ref=e2221] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2222]:
+                      - generic [ref=e2223]:
+                        - link "Edit" [ref=e2224] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e572501806d93a9de59/edit
+                        - button "Delete" [ref=e2225] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772969569779 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772969569779 0 Active Edit Delete" [ref=e2226]':
+                    - cell "IBMMQ Exact Delivery 1772969569779" [ref=e2227]:
+                      - generic [ref=e2228]: IBMMQ Exact Delivery 1772969569779
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2229]':
+                      - generic [ref=e2230]: "Destination Type: queue"
+                      - generic [ref=e2231]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2232]:
+                      - generic [ref=e2233]:
+                        - generic [ref=e2234]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772969569779" [ref=e2235]':
+                      - generic [ref=e2236]:
+                        - generic [ref=e2237]: Exact
+                        - generic [ref=e2238]: "Pattern: exact-body-1772969569779"
+                    - cell "0" [ref=e2239]
+                    - cell "Active" [ref=e2240]:
+                      - button "Active" [ref=e2241] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2242]:
+                      - generic [ref=e2243]:
+                        - link "Edit" [ref=e2244] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e622501806d93a9de5a/edit
+                        - button "Delete" [ref=e2245] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772969582449 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772969582449-\\d+.* 0 Active Edit Delete" [ref=e2246]':
+                    - cell "IBMMQ Regex Delivery 1772969582449" [ref=e2247]:
+                      - generic [ref=e2248]: IBMMQ Regex Delivery 1772969582449
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2249]':
+                      - generic [ref=e2250]: "Destination Type: queue"
+                      - generic [ref=e2251]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2252]:
+                      - generic [ref=e2253]:
+                        - generic [ref=e2254]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772969582449-\\d+.*" [ref=e2255]':
+                      - generic [ref=e2256]:
+                        - generic [ref=e2257]: Regex
+                        - generic [ref=e2258]: "Pattern: .*orderId-1772969582449-\\d+.*"
+                    - cell "0" [ref=e2259]
+                    - cell "Active" [ref=e2260]:
+                      - button "Active" [ref=e2261] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2262]:
+                      - generic [ref=e2263]:
+                        - link "Edit" [ref=e2264] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e702501806d93a9de5b/edit
+                        - button "Delete" [ref=e2265] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772969596695 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772969596695 0 Active Edit Delete" [ref=e2266]':
+                    - cell "IBMMQ Inactive Delivery 1772969596695" [ref=e2267]:
+                      - generic [ref=e2268]: IBMMQ Inactive Delivery 1772969596695
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2269]':
+                      - generic [ref=e2270]: "Destination Type: queue"
+                      - generic [ref=e2271]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2272]:
+                      - generic [ref=e2273]:
+                        - generic [ref=e2274]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772969596695" [ref=e2275]':
+                      - generic [ref=e2276]:
+                        - generic [ref=e2277]: Contains
+                        - generic [ref=e2278]: "Pattern: inactive-trigger-1772969596695"
+                    - cell "0" [ref=e2279]
+                    - cell "Active" [ref=e2280]:
+                      - button "Active" [ref=e2281] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2282]:
+                      - generic [ref=e2283]:
+                        - link "Edit" [ref=e2284] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e7e2501806d93a9de5c/edit
+                        - button "Delete" [ref=e2285] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772969626789 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772969626789 0 Active Edit Delete" [ref=e2286]':
+                    - cell "IBMMQ Inactive Delivery 1772969626789" [ref=e2287]:
+                      - generic [ref=e2288]: IBMMQ Inactive Delivery 1772969626789
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2289]':
+                      - generic [ref=e2290]: "Destination Type: queue"
+                      - generic [ref=e2291]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2292]:
+                      - generic [ref=e2293]:
+                        - generic [ref=e2294]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772969626789" [ref=e2295]':
+                      - generic [ref=e2296]:
+                        - generic [ref=e2297]: Contains
+                        - generic [ref=e2298]: "Pattern: inactive-trigger-1772969626789"
+                    - cell "0" [ref=e2299]
+                    - cell "Active" [ref=e2300]:
+                      - button "Active" [ref=e2301] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2302]:
+                      - generic [ref=e2303]:
+                        - link "Edit" [ref=e2304] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5e9c2501806d93a9de5d/edit
+                        - button "Delete" [ref=e2305] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772969662162 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729696621... 0 Inactive Edit Delete" [ref=e2306]':
+                    - cell "IBMMQ Deactivate Delivery 1772969662162" [ref=e2307]:
+                      - generic [ref=e2308]: IBMMQ Deactivate Delivery 1772969662162
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2309]':
+                      - generic [ref=e2310]: "Destination Type: queue"
+                      - generic [ref=e2311]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2312]:
+                      - generic [ref=e2313]:
+                        - generic [ref=e2314]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729696621..." [ref=e2315]':
+                      - generic [ref=e2316]:
+                        - generic [ref=e2317]: Contains
+                        - generic [ref=e2318]: "Pattern: deactivate-trigger-17729696621..."
+                    - cell "0" [ref=e2319]
+                    - cell "Inactive" [ref=e2320]:
+                      - button "Inactive" [ref=e2321] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2322]:
+                      - generic [ref=e2323]:
+                        - link "Edit" [ref=e2324] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5ec02501806d93a9de5e/edit
+                        - button "Delete" [ref=e2325] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772969682324 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729696823... 0 Inactive Edit Delete" [ref=e2326]':
+                    - cell "IBMMQ Deactivate Delivery 1772969682324" [ref=e2327]:
+                      - generic [ref=e2328]: IBMMQ Deactivate Delivery 1772969682324
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2329]':
+                      - generic [ref=e2330]: "Destination Type: queue"
+                      - generic [ref=e2331]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2332]:
+                      - generic [ref=e2333]:
+                        - generic [ref=e2334]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729696823..." [ref=e2335]':
+                      - generic [ref=e2336]:
+                        - generic [ref=e2337]: Contains
+                        - generic [ref=e2338]: "Pattern: deactivate-trigger-17729696823..."
+                    - cell "0" [ref=e2339]
+                    - cell "Inactive" [ref=e2340]:
+                      - button "Inactive" [ref=e2341] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2342]:
+                      - generic [ref=e2343]:
+                        - link "Edit" [ref=e2344] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5ed32501806d93a9de5f/edit
+                        - button "Delete" [ref=e2345] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772969700139 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772969700139 0 Active Edit Delete" [ref=e2346]':
+                    - cell "IBMMQ Edit Delivery 1772969700139" [ref=e2347]:
+                      - generic [ref=e2348]: IBMMQ Edit Delivery 1772969700139
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2349]':
+                      - generic [ref=e2350]: "Destination Type: queue"
+                      - generic [ref=e2351]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2352]:
+                      - generic [ref=e2353]:
+                        - generic [ref=e2354]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772969700139" [ref=e2355]':
+                      - generic [ref=e2356]:
+                        - generic [ref=e2357]: Contains
+                        - generic [ref=e2358]: "Pattern: edit-trigger-1772969700139"
+                    - cell "0" [ref=e2359]
+                    - cell "Active" [ref=e2360]:
+                      - button "Active" [ref=e2361] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2362]:
+                      - generic [ref=e2363]:
+                        - link "Edit" [ref=e2364] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad5ee52501806d93a9de60/edit
+                        - button "Delete" [ref=e2365] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772972095269 Destination Type: queue Destination: DEV.QUEUE.1772972095269 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2366]':
+                    - cell "Basic IBM MQ Queue Stub 1772972095269" [ref=e2367]:
+                      - generic [ref=e2368]: Basic IBM MQ Queue Stub 1772972095269
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772972095269" [ref=e2369]':
+                      - generic [ref=e2370]: "Destination Type: queue"
+                      - generic [ref=e2371]: "Destination: DEV.QUEUE.1772972095269"
+                    - cell "Uses JMSReplyTo0" [ref=e2372]
+                    - cell "None" [ref=e2373]:
+                      - generic [ref=e2375]: None
+                    - cell "0" [ref=e2376]
+                    - cell "Active" [ref=e2377]:
+                      - button "Active" [ref=e2378] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2379]:
+                      - generic [ref=e2380]:
+                        - link "Edit" [ref=e2381] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6840a424c5206b1de233/edit
+                        - button "Delete" [ref=e2382] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772972098148 Destination Type: topic Destination: DEV.TOPIC.1772972098148 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2383]':
+                    - cell "IBM MQ Topic Stub 1772972098148" [ref=e2384]:
+                      - generic [ref=e2385]: IBM MQ Topic Stub 1772972098148
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772972098148" [ref=e2386]':
+                      - generic [ref=e2387]: "Destination Type: topic"
+                      - generic [ref=e2388]: "Destination: DEV.TOPIC.1772972098148"
+                    - cell "Uses JMSReplyTo0" [ref=e2389]
+                    - cell "None" [ref=e2390]:
+                      - generic [ref=e2392]: None
+                    - cell "0" [ref=e2393]
+                    - cell "Active" [ref=e2394]:
+                      - button "Active" [ref=e2395] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2396]:
+                      - generic [ref=e2397]:
+                        - link "Edit" [ref=e2398] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6843a424c5206b1de234/edit
+                        - button "Delete" [ref=e2399] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772972102215 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772972102215 Uses JMSReplyTo0 Contains Pattern: correlationId-1772972102215 0 Active Edit Delete" [ref=e2400]':
+                    - cell "IBMMQ Contains Stub 1772972102215" [ref=e2401]:
+                      - generic [ref=e2402]: IBMMQ Contains Stub 1772972102215
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772972102215" [ref=e2403]':
+                      - generic [ref=e2404]: "Destination Type: queue"
+                      - generic [ref=e2405]: "Destination: DEV.QUEUE.CONTAINS.1772972102215"
+                    - cell "Uses JMSReplyTo0" [ref=e2406]
+                    - 'cell "Contains Pattern: correlationId-1772972102215" [ref=e2407]':
+                      - generic [ref=e2408]:
+                        - generic [ref=e2409]: Contains
+                        - generic [ref=e2410]: "Pattern: correlationId-1772972102215"
+                    - cell "0" [ref=e2411]
+                    - cell "Active" [ref=e2412]:
+                      - button "Active" [ref=e2413] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2414]:
+                      - generic [ref=e2415]:
+                        - link "Edit" [ref=e2416] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6847a424c5206b1de235/edit
+                        - button "Delete" [ref=e2417] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772972105563 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772972105563 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772972105563\"} 0 Active Edit Delete" [ref=e2418]':
+                    - cell "IBMMQ Exact Stub 1772972105563" [ref=e2419]:
+                      - generic [ref=e2420]: IBMMQ Exact Stub 1772972105563
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772972105563" [ref=e2421]':
+                      - generic [ref=e2422]: "Destination Type: queue"
+                      - generic [ref=e2423]: "Destination: DEV.QUEUE.EXACT.1772972105563"
+                    - cell "Uses JMSReplyTo0" [ref=e2424]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772972105563\"}" [ref=e2425]':
+                      - generic [ref=e2426]:
+                        - generic [ref=e2427]: Exact
+                        - generic [ref=e2428]: "Pattern: {\"requestId\":\"1772972105563\"}"
+                    - cell "0" [ref=e2429]
+                    - cell "Active" [ref=e2430]:
+                      - button "Active" [ref=e2431] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2432]:
+                      - generic [ref=e2433]:
+                        - link "Edit" [ref=e2434] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad684ba424c5206b1de236/edit
+                        - button "Delete" [ref=e2435] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772972109197 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772972109197 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e2436]':
+                    - cell "IBMMQ Regex Stub 1772972109197" [ref=e2437]:
+                      - generic [ref=e2438]: IBMMQ Regex Stub 1772972109197
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772972109197" [ref=e2439]':
+                      - generic [ref=e2440]: "Destination Type: queue"
+                      - generic [ref=e2441]: "Destination: DEV.QUEUE.REGEX.1772972109197"
+                    - cell "Uses JMSReplyTo0" [ref=e2442]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e2443]':
+                      - generic [ref=e2444]:
+                        - generic [ref=e2445]: Regex
+                        - generic [ref=e2446]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e2447]
+                    - cell "Active" [ref=e2448]:
+                      - button "Active" [ref=e2449] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2450]:
+                      - generic [ref=e2451]:
+                        - link "Edit" [ref=e2452] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad684fa424c5206b1de237/edit
+                        - button "Delete" [ref=e2453] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772972113316 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772972113316 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e2454]':
+                    - cell "IBMMQ Priority Stub 1772972113316" [ref=e2455]:
+                      - generic [ref=e2456]: IBMMQ Priority Stub 1772972113316
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772972113316" [ref=e2457]':
+                      - generic [ref=e2458]: "Destination Type: queue"
+                      - generic [ref=e2459]: "Destination: DEV.QUEUE.PRIO.1772972113316"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e2460]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e2461]: "Latency: 200ms"
+                    - cell "None" [ref=e2462]:
+                      - generic [ref=e2464]: None
+                    - cell "10" [ref=e2465]
+                    - cell "Active" [ref=e2466]:
+                      - button "Active" [ref=e2467] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2468]:
+                      - generic [ref=e2469]:
+                        - link "Edit" [ref=e2470] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6852a424c5206b1de238/edit
+                        - button "Delete" [ref=e2471] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772972116578 Destination Type: queue Destination: DEV.QUEUE.SEL.1772972116578 Selector: JMSCorrelationID=''CID-1772972116578'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2472]':
+                    - cell "IBMMQ Selector Stub 1772972116578" [ref=e2473]:
+                      - generic [ref=e2474]: IBMMQ Selector Stub 1772972116578
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772972116578 Selector: JMSCorrelationID=''CID-1772972116578''" [ref=e2475]':
+                      - generic [ref=e2476]: "Destination Type: queue"
+                      - generic [ref=e2477]: "Destination: DEV.QUEUE.SEL.1772972116578"
+                      - generic [ref=e2478]: "Selector: JMSCorrelationID='CID-1772972116578'"
+                    - cell "Uses JMSReplyTo0" [ref=e2479]
+                    - cell "None" [ref=e2480]:
+                      - generic [ref=e2482]: None
+                    - cell "0" [ref=e2483]
+                    - cell "Active" [ref=e2484]:
+                      - button "Active" [ref=e2485] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2486]:
+                      - generic [ref=e2487]:
+                        - link "Edit" [ref=e2488] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6856a424c5206b1de239/edit
+                        - button "Delete" [ref=e2489] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772972125059 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972125059 Uses JMSReplyTo0 None 0 Inactive Edit Delete" [ref=e2490]':
+                    - cell "IBMMQ Toggle Stub 1772972125059" [ref=e2491]:
+                      - generic [ref=e2492]: IBMMQ Toggle Stub 1772972125059
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972125059" [ref=e2493]':
+                      - generic [ref=e2494]: "Destination Type: queue"
+                      - generic [ref=e2495]: "Destination: DEV.QUEUE.TOGGLE.1772972125059"
+                    - cell "Uses JMSReplyTo0" [ref=e2496]
+                    - cell "None" [ref=e2497]:
+                      - generic [ref=e2499]: None
+                    - cell "0" [ref=e2500]
+                    - cell "Inactive" [ref=e2501]:
+                      - button "Inactive" [ref=e2502] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2503]:
+                      - generic [ref=e2504]:
+                        - link "Edit" [ref=e2505] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad685fa424c5206b1de23a/edit
+                        - button "Delete" [ref=e2506] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772972147693 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972147693 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2507]':
+                    - cell "IBMMQ Toggle Stub 1772972147693" [ref=e2508]:
+                      - generic [ref=e2509]: IBMMQ Toggle Stub 1772972147693
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972147693" [ref=e2510]':
+                      - generic [ref=e2511]: "Destination Type: queue"
+                      - generic [ref=e2512]: "Destination: DEV.QUEUE.TOGGLE.1772972147693"
+                    - cell "Uses JMSReplyTo0" [ref=e2513]
+                    - cell "None" [ref=e2514]:
+                      - generic [ref=e2516]: None
+                    - cell "0" [ref=e2517]
+                    - cell "Active" [ref=e2518]:
+                      - button "Active" [ref=e2519] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2520]:
+                      - generic [ref=e2521]:
+                        - link "Edit" [ref=e2522] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6875a424c5206b1de23b/edit
+                        - button "Delete" [ref=e2523] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772972161936 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772972161936 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2524]':
+                    - cell "IBMMQ Edit Stub 1772972161936" [ref=e2525]:
+                      - generic [ref=e2526]: IBMMQ Edit Stub 1772972161936
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772972161936" [ref=e2527]':
+                      - generic [ref=e2528]: "Destination Type: queue"
+                      - generic [ref=e2529]: "Destination: DEV.QUEUE.EDIT.1772972161936"
+                    - cell "Uses JMSReplyTo0" [ref=e2530]
+                    - cell "None" [ref=e2531]:
+                      - generic [ref=e2533]: None
+                    - cell "0" [ref=e2534]
+                    - cell "Active" [ref=e2535]:
+                      - button "Active" [ref=e2536] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2537]:
+                      - generic [ref=e2538]:
+                        - link "Edit" [ref=e2539] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6883a424c5206b1de23c/edit
+                        - button "Delete" [ref=e2540] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772972194311 Destination Type: queue Destination: DEV.QUEUE.SA.1772972194311 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2541]':
+                    - cell "SearchA IBMMQ 1772972194311" [ref=e2542]:
+                      - generic [ref=e2543]: SearchA IBMMQ 1772972194311
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772972194311" [ref=e2544]':
+                      - generic [ref=e2545]: "Destination Type: queue"
+                      - generic [ref=e2546]: "Destination: DEV.QUEUE.SA.1772972194311"
+                    - cell "Uses JMSReplyTo0" [ref=e2547]
+                    - cell "None" [ref=e2548]:
+                      - generic [ref=e2550]: None
+                    - cell "0" [ref=e2551]
+                    - cell "Active" [ref=e2552]:
+                      - button "Active" [ref=e2553] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2554]:
+                      - generic [ref=e2555]:
+                        - link "Edit" [ref=e2556] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68a3a424c5206b1de23e/edit
+                        - button "Delete" [ref=e2557] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772972194311 Destination Type: queue Destination: DEV.QUEUE.SB.1772972194311 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2558]':
+                    - cell "SearchB IBMMQ 1772972194311" [ref=e2559]:
+                      - generic [ref=e2560]: SearchB IBMMQ 1772972194311
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772972194311" [ref=e2561]':
+                      - generic [ref=e2562]: "Destination Type: queue"
+                      - generic [ref=e2563]: "Destination: DEV.QUEUE.SB.1772972194311"
+                    - cell "Uses JMSReplyTo0" [ref=e2564]
+                    - cell "None" [ref=e2565]:
+                      - generic [ref=e2567]: None
+                    - cell "0" [ref=e2568]
+                    - cell "Active" [ref=e2569]:
+                      - button "Active" [ref=e2570] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2571]:
+                      - generic [ref=e2572]:
+                        - link "Edit" [ref=e2573] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68a4a424c5206b1de23f/edit
+                        - button "Delete" [ref=e2574] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772972203422 Destination Type: queue Destination: DEV.QUEUE.INACT.1772972203422 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2575]':
+                    - cell "IBMMQ Inactive Stub 1772972203422" [ref=e2576]:
+                      - generic [ref=e2577]: IBMMQ Inactive Stub 1772972203422
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772972203422" [ref=e2578]':
+                      - generic [ref=e2579]: "Destination Type: queue"
+                      - generic [ref=e2580]: "Destination: DEV.QUEUE.INACT.1772972203422"
+                    - cell "Uses JMSReplyTo0" [ref=e2581]
+                    - cell "None" [ref=e2582]:
+                      - generic [ref=e2584]: None
+                    - cell "0" [ref=e2585]
+                    - cell "Active" [ref=e2586]:
+                      - button "Active" [ref=e2587] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2588]:
+                      - generic [ref=e2589]:
+                        - link "Edit" [ref=e2590] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68ada424c5206b1de240/edit
+                        - button "Delete" [ref=e2591] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772972213810 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772972213810 0 Active Edit Delete" [ref=e2592]':
+                    - cell "IBMMQ Delivery Basic 1772972213810" [ref=e2593]:
+                      - generic [ref=e2594]: IBMMQ Delivery Basic 1772972213810
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2595]':
+                      - generic [ref=e2596]: "Destination Type: queue"
+                      - generic [ref=e2597]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2598]:
+                      - generic [ref=e2599]:
+                        - generic [ref=e2600]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772972213810" [ref=e2601]':
+                      - generic [ref=e2602]:
+                        - generic [ref=e2603]: Contains
+                        - generic [ref=e2604]: "Pattern: hello-1772972213810"
+                    - cell "0" [ref=e2605]
+                    - cell "Active" [ref=e2606]:
+                      - button "Active" [ref=e2607] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2608]:
+                      - generic [ref=e2609]:
+                        - link "Edit" [ref=e2610] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68b7a424c5206b1de241/edit
+                        - button "Delete" [ref=e2611] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772972222668 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772972222668 0 Active Edit Delete" [ref=e2612]':
+                    - cell "IBMMQ Contains Delivery 1772972222668" [ref=e2613]:
+                      - generic [ref=e2614]: IBMMQ Contains Delivery 1772972222668
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2615]':
+                      - generic [ref=e2616]: "Destination Type: queue"
+                      - generic [ref=e2617]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2618]:
+                      - generic [ref=e2619]:
+                        - generic [ref=e2620]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772972222668" [ref=e2621]':
+                      - generic [ref=e2622]:
+                        - generic [ref=e2623]: Contains
+                        - generic [ref=e2624]: "Pattern: MATCH-TOKEN-1772972222668"
+                    - cell "0" [ref=e2625]
+                    - cell "Active" [ref=e2626]:
+                      - button "Active" [ref=e2627] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2628]:
+                      - generic [ref=e2629]:
+                        - link "Edit" [ref=e2630] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68c0a424c5206b1de242/edit
+                        - button "Delete" [ref=e2631] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772972237201 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772972237201 0 Active Edit Delete" [ref=e2632]':
+                    - cell "IBMMQ Exact Delivery 1772972237201" [ref=e2633]:
+                      - generic [ref=e2634]: IBMMQ Exact Delivery 1772972237201
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2635]':
+                      - generic [ref=e2636]: "Destination Type: queue"
+                      - generic [ref=e2637]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2638]:
+                      - generic [ref=e2639]:
+                        - generic [ref=e2640]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772972237201" [ref=e2641]':
+                      - generic [ref=e2642]:
+                        - generic [ref=e2643]: Exact
+                        - generic [ref=e2644]: "Pattern: exact-body-1772972237201"
+                    - cell "0" [ref=e2645]
+                    - cell "Active" [ref=e2646]:
+                      - button "Active" [ref=e2647] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2648]:
+                      - generic [ref=e2649]:
+                        - link "Edit" [ref=e2650] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68cea424c5206b1de243/edit
+                        - button "Delete" [ref=e2651] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772972249516 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772972249516-\\d+.* 0 Active Edit Delete" [ref=e2652]':
+                    - cell "IBMMQ Regex Delivery 1772972249516" [ref=e2653]:
+                      - generic [ref=e2654]: IBMMQ Regex Delivery 1772972249516
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2655]':
+                      - generic [ref=e2656]: "Destination Type: queue"
+                      - generic [ref=e2657]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2658]:
+                      - generic [ref=e2659]:
+                        - generic [ref=e2660]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772972249516-\\d+.*" [ref=e2661]':
+                      - generic [ref=e2662]:
+                        - generic [ref=e2663]: Regex
+                        - generic [ref=e2664]: "Pattern: .*orderId-1772972249516-\\d+.*"
+                    - cell "0" [ref=e2665]
+                    - cell "Active" [ref=e2666]:
+                      - button "Active" [ref=e2667] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2668]:
+                      - generic [ref=e2669]:
+                        - link "Edit" [ref=e2670] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68daa424c5206b1de244/edit
+                        - button "Delete" [ref=e2671] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772972266007 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772972266007 0 Active Edit Delete" [ref=e2672]':
+                    - cell "IBMMQ Inactive Delivery 1772972266007" [ref=e2673]:
+                      - generic [ref=e2674]: IBMMQ Inactive Delivery 1772972266007
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2675]':
+                      - generic [ref=e2676]: "Destination Type: queue"
+                      - generic [ref=e2677]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2678]:
+                      - generic [ref=e2679]:
+                        - generic [ref=e2680]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772972266007" [ref=e2681]':
+                      - generic [ref=e2682]:
+                        - generic [ref=e2683]: Contains
+                        - generic [ref=e2684]: "Pattern: inactive-trigger-1772972266007"
+                    - cell "0" [ref=e2685]
+                    - cell "Active" [ref=e2686]:
+                      - button "Active" [ref=e2687] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2688]:
+                      - generic [ref=e2689]:
+                        - link "Edit" [ref=e2690] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68eba424c5206b1de245/edit
+                        - button "Delete" [ref=e2691] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772972283684 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729722836... 0 Inactive Edit Delete" [ref=e2692]':
+                    - cell "IBMMQ Deactivate Delivery 1772972283684" [ref=e2693]:
+                      - generic [ref=e2694]: IBMMQ Deactivate Delivery 1772972283684
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2695]':
+                      - generic [ref=e2696]: "Destination Type: queue"
+                      - generic [ref=e2697]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2698]:
+                      - generic [ref=e2699]:
+                        - generic [ref=e2700]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729722836..." [ref=e2701]':
+                      - generic [ref=e2702]:
+                        - generic [ref=e2703]: Contains
+                        - generic [ref=e2704]: "Pattern: deactivate-trigger-17729722836..."
+                    - cell "0" [ref=e2705]
+                    - cell "Inactive" [ref=e2706]:
+                      - button "Inactive" [ref=e2707] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2708]:
+                      - generic [ref=e2709]:
+                        - link "Edit" [ref=e2710] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad68fda424c5206b1de246/edit
+                        - button "Delete" [ref=e2711] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772972309289 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729723092... 0 Inactive Edit Delete" [ref=e2712]':
+                    - cell "IBMMQ Deactivate Delivery 1772972309289" [ref=e2713]:
+                      - generic [ref=e2714]: IBMMQ Deactivate Delivery 1772972309289
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2715]':
+                      - generic [ref=e2716]: "Destination Type: queue"
+                      - generic [ref=e2717]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2718]:
+                      - generic [ref=e2719]:
+                        - generic [ref=e2720]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729723092..." [ref=e2721]':
+                      - generic [ref=e2722]:
+                        - generic [ref=e2723]: Contains
+                        - generic [ref=e2724]: "Pattern: deactivate-trigger-17729723092..."
+                    - cell "0" [ref=e2725]
+                    - cell "Inactive" [ref=e2726]:
+                      - button "Inactive" [ref=e2727] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2728]:
+                      - generic [ref=e2729]:
+                        - link "Edit" [ref=e2730] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6917a424c5206b1de247/edit
+                        - button "Delete" [ref=e2731] [cursor=pointer]
+                  - 'row "IBMMQ Edit Delivery 1772972333060 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: edit-trigger-1772972333060 0 Active Edit Delete" [ref=e2732]':
+                    - cell "IBMMQ Edit Delivery 1772972333060" [ref=e2733]:
+                      - generic [ref=e2734]: IBMMQ Edit Delivery 1772972333060
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2735]':
+                      - generic [ref=e2736]: "Destination Type: queue"
+                      - generic [ref=e2737]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2738]:
+                      - generic [ref=e2739]:
+                        - generic [ref=e2740]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: edit-trigger-1772972333060" [ref=e2741]':
+                      - generic [ref=e2742]:
+                        - generic [ref=e2743]: Contains
+                        - generic [ref=e2744]: "Pattern: edit-trigger-1772972333060"
+                    - cell "0" [ref=e2745]
+                    - cell "Active" [ref=e2746]:
+                      - button "Active" [ref=e2747] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2748]:
+                      - generic [ref=e2749]:
+                        - link "Edit" [ref=e2750] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad692ea424c5206b1de248/edit
+                        - button "Delete" [ref=e2751] [cursor=pointer]
+                  - 'row "Basic IBM MQ Queue Stub 1772972795615 Destination Type: queue Destination: DEV.QUEUE.1772972795615 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2752]':
+                    - cell "Basic IBM MQ Queue Stub 1772972795615" [ref=e2753]:
+                      - generic [ref=e2754]: Basic IBM MQ Queue Stub 1772972795615
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1772972795615" [ref=e2755]':
+                      - generic [ref=e2756]: "Destination Type: queue"
+                      - generic [ref=e2757]: "Destination: DEV.QUEUE.1772972795615"
+                    - cell "Uses JMSReplyTo0" [ref=e2758]
+                    - cell "None" [ref=e2759]:
+                      - generic [ref=e2761]: None
+                    - cell "0" [ref=e2762]
+                    - cell "Active" [ref=e2763]:
+                      - button "Active" [ref=e2764] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2765]:
+                      - generic [ref=e2766]:
+                        - link "Edit" [ref=e2767] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6afda424c5206b1de249/edit
+                        - button "Delete" [ref=e2768] [cursor=pointer]
+                  - 'row "IBM MQ Topic Stub 1772972799826 Destination Type: topic Destination: DEV.TOPIC.1772972799826 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2769]':
+                    - cell "IBM MQ Topic Stub 1772972799826" [ref=e2770]:
+                      - generic [ref=e2771]: IBM MQ Topic Stub 1772972799826
+                    - 'cell "Destination Type: topic Destination: DEV.TOPIC.1772972799826" [ref=e2772]':
+                      - generic [ref=e2773]: "Destination Type: topic"
+                      - generic [ref=e2774]: "Destination: DEV.TOPIC.1772972799826"
+                    - cell "Uses JMSReplyTo0" [ref=e2775]
+                    - cell "None" [ref=e2776]:
+                      - generic [ref=e2778]: None
+                    - cell "0" [ref=e2779]
+                    - cell "Active" [ref=e2780]:
+                      - button "Active" [ref=e2781] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2782]:
+                      - generic [ref=e2783]:
+                        - link "Edit" [ref=e2784] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b01a424c5206b1de24a/edit
+                        - button "Delete" [ref=e2785] [cursor=pointer]
+                  - 'row "IBMMQ Contains Stub 1772972803664 Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772972803664 Uses JMSReplyTo0 Contains Pattern: correlationId-1772972803664 0 Active Edit Delete" [ref=e2786]':
+                    - cell "IBMMQ Contains Stub 1772972803664" [ref=e2787]:
+                      - generic [ref=e2788]: IBMMQ Contains Stub 1772972803664
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.CONTAINS.1772972803664" [ref=e2789]':
+                      - generic [ref=e2790]: "Destination Type: queue"
+                      - generic [ref=e2791]: "Destination: DEV.QUEUE.CONTAINS.1772972803664"
+                    - cell "Uses JMSReplyTo0" [ref=e2792]
+                    - 'cell "Contains Pattern: correlationId-1772972803664" [ref=e2793]':
+                      - generic [ref=e2794]:
+                        - generic [ref=e2795]: Contains
+                        - generic [ref=e2796]: "Pattern: correlationId-1772972803664"
+                    - cell "0" [ref=e2797]
+                    - cell "Active" [ref=e2798]:
+                      - button "Active" [ref=e2799] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2800]:
+                      - generic [ref=e2801]:
+                        - link "Edit" [ref=e2802] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b05a424c5206b1de24b/edit
+                        - button "Delete" [ref=e2803] [cursor=pointer]
+                  - 'row "IBMMQ Exact Stub 1772972807025 Destination Type: queue Destination: DEV.QUEUE.EXACT.1772972807025 Uses JMSReplyTo0 Exact Pattern: {\"requestId\":\"1772972807025\"} 0 Active Edit Delete" [ref=e2804]':
+                    - cell "IBMMQ Exact Stub 1772972807025" [ref=e2805]:
+                      - generic [ref=e2806]: IBMMQ Exact Stub 1772972807025
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EXACT.1772972807025" [ref=e2807]':
+                      - generic [ref=e2808]: "Destination Type: queue"
+                      - generic [ref=e2809]: "Destination: DEV.QUEUE.EXACT.1772972807025"
+                    - cell "Uses JMSReplyTo0" [ref=e2810]
+                    - 'cell "Exact Pattern: {\"requestId\":\"1772972807025\"}" [ref=e2811]':
+                      - generic [ref=e2812]:
+                        - generic [ref=e2813]: Exact
+                        - generic [ref=e2814]: "Pattern: {\"requestId\":\"1772972807025\"}"
+                    - cell "0" [ref=e2815]
+                    - cell "Active" [ref=e2816]:
+                      - button "Active" [ref=e2817] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2818]:
+                      - generic [ref=e2819]:
+                        - link "Edit" [ref=e2820] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b09a424c5206b1de24c/edit
+                        - button "Delete" [ref=e2821] [cursor=pointer]
+                  - 'row "IBMMQ Regex Stub 1772972811198 Destination Type: queue Destination: DEV.QUEUE.REGEX.1772972811198 Uses JMSReplyTo0 Regex Pattern: .*orderId.*ORD-\\d+.* 0 Active Edit Delete" [ref=e2822]':
+                    - cell "IBMMQ Regex Stub 1772972811198" [ref=e2823]:
+                      - generic [ref=e2824]: IBMMQ Regex Stub 1772972811198
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.REGEX.1772972811198" [ref=e2825]':
+                      - generic [ref=e2826]: "Destination Type: queue"
+                      - generic [ref=e2827]: "Destination: DEV.QUEUE.REGEX.1772972811198"
+                    - cell "Uses JMSReplyTo0" [ref=e2828]
+                    - 'cell "Regex Pattern: .*orderId.*ORD-\\d+.*" [ref=e2829]':
+                      - generic [ref=e2830]:
+                        - generic [ref=e2831]: Regex
+                        - generic [ref=e2832]: "Pattern: .*orderId.*ORD-\\d+.*"
+                    - cell "0" [ref=e2833]
+                    - cell "Active" [ref=e2834]:
+                      - button "Active" [ref=e2835] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2836]:
+                      - generic [ref=e2837]:
+                        - link "Edit" [ref=e2838] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b0ca424c5206b1de24d/edit
+                        - button "Delete" [ref=e2839] [cursor=pointer]
+                  - 'row "IBMMQ Priority Stub 1772972819223 Destination Type: queue Destination: DEV.QUEUE.PRIO.1772972819223 Uses JMSReplyTo Latency: 200ms None 10 Active Edit Delete" [ref=e2840]':
+                    - cell "IBMMQ Priority Stub 1772972819223" [ref=e2841]:
+                      - generic [ref=e2842]: IBMMQ Priority Stub 1772972819223
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.PRIO.1772972819223" [ref=e2843]':
+                      - generic [ref=e2844]: "Destination Type: queue"
+                      - generic [ref=e2845]: "Destination: DEV.QUEUE.PRIO.1772972819223"
+                    - 'cell "Uses JMSReplyTo Latency: 200ms" [ref=e2846]':
+                      - text: Uses JMSReplyTo
+                      - generic [ref=e2847]: "Latency: 200ms"
+                    - cell "None" [ref=e2848]:
+                      - generic [ref=e2850]: None
+                    - cell "10" [ref=e2851]
+                    - cell "Active" [ref=e2852]:
+                      - button "Active" [ref=e2853] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2854]:
+                      - generic [ref=e2855]:
+                        - link "Edit" [ref=e2856] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b15a424c5206b1de24e/edit
+                        - button "Delete" [ref=e2857] [cursor=pointer]
+                  - 'row "IBMMQ Selector Stub 1772972823028 Destination Type: queue Destination: DEV.QUEUE.SEL.1772972823028 Selector: JMSCorrelationID=''CID-1772972823028'' Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2858]':
+                    - cell "IBMMQ Selector Stub 1772972823028" [ref=e2859]:
+                      - generic [ref=e2860]: IBMMQ Selector Stub 1772972823028
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SEL.1772972823028 Selector: JMSCorrelationID=''CID-1772972823028''" [ref=e2861]':
+                      - generic [ref=e2862]: "Destination Type: queue"
+                      - generic [ref=e2863]: "Destination: DEV.QUEUE.SEL.1772972823028"
+                      - generic [ref=e2864]: "Selector: JMSCorrelationID='CID-1772972823028'"
+                    - cell "Uses JMSReplyTo0" [ref=e2865]
+                    - cell "None" [ref=e2866]:
+                      - generic [ref=e2868]: None
+                    - cell "0" [ref=e2869]
+                    - cell "Active" [ref=e2870]:
+                      - button "Active" [ref=e2871] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2872]:
+                      - generic [ref=e2873]:
+                        - link "Edit" [ref=e2874] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b18a424c5206b1de24f/edit
+                        - button "Delete" [ref=e2875] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772972826336 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972826336 Uses JMSReplyTo0 None 0 Inactive Edit Delete" [ref=e2876]':
+                    - cell "IBMMQ Toggle Stub 1772972826336" [ref=e2877]:
+                      - generic [ref=e2878]: IBMMQ Toggle Stub 1772972826336
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972826336" [ref=e2879]':
+                      - generic [ref=e2880]: "Destination Type: queue"
+                      - generic [ref=e2881]: "Destination: DEV.QUEUE.TOGGLE.1772972826336"
+                    - cell "Uses JMSReplyTo0" [ref=e2882]
+                    - cell "None" [ref=e2883]:
+                      - generic [ref=e2885]: None
+                    - cell "0" [ref=e2886]
+                    - cell "Inactive" [ref=e2887]:
+                      - button "Inactive" [ref=e2888] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2889]:
+                      - generic [ref=e2890]:
+                        - link "Edit" [ref=e2891] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b1ba424c5206b1de250/edit
+                        - button "Delete" [ref=e2892] [cursor=pointer]
+                  - 'row "IBMMQ Toggle Stub 1772972850291 Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972850291 Uses JMSReplyTo0 None 0 Inactive Edit Delete" [ref=e2893]':
+                    - cell "IBMMQ Toggle Stub 1772972850291" [ref=e2894]:
+                      - generic [ref=e2895]: IBMMQ Toggle Stub 1772972850291
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.TOGGLE.1772972850291" [ref=e2896]':
+                      - generic [ref=e2897]: "Destination Type: queue"
+                      - generic [ref=e2898]: "Destination: DEV.QUEUE.TOGGLE.1772972850291"
+                    - cell "Uses JMSReplyTo0" [ref=e2899]
+                    - cell "None" [ref=e2900]:
+                      - generic [ref=e2902]: None
+                    - cell "0" [ref=e2903]
+                    - cell "Inactive" [ref=e2904]:
+                      - button "Inactive" [ref=e2905] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2906]:
+                      - generic [ref=e2907]:
+                        - link "Edit" [ref=e2908] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b34a424c5206b1de251/edit
+                        - button "Delete" [ref=e2909] [cursor=pointer]
+                  - 'row "IBMMQ Edit Stub 1772972873417 Destination Type: queue Destination: DEV.QUEUE.EDIT.1772972873417 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2910]':
+                    - cell "IBMMQ Edit Stub 1772972873417" [ref=e2911]:
+                      - generic [ref=e2912]: IBMMQ Edit Stub 1772972873417
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.EDIT.1772972873417" [ref=e2913]':
+                      - generic [ref=e2914]: "Destination Type: queue"
+                      - generic [ref=e2915]: "Destination: DEV.QUEUE.EDIT.1772972873417"
+                    - cell "Uses JMSReplyTo0" [ref=e2916]
+                    - cell "None" [ref=e2917]:
+                      - generic [ref=e2919]: None
+                    - cell "0" [ref=e2920]
+                    - cell "Active" [ref=e2921]:
+                      - button "Active" [ref=e2922] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2923]:
+                      - generic [ref=e2924]:
+                        - link "Edit" [ref=e2925] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b4aa424c5206b1de252/edit
+                        - button "Delete" [ref=e2926] [cursor=pointer]
+                  - 'row "SearchA IBMMQ 1772972905459 Destination Type: queue Destination: DEV.QUEUE.SA.1772972905459 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2927]':
+                    - cell "SearchA IBMMQ 1772972905459" [ref=e2928]:
+                      - generic [ref=e2929]: SearchA IBMMQ 1772972905459
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SA.1772972905459" [ref=e2930]':
+                      - generic [ref=e2931]: "Destination Type: queue"
+                      - generic [ref=e2932]: "Destination: DEV.QUEUE.SA.1772972905459"
+                    - cell "Uses JMSReplyTo0" [ref=e2933]
+                    - cell "None" [ref=e2934]:
+                      - generic [ref=e2936]: None
+                    - cell "0" [ref=e2937]
+                    - cell "Active" [ref=e2938]:
+                      - button "Active" [ref=e2939] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2940]:
+                      - generic [ref=e2941]:
+                        - link "Edit" [ref=e2942] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b6ba424c5206b1de254/edit
+                        - button "Delete" [ref=e2943] [cursor=pointer]
+                  - 'row "SearchB IBMMQ 1772972905459 Destination Type: queue Destination: DEV.QUEUE.SB.1772972905459 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2944]':
+                    - cell "SearchB IBMMQ 1772972905459" [ref=e2945]:
+                      - generic [ref=e2946]: SearchB IBMMQ 1772972905459
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.SB.1772972905459" [ref=e2947]':
+                      - generic [ref=e2948]: "Destination Type: queue"
+                      - generic [ref=e2949]: "Destination: DEV.QUEUE.SB.1772972905459"
+                    - cell "Uses JMSReplyTo0" [ref=e2950]
+                    - cell "None" [ref=e2951]:
+                      - generic [ref=e2953]: None
+                    - cell "0" [ref=e2954]
+                    - cell "Active" [ref=e2955]:
+                      - button "Active" [ref=e2956] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2957]:
+                      - generic [ref=e2958]:
+                        - link "Edit" [ref=e2959] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b6ca424c5206b1de255/edit
+                        - button "Delete" [ref=e2960] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Stub 1772972910196 Destination Type: queue Destination: DEV.QUEUE.INACT.1772972910196 Uses JMSReplyTo0 None 0 Active Edit Delete" [ref=e2961]':
+                    - cell "IBMMQ Inactive Stub 1772972910196" [ref=e2962]:
+                      - generic [ref=e2963]: IBMMQ Inactive Stub 1772972910196
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.INACT.1772972910196" [ref=e2964]':
+                      - generic [ref=e2965]: "Destination Type: queue"
+                      - generic [ref=e2966]: "Destination: DEV.QUEUE.INACT.1772972910196"
+                    - cell "Uses JMSReplyTo0" [ref=e2967]
+                    - cell "None" [ref=e2968]:
+                      - generic [ref=e2970]: None
+                    - cell "0" [ref=e2971]
+                    - cell "Active" [ref=e2972]:
+                      - button "Active" [ref=e2973] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2974]:
+                      - generic [ref=e2975]:
+                        - link "Edit" [ref=e2976] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b6fa424c5206b1de256/edit
+                        - button "Delete" [ref=e2977] [cursor=pointer]
+                  - 'row "IBMMQ Delivery Basic 1772972916985 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: hello-1772972916985 0 Active Edit Delete" [ref=e2978]':
+                    - cell "IBMMQ Delivery Basic 1772972916985" [ref=e2979]:
+                      - generic [ref=e2980]: IBMMQ Delivery Basic 1772972916985
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e2981]':
+                      - generic [ref=e2982]: "Destination Type: queue"
+                      - generic [ref=e2983]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e2984]:
+                      - generic [ref=e2985]:
+                        - generic [ref=e2986]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: hello-1772972916985" [ref=e2987]':
+                      - generic [ref=e2988]:
+                        - generic [ref=e2989]: Contains
+                        - generic [ref=e2990]: "Pattern: hello-1772972916985"
+                    - cell "0" [ref=e2991]
+                    - cell "Active" [ref=e2992]:
+                      - button "Active" [ref=e2993] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e2994]:
+                      - generic [ref=e2995]:
+                        - link "Edit" [ref=e2996] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b77a424c5206b1de257/edit
+                        - button "Delete" [ref=e2997] [cursor=pointer]
+                  - 'row "IBMMQ Contains Delivery 1772972931980 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: MATCH-TOKEN-1772972931980 0 Active Edit Delete" [ref=e2998]':
+                    - cell "IBMMQ Contains Delivery 1772972931980" [ref=e2999]:
+                      - generic [ref=e3000]: IBMMQ Contains Delivery 1772972931980
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e3001]':
+                      - generic [ref=e3002]: "Destination Type: queue"
+                      - generic [ref=e3003]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e3004]:
+                      - generic [ref=e3005]:
+                        - generic [ref=e3006]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: MATCH-TOKEN-1772972931980" [ref=e3007]':
+                      - generic [ref=e3008]:
+                        - generic [ref=e3009]: Contains
+                        - generic [ref=e3010]: "Pattern: MATCH-TOKEN-1772972931980"
+                    - cell "0" [ref=e3011]
+                    - cell "Active" [ref=e3012]:
+                      - button "Active" [ref=e3013] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e3014]:
+                      - generic [ref=e3015]:
+                        - link "Edit" [ref=e3016] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b86a424c5206b1de258/edit
+                        - button "Delete" [ref=e3017] [cursor=pointer]
+                  - 'row "IBMMQ Exact Delivery 1772972945333 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Exact Pattern: exact-body-1772972945333 0 Active Edit Delete" [ref=e3018]':
+                    - cell "IBMMQ Exact Delivery 1772972945333" [ref=e3019]:
+                      - generic [ref=e3020]: IBMMQ Exact Delivery 1772972945333
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e3021]':
+                      - generic [ref=e3022]: "Destination Type: queue"
+                      - generic [ref=e3023]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e3024]:
+                      - generic [ref=e3025]:
+                        - generic [ref=e3026]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Exact Pattern: exact-body-1772972945333" [ref=e3027]':
+                      - generic [ref=e3028]:
+                        - generic [ref=e3029]: Exact
+                        - generic [ref=e3030]: "Pattern: exact-body-1772972945333"
+                    - cell "0" [ref=e3031]
+                    - cell "Active" [ref=e3032]:
+                      - button "Active" [ref=e3033] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e3034]:
+                      - generic [ref=e3035]:
+                        - link "Edit" [ref=e3036] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6b93a424c5206b1de259/edit
+                        - button "Delete" [ref=e3037] [cursor=pointer]
+                  - 'row "IBMMQ Regex Delivery 1772972962663 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Regex Pattern: .*orderId-1772972962663-\\d+.* 0 Active Edit Delete" [ref=e3038]':
+                    - cell "IBMMQ Regex Delivery 1772972962663" [ref=e3039]:
+                      - generic [ref=e3040]: IBMMQ Regex Delivery 1772972962663
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e3041]':
+                      - generic [ref=e3042]: "Destination Type: queue"
+                      - generic [ref=e3043]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e3044]:
+                      - generic [ref=e3045]:
+                        - generic [ref=e3046]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Regex Pattern: .*orderId-1772972962663-\\d+.*" [ref=e3047]':
+                      - generic [ref=e3048]:
+                        - generic [ref=e3049]: Regex
+                        - generic [ref=e3050]: "Pattern: .*orderId-1772972962663-\\d+.*"
+                    - cell "0" [ref=e3051]
+                    - cell "Active" [ref=e3052]:
+                      - button "Active" [ref=e3053] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e3054]:
+                      - generic [ref=e3055]:
+                        - link "Edit" [ref=e3056] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6ba4a424c5206b1de25a/edit
+                        - button "Delete" [ref=e3057] [cursor=pointer]
+                  - 'row "IBMMQ Inactive Delivery 1772972981545 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: inactive-trigger-1772972981545 0 Active Edit Delete" [ref=e3058]':
+                    - cell "IBMMQ Inactive Delivery 1772972981545" [ref=e3059]:
+                      - generic [ref=e3060]: IBMMQ Inactive Delivery 1772972981545
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e3061]':
+                      - generic [ref=e3062]: "Destination Type: queue"
+                      - generic [ref=e3063]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e3064]:
+                      - generic [ref=e3065]:
+                        - generic [ref=e3066]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: inactive-trigger-1772972981545" [ref=e3067]':
+                      - generic [ref=e3068]:
+                        - generic [ref=e3069]: Contains
+                        - generic [ref=e3070]: "Pattern: inactive-trigger-1772972981545"
+                    - cell "0" [ref=e3071]
+                    - cell "Active" [ref=e3072]:
+                      - button "Active" [ref=e3073] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e3074]:
+                      - generic [ref=e3075]:
+                        - link "Edit" [ref=e3076] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6bb8a424c5206b1de25b/edit
+                        - button "Delete" [ref=e3077] [cursor=pointer]
+                  - 'row "IBMMQ Deactivate Delivery 1772973000523 Destination Type: queue Destination: DEV.QUEUE.1 queue DEV.QUEUE.2 0 Contains Pattern: deactivate-trigger-17729730005... 0 Active Edit Delete" [ref=e3078]':
+                    - cell "IBMMQ Deactivate Delivery 1772973000523" [ref=e3079]:
+                      - generic [ref=e3080]: IBMMQ Deactivate Delivery 1772973000523
+                    - 'cell "Destination Type: queue Destination: DEV.QUEUE.1" [ref=e3081]':
+                      - generic [ref=e3082]: "Destination Type: queue"
+                      - generic [ref=e3083]: "Destination: DEV.QUEUE.1"
+                    - cell "queue DEV.QUEUE.2 0" [ref=e3084]:
+                      - generic [ref=e3085]:
+                        - generic [ref=e3086]: queue
+                        - text: DEV.QUEUE.2
+                      - text: "0"
+                    - 'cell "Contains Pattern: deactivate-trigger-17729730005..." [ref=e3087]':
+                      - generic [ref=e3088]:
+                        - generic [ref=e3089]: Contains
+                        - generic [ref=e3090]: "Pattern: deactivate-trigger-17729730005..."
+                    - cell "0" [ref=e3091]
+                    - cell "Active" [ref=e3092]:
+                      - button "Active" [active] [ref=e3093] [cursor=pointer]
+                    - cell "Edit Delete" [ref=e3094]:
+                      - generic [ref=e3095]:
+                        - link "Edit" [ref=e3096] [cursor=pointer]:
+                          - /url: /ibmmq/stubs/69ad6bcaa424c5206b1de25c/edit
+                        - button "Delete" [ref=e3097] [cursor=pointer]
+  - contentinfo [ref=e3098]:
+    - paragraph [ref=e3100]: Service Virtualization Platform © 2026
+```

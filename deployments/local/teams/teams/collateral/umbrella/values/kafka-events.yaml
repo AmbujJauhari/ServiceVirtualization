@@ -1,0 +1,104 @@
+# =============================================================================
+# Collateral Team — Kafka Events Instance
+# =============================================================================
+# External: SSL://events.kafka.collateral.service-virtualization.local:443
+# Internal: PLAINTEXT://collateral-service-virtualization-kafka-events.collateral.svc.cluster.local:9092
+#
+# DNS required:
+#   events.kafka.collateral.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  kafka:
+    enabled: true
+
+    ui:
+      enabled: true
+      replicaCount: 1
+      image:
+        repository: "provectuslabs/kafka-ui"
+        tag: "latest"
+        pullPolicy: "IfNotPresent"
+      service:
+        type: "ClusterIP"
+        port: 8080
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "200m"
+      livenessProbe:
+        httpGet:
+          path: "/actuator/health"
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 30
+      readinessProbe:
+        httpGet:
+          path: "/actuator/health"
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10
+
+    instances:
+      events:
+        image:
+          repository: "confluentinc/cp-kafka"
+          tag: "7.4.0"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        clusterID: "Q2xUZXN0S2Fma2FDbHVzdA"
+
+        certificates:
+          enabled: true
+          secretName: "collateral-tls-secret"
+          secretVolumeName: "collateral-tls-secret"
+
+        externalHostname: "events.kafka.collateral.service-virtualization.local"
+        # NodePort that maps to the Istio gateway TLS port (443) on local K3s.
+        # AKS / production: remove this line (defaults to 443 via the load balancer).
+        externalPort: 30501
+
+        service:
+          type: "ClusterIP"
+
+        config:
+          initContainers: []
+          extraVolumes: []
+
+        extraEnvVars: {}
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 45
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 10
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+networking:
+  kafka:
+    instances:
+      events:
+        enabled: true
+        sniHost: "events.kafka.collateral.service-virtualization.local"
+        uiEnabled: true
+        uiPathPrefix: "/collateral/kafka-ui"

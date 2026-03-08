@@ -10,6 +10,7 @@ import java.util.Map;
 
 /**
  * Model class representing an ActiveMQ stub configuration.
+ * Supports multi-server ActiveMQ configuration.
  */
 @Document(collection = "activemq_stubs")
 public class ActiveMQStub {
@@ -30,6 +31,10 @@ public class ActiveMQStub {
     private String name;
     private String description;
     private String userId;
+    
+    // Multi-server support
+    private String serverName;         // Which ActiveMQ server to listen on
+    private String responseServerName; // Which ActiveMQ server to respond on (null = same as serverName)
     
     // Request configuration
     private String destinationType; // "queue" or "topic"
@@ -86,8 +91,6 @@ public class ActiveMQStub {
         this.responseContent = responseContent;
     }
     
-    // Getters and setters
-    
     public String getId() {
         return id;
     }
@@ -118,6 +121,22 @@ public class ActiveMQStub {
     
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+    
+    public String getServerName() {
+        return serverName;
+    }
+    
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+    
+    public String getResponseServerName() {
+        return responseServerName;
+    }
+    
+    public void setResponseServerName(String responseServerName) {
+        this.responseServerName = responseServerName;
     }
     
     public String getDestinationType() {

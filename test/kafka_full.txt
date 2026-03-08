@@ -1,0 +1,702 @@
+﻿---
+# Source: margin/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: margin-sa
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: margin
+    team: margin
+---
+# Source: margin/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: margin-sa-binding
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: margin
+    team: margin
+subjects:
+  - kind: ServiceAccount
+    name: margin-sa
+    namespace: margin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: namespace-admin
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: margin-service-virtualization-kafka-events
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: events
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: 9092
+      protocol: TCP
+      name: plaintext
+    - port: 9093
+      targetPort: 9093
+      protocol: TCP
+      name: controller
+    - port: 9094
+      targetPort: 9094
+      protocol: TCP
+      name: ssl
+  selector:
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: events
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: margin-service-virtualization-kafka-ui
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-ui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: kafka-ui
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: margin-service-virtualization-kafka-schema-registry
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-schema-registry
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: kafka-schema-registry
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: margin-service-virtualization-kafka-control-center
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-control-center
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9021
+      targetPort: 9021
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: kafka-control-center
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: margin-service-virtualization-kafka-events
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: events
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service-virtualization
+      app.kubernetes.io/instance: margin
+      app.kubernetes.io/component: kafka
+      app.kubernetes.io/instance-name: events
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: service-virtualization
+        app.kubernetes.io/instance: margin
+        app.kubernetes.io/component: kafka
+        app.kubernetes.io/instance-name: events
+    spec:
+      serviceAccountName: margin-sa
+      initContainers:
+      # -----------------------------------------------------------------------
+      # cert-converter: PEM ΓåÆ JKS using the same cp-kafka image (already pulled).
+      # The Confluent cp-kafka image includes both openssl and keytool, so no
+      # extra image is needed. This follows the Confluent-standard approach of
+      # placing JKS files + credential files in /etc/kafka/secrets.
+      # -----------------------------------------------------------------------
+      - name: cert-converter
+        image: "confluentinc/cp-kafka:7.4.0"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            mkdir -p /etc/kafka/secrets
+
+            echo "Converting PEM certificate to PKCS12..."
+            openssl pkcs12 -export \
+              -in /mnt/wildcard/tls.crt \
+              -inkey /mnt/wildcard/tls.key \
+              -out /tmp/kafka.p12 \
+              -passout pass:changeit \
+              -name kafka
+
+            echo "Converting PKCS12 to JKS keystore..."
+            keytool -importkeystore \
+              -srckeystore /tmp/kafka.p12 \
+              -srcstoretype PKCS12 \
+              -srcstorepass changeit \
+              -destkeystore /etc/kafka/secrets/kafka.keystore.jks \
+              -deststorepass changeit \
+              -noprompt
+
+            echo "Creating JKS truststore from server certificate..."
+            keytool -importcert \
+              -alias wildcard \
+              -file /mnt/wildcard/tls.crt \
+              -keystore /etc/kafka/secrets/kafka.truststore.jks \
+              -storepass changeit \
+              -noprompt
+
+            echo "Writing Confluent credential files..."
+            echo "changeit" > /etc/kafka/secrets/keystore_credentials
+            echo "changeit" > /etc/kafka/secrets/key_credentials
+            echo "changeit" > /etc/kafka/secrets/truststore_credentials
+
+            echo "Done. JKS files:"
+            ls -lh /etc/kafka/secrets/
+        volumeMounts:
+          - name: kafka-secrets-events
+            mountPath: /etc/kafka/secrets
+          - name: margin-tls-secret
+            mountPath: /mnt/wildcard
+            readOnly: true
+
+      containers:
+      - name: kafka
+        image: "confluentinc/cp-kafka:7.4.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9092
+          name: plaintext
+        - containerPort: 9093
+          name: controller
+        - containerPort: 9094
+          name: ssl
+        env:
+        # =======================================================================
+        # KRaft Mode (no Zookeeper)
+        # =======================================================================
+        # This broker also acts as controller ΓÇö single-node setup for service virt.
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_NODE_ID
+          value: "1"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@margin-service-virtualization-kafka-events:9093"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_LOG_DIRS
+          value: "/var/lib/kafka/data"
+        # KRaft cluster ID ΓÇö must be a valid 22-char base64-encoded UUID.
+        # Generate a new one with: kafka-storage.sh random-uuid
+        - name: CLUSTER_ID
+          value: "MkU3OEVBNTcwNTJENDM2Qk"
+        # =======================================================================
+        # Listener Configuration
+        # Internal: PLAINTEXT://9092  (backend ΓåÆ no TLS needed inside cluster)
+        # Controller: CONTROLLER://9093  (KRaft, always internal)
+        # External: SSL://9094 (Istio TLS PASSTHROUGH ΓåÆ pod:9094)
+        # =======================================================================
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092,SSL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          # SSL listener advertises the external hostname so clients that reconnect
+          # after bootstrap still route through Istio and not directly to the pod.
+          value: "PLAINTEXT://margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092,SSL://events.kafka.margin.service-virtualization.local:30501"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        # =======================================================================
+        # SSL Configuration (Confluent convention)
+        # Files are placed in /etc/kafka/secrets/ by the cert-converter init container.
+        # KAFKA_SSL_KEYSTORE_FILENAME / TRUSTSTORE_FILENAME are relative filenames;
+        # the Confluent entrypoint prepends /etc/kafka/secrets/ automatically.
+        # =======================================================================
+        - name: KAFKA_SSL_KEYSTORE_FILENAME
+          value: "kafka.keystore.jks"
+        - name: KAFKA_SSL_KEYSTORE_CREDENTIALS
+          value: "keystore_credentials"
+        - name: KAFKA_SSL_KEY_CREDENTIALS
+          value: "key_credentials"
+        - name: KAFKA_SSL_TRUSTSTORE_FILENAME
+          value: "kafka.truststore.jks"
+        - name: KAFKA_SSL_TRUSTSTORE_CREDENTIALS
+          value: "truststore_credentials"
+        - name: KAFKA_SSL_CLIENT_AUTH
+          value: "none"
+        # Disable hostname verification ΓÇö our wildcard cert (*.service-virtualization.local)
+        # does not cover multi-level hostnames like events.kafka.margin.service-virtualization.local.
+        - name: KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM
+          value: ""
+        # =======================================================================
+        # Single-node replication settings (service virtualization ΓÇö not HA)
+        # =======================================================================
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: "1"
+        # Speeds up consumer group rebalance in single-broker setup
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+
+        volumeMounts:
+        - name: kafka-secrets-events
+          mountPath: /etc/kafka/secrets
+          readOnly: false
+        livenessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 30
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 45
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        startupProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 30
+
+      volumes:
+      # emptyDir populated by the cert-converter init container.
+      # Contains: kafka.keystore.jks, kafka.truststore.jks, and three credential files.
+      - name: kafka-secrets-events
+        emptyDir: {}
+      # The team TLS secret ΓÇö read by the init container, not the main container.
+      - name: margin-tls-secret
+        secret:
+          secretName: margin-tls-secret
+          items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: margin-service-virtualization-kafka-ui
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service-virtualization
+      app.kubernetes.io/instance: margin
+      app.kubernetes.io/component: kafka-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: service-virtualization
+        app.kubernetes.io/instance: margin
+        app.kubernetes.io/component: kafka-ui
+    spec:
+      serviceAccountName: margin-sa
+
+      containers:
+      - name: kafka-ui
+        image: "provectuslabs/kafka-ui:latest"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: DYNAMIC_CONFIG_ENABLED
+          value: "true"
+        # Wire each Kafka instance to the UI using sequential integer indices.
+        # The UI connects via PLAINTEXT (port 9092) ΓÇö internal cluster access only.
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: "events"
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: "margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: margin-service-virtualization-kafka-schema-registry
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service-virtualization
+      app.kubernetes.io/instance: margin
+      app.kubernetes.io/component: kafka-schema-registry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: service-virtualization
+        app.kubernetes.io/instance: margin
+        app.kubernetes.io/component: kafka-schema-registry
+    spec:
+      serviceAccountName: margin-sa
+      containers:
+      - name: schema-registry
+        image: "confluentinc/cp-schema-registry:7.4.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: "margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092"
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http://0.0.0.0:8081"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL
+          value: "PLAINTEXT"
+        resources:
+          limits:
+            cpu: 500m
+            memory: 768Mi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /subjects
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 10
+---
+# Source: margin/charts/sv/templates/optional-services/kafka.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: margin-service-virtualization-kafka-control-center
+  namespace: margin
+  labels:
+    helm.sh/chart: sv-1.0.0
+    app.kubernetes.io/name: service-virtualization
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: kafka-control-center
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service-virtualization
+      app.kubernetes.io/instance: margin
+      app.kubernetes.io/component: kafka-control-center
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: service-virtualization
+        app.kubernetes.io/instance: margin
+        app.kubernetes.io/component: kafka-control-center
+    spec:
+      serviceAccountName: margin-sa
+      containers:
+      - name: control-center
+        image: "confluentinc/cp-enterprise-control-center:7.4.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9021
+          name: http
+        env:
+        - name: CONTROL_CENTER_BOOTSTRAP_SERVERS
+          value: "margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092"
+        - name: CONTROL_CENTER_SCHEMA_REGISTRY_URL
+          value: "http://margin-service-virtualization-kafka-schema-registry.margin.svc.cluster.local:8081"
+        - name: CONTROL_CENTER_REPLICATION_FACTOR
+          value: "1"
+        - name: CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS
+          value: "1"
+        - name: CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS
+          value: "1"
+        - name: CONFLUENT_METRICS_TOPIC_REPLICATION
+          value: "1"
+        - name: CONFLUENT_CONTROLCENTER_COMMAND_TOPIC_REPLICATION
+          value: "1"
+        - name: PORT
+          value: "9021"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 3Gi
+          requests:
+            cpu: 500m
+            memory: 2Gi
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9021
+          initialDelaySeconds: 180
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9021
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          failureThreshold: 10
+---
+# Source: margin/templates/kafka.yaml
+# TLS VirtualService ΓÇö Kafka events wire protocol (PASSTHROUGH)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: margin-kafka-events-vs
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: margin-1.0.0
+    app.kubernetes.io/name: margin-networking
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: virtualservice
+    service: kafka-events
+  annotations:
+    description: "Routes events.kafka.margin.service-virtualization.local:443 (TLS passthrough) to Kafka events pod port 9094"
+spec:
+  hosts:
+  - "events.kafka.margin.service-virtualization.local"
+  gateways:
+  - istio-ingress/shared-gateway
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "events.kafka.margin.service-virtualization.local"
+    route:
+    - destination:
+        host: margin-service-virtualization-kafka-events.margin.svc.cluster.local
+        port:
+          number: 9094
+---
+# Source: margin/templates/kafka.yaml
+# HTTP VirtualService ΓÇö Kafka UI console
+# Enable on one instance only ΓÇö the UI pod is shared across all Kafka instances.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: margin-kafka-ui-vs
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: margin-1.0.0
+    app.kubernetes.io/name: margin-networking
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: virtualservice
+    service: kafka-ui
+  annotations:
+    description: "Routes /margin/kafka-ui/* to Kafka UI console (port 8080)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/margin/kafka-ui"
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: margin-service-virtualization-kafka-ui.margin.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+---
+# Source: margin/templates/kafka.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: margin-kafka-schema-registry-vs
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: margin-1.0.0
+    app.kubernetes.io/name: margin-networking
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: virtualservice
+    service: kafka-schema-registry
+  annotations:
+    description: "Routes /margin/schema-registry/* to Schema Registry (port 8081)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/margin/schema-registry"
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: margin-service-virtualization-kafka-schema-registry.margin.svc.cluster.local
+        port:
+          number: 8081
+    timeout: 30s
+---
+# Source: margin/templates/kafka.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: margin-kafka-control-center-vs
+  namespace: margin
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: margin-1.0.0
+    app.kubernetes.io/name: margin-networking
+    app.kubernetes.io/instance: margin
+    app.kubernetes.io/component: virtualservice
+    service: kafka-control-center
+  annotations:
+    description: "Routes /margin/control-center/* to Confluent Control Center (port 9021)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/margin/control-center"
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: margin-service-virtualization-kafka-control-center.margin.svc.cluster.local
+        port:
+          number: 9021
+    timeout: 60s

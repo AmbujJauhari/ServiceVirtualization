@@ -1,0 +1,143 @@
+# =============================================================================
+# Margin Team — ActiveMQ Brokers
+# =============================================================================
+# Enables:
+#   sv.activemq.instances             — deploys broker1 and broker2
+#   networking.activemq.instances     — creates HTTP console VS for each
+#
+# ActiveMQ wire protocol (OpenWire) is cluster-internal only.
+# Only the admin console needs a VirtualService for browser access.
+#
+# Console URLs:
+#   http://<ingress-ip>/margin/activemq/broker1/
+#   http://<ingress-ip>/margin/activemq/broker2/
+#
+# Note: networking.activemq.instances keys must match sv.activemq.instances[].name values.
+# =============================================================================
+
+sv:
+  activemq:
+    enabled: false
+
+    instances:
+      - name: "broker1"
+        enabled: true
+
+        image:
+          repository: "rmohr/activemq"
+          tag: "5.15.9"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        service:
+          type: "ClusterIP"
+          port: 61616
+          adminPort: 8161
+
+        memory:
+          min: "512"
+          max: "2048"
+
+        persistence:
+          dataSize: ""
+          confSize: ""
+          storageClass: ""
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+        extraEnvVars: {}
+
+      - name: "broker2"
+        enabled: true
+
+        image:
+          repository: "rmohr/activemq"
+          tag: "5.15.9"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        config:
+          initContainers: []
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        service:
+          type: "ClusterIP"
+          port: 61617
+          adminPort: 8162
+
+        memory:
+          min: "512"
+          max: "2048"
+
+        persistence:
+          dataSize: ""
+          confSize: ""
+          storageClass: ""
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+        extraEnvVars: {}
+
+# =============================================================================
+# Networking: Istio resources for ActiveMQ consoles
+# Keys here must match the 'name' fields in sv.activemq.instances above.
+# =============================================================================
+
+networking:
+  activemq:
+    instances:
+      broker1:
+        enabled: true
+        consolePath: "/margin/activemq/broker1"
+      broker2:
+        enabled: true
+        consolePath: "/margin/activemq/broker2"

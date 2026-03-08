@@ -1,0 +1,282 @@
+{{- if and .Values.tibco .Values.tibco.enabled }}
+{{- /*
+Multi-Instance TIBCO EMS Support with SSL/TLS
+Each instance is deployed as a separate Deployment, Service, and ConfigMap.
+SSL strategy: per-instance. Set instance.certificates.enabled: true and provide
+an init container that writes tls.crt + tls.key into the emptyDir. The template
+generates dual listeners: tcp://7222 (internal) and ssl://7243 (Istio PASSTHROUGH).
+*/}}
+{{- if not .Values.tibco.instances }}
+{{- fail "tibco.instances is REQUIRED. Please define at least one TIBCO EMS instance" }}
+{{- end }}
+
+{{- if eq (len .Values.tibco.instances) 0 }}
+{{- fail "tibco.instances cannot be empty. Please define at least one TIBCO EMS instance" }}
+{{- end }}
+
+{{- range $name, $instance := .Values.tibco.instances }}
+{{- with $instance }}
+{{- if not (hasKey .config.default "enabled") }}
+{{- fail (printf "Instance '%s': config.default.enabled is REQUIRED. Set to true for auto-generated tibemsd.conf or false to supply config.custom.tibemsd inline" $name) }}
+{{- end }}
+{{- if not (kindIs "bool" .config.default.enabled) }}
+{{- fail (printf "Instance '%s': config.default.enabled must be a boolean (true or false)" $name) }}
+{{- end }}
+{{- if and (not .config.default.enabled) (not .config.custom.tibemsd) (not .config.configMapName) }}
+{{- fail (printf "Instance '%s': config.default.enabled is false so either config.custom.tibemsd (inline) or config.configMapName (pre-existing) is REQUIRED" $name) }}
+{{- end }}
+
+{{- if or .config.default.enabled .config.custom.tibemsd }}
+{{- $instanceSslEnabled := and .certificates .certificates.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-tibco-{{ $name | lower }}-config
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: tibco
+    app.kubernetes.io/instance-name: {{ $name | lower }}
+data:
+  tibemsd.conf: |
+{{- if .config.default.enabled }}
+    # =============================================================================
+    # TIBCO EMS Configuration: {{ $name }}
+    # Server: {{ .config.default.serverName }}
+    # SSL Enabled: {{ $instanceSslEnabled }}
+    # =============================================================================
+    server                  = {{ .config.default.serverName }}
+    # =============================================================================
+    # Data file paths — all written to the emptyDir volume at /data/tibco-ems.
+    # EMS writes these files to the current working directory by default, which is
+    # read-only in a container. Each path must be explicitly set to a writable dir.
+    # =============================================================================
+    store                   = /data/tibco-ems
+    users                   = /data/tibco-ems/users.conf
+    groups                  = /data/tibco-ems/groups.conf
+    topics                  = /data/tibco-ems/topics.conf
+    queues                  = /data/tibco-ems/queues.conf
+    acl_list                = /data/tibco-ems/acl.conf
+    factories               = /data/tibco-ems/factories.conf
+    routes                  = /data/tibco-ems/routes.conf
+    bridges                 = /data/tibco-ems/bridges.conf
+    transports              = /data/tibco-ems/transports.conf
+    tibrvcm                 = /data/tibco-ems/tibrvcm.conf
+    durables                = /data/tibco-ems/durables.conf
+    channels                = /data/tibco-ems/channels.conf
+    stores                  = /data/tibco-ems/stores.conf
+    {{- if .config.default.authEnabled }}
+    authorization           = enabled
+    {{- else }}
+    authorization           = disabled
+    {{- end }}
+    {{- if $instanceSslEnabled }}
+    # =============================================================================
+    # SSL/TLS Configuration
+    # Certificate files are written by the cert-provider init container from the
+    # tibco-tls-secret Kubernetes Secret into /etc/tibco/certs before EMS starts.
+    # =============================================================================
+    # PKCS12 bundle created by cert-provider init container from the TLS secret.
+    # EMS does not accept an empty ssl_password for PEM keys — PKCS12 with a
+    # known password is the reliable approach for containerised deployments.
+    # =============================================================================
+    ssl_server_identity     = /etc/tibco/certs/tls.crt
+    ssl_server_key          = /etc/tibco/certs/tls.key
+    ssl_password            = {{ required (printf "tibco instance '%s': certificates.password is required when certificates.enabled is true. For unencrypted keys use any non-empty string." $name) .certificates.password }}
+    ssl_server_ciphers      = ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
+    ssl_require_client_cert = disabled
+    
+    # Dual listeners:
+    #   tcp://7222  — internal cluster traffic (backend connects here without SSL)
+    #   ssl://7243  — external traffic via Istio TLS PASSTHROUGH on port 443
+    listen                  = tcp://0.0.0.0:7222
+    listen                  = ssl://0.0.0.0:7243
+    {{- else }}
+    # Plain TCP Listener (no SSL)
+    listen                  = tcp://0.0.0.0:7222
+    {{- end }}
+    
+    # HTTP health-check listener (separate directive from listen — only supports http://)
+    health_check_listen     = http://:7080
+{{- else }}
+{{ .config.custom.tibemsd | indent 4 }}
+{{- end }}{{/* config.default.enabled */}}
+{{- end }}{{/* config.default.enabled or config.custom.tibemsd */}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-tibco-{{ $name | lower }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: tibco
+    app.kubernetes.io/instance-name: {{ $name | lower }}
+spec:
+  type: {{ .service.type }}
+  ports:
+    - port: {{ .service.tcpPort }}
+      targetPort: 7222
+      protocol: TCP
+      name: tcp
+    {{- if and .certificates .certificates.enabled }}
+    - port: {{ .service.sslPort | default 7243 }}
+      targetPort: 7243
+      protocol: TCP
+      name: ssl
+    {{- end }}
+    - port: {{ .service.httpPort }}
+      targetPort: 7080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: tibco
+    app.kubernetes.io/instance-name: {{ $name | lower }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-tibco-{{ $name | lower }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: tibco
+    app.kubernetes.io/instance-name: {{ $name | lower }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: tibco
+      app.kubernetes.io/instance-name: {{ $name | lower }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: tibco
+        app.kubernetes.io/instance-name: {{ $name | lower }}
+      annotations:
+        checksum/config: {{ toYaml .config | sha256sum }}
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      
+      {{- with $.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- $instanceSslEnabled := and .certificates .certificates.enabled }}
+      {{- $certVolumeName := .certificates.volumeName | default (printf "tibco-pki-%s" ($name | lower)) }}
+
+      {{- if .config.initContainers }}
+      initContainers:
+        {{- toYaml .config.initContainers | nindent 6 }}
+      {{- end }}
+      
+      containers:
+      - name: tibco-ems
+        image: "{{ .image.repository }}:{{ .image.tag }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
+        # The kytay/tibco-ems image has no entrypoint — tibemsd must be invoked explicitly.
+        # To change EMS behaviour, provide a custom tibemsd.conf via config.configMapName
+        # (same pattern as IBM MQ's custom MQSC). The command is always fixed.
+        command: ["/opt/tibco/ems/10.2/bin/tibemsd", "-config", "/etc/tibco/tibemsd.conf"]
+        ports:
+        - containerPort: 7222
+          name: ems-tcp
+        {{- if $instanceSslEnabled }}
+        - containerPort: 7243
+          name: ems-ssl
+        {{- end }}
+        - containerPort: 7080
+          name: http
+        env:
+        {{- if .auth.username }}
+        - name: EMS_ADMIN_USER
+          value: {{ .auth.username | quote }}
+        {{- end }}
+        {{- if .auth.password }}
+        - name: EMS_ADMIN_PASSWORD
+          value: {{ .auth.password | quote }}
+        {{- end }}
+        {{- range $key, $value := .env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- with .resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: ems-data
+          mountPath: /data/tibco-ems
+        {{- if $instanceSslEnabled }}
+        - name: {{ $certVolumeName }}
+          mountPath: /etc/tibco/certs
+          readOnly: true
+        {{- end }}
+        - name: config
+          mountPath: /etc/tibco/tibemsd.conf
+          subPath: tibemsd.conf
+        {{- with .healthCheck }}
+        livenessProbe:
+          tcpSocket:
+            port: 7080
+          initialDelaySeconds: {{ .livenessInitialDelay }}
+          timeoutSeconds: {{ .livenessTimeout }}
+          periodSeconds: {{ .livenessPeriod }}
+          failureThreshold: {{ .livenessFailureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: 7080
+          initialDelaySeconds: {{ .readinessInitialDelay }}
+          timeoutSeconds: {{ .readinessTimeout }}
+          periodSeconds: {{ .readinessPeriod }}
+          failureThreshold: {{ .readinessFailureThreshold }}
+        startupProbe:
+          tcpSocket:
+            port: 7080
+          initialDelaySeconds: {{ .startupInitialDelay }}
+          timeoutSeconds: {{ .startupTimeout }}
+          periodSeconds: {{ .startupPeriod }}
+          failureThreshold: {{ .startupFailureThreshold }}
+        {{- end }}
+      volumes:
+      # Writable store for EMS runtime data files (users.conf, groups.conf, etc.).
+      # Data is ephemeral — lost on pod restart. EMS recreates defaults on each start.
+      - name: ems-data
+        emptyDir: {}
+      {{- if $instanceSslEnabled }}
+      # emptyDir populated by the cert-provider init container.
+      # The init container copies tls.crt + tls.key from the tibco-tls-secret
+      # Kubernetes Secret into this volume before TIBCO EMS starts.
+      - name: {{ $certVolumeName }}
+        emptyDir: {}
+      {{- end }}
+      {{- if or .config.default.enabled .config.custom.tibemsd }}
+      - name: config
+        configMap:
+          name: {{ include "service-virtualization.fullname" $ }}-tibco-{{ $name | lower }}-config
+      {{- else if .config.configMapName }}
+      - name: config
+        configMap:
+          name: {{ .config.configMapName }}
+      {{- end }}
+      {{- with .config.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+{{- end }}{{/* with $instance */}}
+{{- end }}{{/* range $name, $instance */}}
+{{- end }}{{/* if tibco.enabled */}}

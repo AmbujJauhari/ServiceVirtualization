@@ -1,6 +1,7 @@
 package com.service.virtualization.kafka.controller;
 
 import com.service.virtualization.kafka.KafkaStubService;
+import com.service.virtualization.kafka.config.KafkaServerRegistry;
 import com.service.virtualization.kafka.dto.KafkaStubDTO;
 import com.service.virtualization.kafka.mapper.KafkaStubMapper;
 import com.service.virtualization.kafka.model.KafkaStub;
@@ -30,11 +31,15 @@ public class KafkaStubController {
 
     private final KafkaStubService kafkaStubService;
     private final KafkaStubMapper kafkaStubMapper;
+    private final KafkaServerRegistry serverRegistry;
 
     @Autowired
-    public KafkaStubController(KafkaStubService kafkaStubService, KafkaStubMapper kafkaStubMapper) {
+    public KafkaStubController(KafkaStubService kafkaStubService, 
+                               KafkaStubMapper kafkaStubMapper,
+                               KafkaServerRegistry serverRegistry) {
         this.kafkaStubService = kafkaStubService;
         this.kafkaStubMapper = kafkaStubMapper;
+        this.serverRegistry = serverRegistry;
     }
 
     /**
@@ -148,5 +153,15 @@ public class KafkaStubController {
 
         // Convert to DTO and return
         return ResponseEntity.ok(kafkaStubMapper.toDTO(updatedStub));
+    }
+
+    /**
+     * Get list of available Kafka clusters (for multi-cluster support)
+     */
+    @GetMapping("/clusters")
+    public ResponseEntity<List<String>> getAvailableClusters() {
+        logger.debug("Fetching available Kafka clusters");
+        List<String> clusters = serverRegistry.getAvailableClusterNames();
+        return ResponseEntity.ok(clusters);
     }
 } 

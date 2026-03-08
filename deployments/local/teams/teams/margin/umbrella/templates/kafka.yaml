@@ -1,0 +1,130 @@
+{{/*
+=============================================================================
+Kafka Istio Networking — Margin Team
+=============================================================================
+For each enabled Kafka instance creates ONE or TWO resources:
+  1. TLS VirtualService — Kafka wire protocol (clients → port 443 → pod:9094)
+     SNI must match externalHostname in the product chart's Kafka values.
+  2. HTTP VirtualService — Kafka UI console (optional, uiEnabled=true)
+     Enable on only ONE instance — the UI pod is shared across all instances.
+
+Internal backend connections use PLAINTEXT on port 9092 and need no VS.
+
+Service names:
+  Kafka broker : {{ appFullname }}-kafka-{{ instanceName }}
+  Kafka UI     : {{ appFullname }}-kafka-ui
+  where appFullname = {{ .Release.Name }}-service-virtualization
+=============================================================================
+*/}}
+{{- if and .Values.networking.kafka .Values.networking.kafka.instances }}
+{{- range $name, $instance := .Values.networking.kafka.instances }}
+{{- if $instance.enabled }}
+---
+# TLS VirtualService — Kafka {{ $name }} wire protocol (PASSTHROUGH)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-kafka-{{ $name }}-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: kafka-{{ $name }}
+  annotations:
+    description: "Routes {{ $instance.sniHost }}:443 (TLS passthrough) to Kafka {{ $name }} pod port 9094"
+spec:
+  hosts:
+  - {{ required (printf "networking.kafka.instances.%s.sniHost must be set when enabled=true" $name) $instance.sniHost | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - {{ $instance.sniHost | quote }}
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-kafka-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 9094
+{{- /* kafka-ui (provectuslabs) VS removed — routing now handled by Control Center VS below */}}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+=============================================================================
+Schema Registry — HTTP VirtualService
+Routes /schema-registry/* to the Schema Registry pod (port 8081).
+URI rewrite strips the path prefix before forwarding.
+=============================================================================
+*/}}
+{{- if and .Values.networking.kafka .Values.networking.kafka.schemaRegistry .Values.networking.kafka.schemaRegistry.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-kafka-schema-registry-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: kafka-schema-registry
+  annotations:
+    description: "Routes {{ .Values.networking.kafka.schemaRegistry.pathPrefix }}/* to Schema Registry (port 8081)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - match:
+    - uri:
+        prefix: {{ required "networking.kafka.schemaRegistry.pathPrefix must be set" .Values.networking.kafka.schemaRegistry.pathPrefix | quote }}
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-kafka-schema-registry.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 8081
+    timeout: 30s
+{{- end }}
+
+{{/*
+=============================================================================
+Control Center — HTTP VirtualService (host-based routing)
+Control Center is a SPA that loads assets via absolute paths (e.g. /static/js/...).
+Path-based routing with URI rewrite breaks asset loading, so we use a dedicated
+hostname instead. No URI rewrite is needed — all requests pass straight through.
+
+DNS required (Windows hosts / Acrylic):
+  control-center.margin.service-virtualization.local → <vm-bridged-ip>
+=============================================================================
+*/}}
+{{- if and .Values.networking.kafka .Values.networking.kafka.controlCenter .Values.networking.kafka.controlCenter.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-kafka-control-center-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: kafka-control-center
+  annotations:
+    description: "Routes {{ required "networking.kafka.controlCenter.hostname must be set" .Values.networking.kafka.controlCenter.hostname }}:80 to Confluent Control Center (port 9021)"
+spec:
+  hosts:
+  - {{ required "networking.kafka.controlCenter.hostname must be set" .Values.networking.kafka.controlCenter.hostname | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-kafka-control-center.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 9021
+    timeout: 60s
+{{- end }}

@@ -1,22 +1,28 @@
 package com.service.virtualization.ibmmq.service;
 
+import com.service.virtualization.ibmmq.config.IbmMqConnectionFactoryRegistry;
 import com.service.virtualization.ibmmq.model.IBMMQStub;
+import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Service for IBM MQ response processing
+ * Service for IBM MQ response processing.
+ * Supports multi-server IBM MQ configuration.
  * Only active when ibmmq-disabled profile is NOT active
  */
 @Service
@@ -25,15 +31,16 @@ public class IBMMQResponseService {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQResponseService.class);
 
     @Autowired
-    @Qualifier("ibmmqQueueJmsTemplate")
-    private JmsTemplate queueJmsTemplate;
+    private IbmMqConnectionFactoryRegistry connectionFactoryRegistry;
 
     @Autowired
-    @Qualifier("ibmmqTopicJmsTemplate")
-    private JmsTemplate topicJmsTemplate;
+    private IBMMQWebhookService ibmmqWebhookService;
 
-    @Autowired
-    private IBMMQWebhookService IBMMQWebhookService;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+
+    // Cache of JMS templates per server
+    private final Map<String, JmsTemplate> queueTemplates = new ConcurrentHashMap<>();
+    private final Map<String, JmsTemplate> topicTemplates = new ConcurrentHashMap<>();
 
     /**
      * Process and send a response for a matched message.
@@ -50,7 +57,13 @@ public class IBMMQResponseService {
             // Process the response based on type
             final Map<String, String> headers = extractHeaders(message);
 
-            sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
+            if (stub.getLatency() != null && stub.getLatency() > 0) {
+                scheduler.schedule(
+                    () -> sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers),
+                    stub.getLatency(), TimeUnit.MILLISECONDS);
+            } else {
+                sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
+            }
         } catch (Exception e) {
             logger.error("Error processing response for stub {}: {}",
                     stub.getId(), e.getMessage(), e);
@@ -69,17 +82,20 @@ public class IBMMQResponseService {
     private void sendResponse(IBMMQStub stub, String destination, String destinationType,
                               String originalMessageContent, Map<String, String> headers) {
         try {
-            // Determine which JmsTemplate to use based on destination type
+            // Determine which JmsTemplate to use based on destination type and server
             boolean isTopic = "topic".equalsIgnoreCase(destinationType);
-            JmsTemplate jmsTemplate = isTopic ? topicJmsTemplate : queueJmsTemplate;
+            String responseServerName = stub.getEffectiveResponseServerName();
+            
+            JmsTemplate jmsTemplate = getJmsTemplate(responseServerName, isTopic);
 
-            logger.debug("Sending response to {} {} for stub {}",
-                    isTopic ? "topic" : "queue", destination, stub.getId());
+            logger.debug("Sending response to {} {} on server '{}' for stub {}",
+                    isTopic ? "topic" : "queue", destination, 
+                    responseServerName != null ? responseServerName : "default", stub.getId());
 
             // Check if we should get content from webhook
             String responseContent;
             if (stub.getWebhookUrl() != null && !stub.getWebhookUrl().trim().isEmpty()) {
-                responseContent = IBMMQWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
+                responseContent = ibmmqWebhookService.getWebhookResponse(stub, originalMessageContent, headers);
             } else {
                 responseContent = stub.getResponseContent();
             }
@@ -152,5 +168,29 @@ public class IBMMQResponseService {
         }
 
         return headers;
+    }
+
+    /**
+     * Gets or creates a JmsTemplate for the specified server and destination type.
+     * 
+     * @param serverName The server name (null for default)
+     * @param isTopic True for topic, false for queue
+     * @return JmsTemplate for the server
+     */
+    private JmsTemplate getJmsTemplate(String serverName, boolean isTopic) {
+        Map<String, JmsTemplate> templateCache = isTopic ? topicTemplates : queueTemplates;
+
+        String cacheKey = serverName != null && !serverName.trim().isEmpty() ? serverName : "__default__";
+
+        return templateCache.computeIfAbsent(cacheKey, name -> {
+            ConnectionFactory connectionFactory = "__default__".equals(name)
+                    ? connectionFactoryRegistry.getDefaultConnectionFactory()
+                    : connectionFactoryRegistry.getConnectionFactory(name);
+            JmsTemplate template = new JmsTemplate();
+            template.setConnectionFactory(connectionFactory);
+            template.setPubSubDomain(isTopic);
+            logger.debug("Created {} JmsTemplate for server '{}'", isTopic ? "topic" : "queue", name);
+            return template;
+        });
     }
 } 

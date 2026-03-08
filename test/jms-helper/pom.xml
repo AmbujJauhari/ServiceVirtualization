@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.service.virtualization</groupId>
+    <artifactId>jms-helper</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>JMS Helper</name>
+    <description>
+        Standalone Spring Boot service that exposes HTTP endpoints for publishing and
+        consuming JMS messages over IBM MQ and Tibco EMS.  Used exclusively by the
+        Playwright E2E tests to drive the full stub round-trip without polluting the
+        main backend with test-only code.
+    </description>
+
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- HTTP layer only — no JMS auto-configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- IBM MQ Jakarta JMS client -->
+        <dependency>
+            <groupId>com.ibm.mq</groupId>
+            <artifactId>com.ibm.mq.jakarta.client</artifactId>
+            <version>9.3.4.1</version>
+        </dependency>
+
+        <!-- Jakarta JMS API (brought in transitively by ibm client, explicit for clarity) -->
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+        <!--
+            Tibco EMS 8.6 client — uses the legacy javax.jms API.
+            We call it directly without any Spring JMS wrapper, so the javax/jakarta
+            split does not matter here.
+        -->
+        <dependency>
+            <groupId>com.tibco</groupId>
+            <artifactId>tibjms</artifactId>
+            <version>8.6</version>
+        </dependency>
+
+        <!-- javax.jms API required by Tibco EMS 8.6 client -->
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <!-- Tibco EMS client JAR hosted here (same as backend) -->
+        <repository>
+            <id>tibjms</id>
+            <url>http://repository.openmindonline.it/</url>
+        </repository>
+    </repositories>
+</project>

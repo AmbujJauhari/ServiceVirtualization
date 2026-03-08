@@ -1,69 +1,78 @@
 package com.service.virtualization.health;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.service.virtualization.activemq.config.ActiveMqServerConfig;
+import com.service.virtualization.activemq.config.ActiveMqServerRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * Health indicator for ActiveMQ
+ * Health indicator for ActiveMQ.
+ * Checks all configured servers from the registry.
  */
 @Component("activemq")
+@Profile("!activemq-disabled")
 public class ActiveMQHealthIndicator implements HealthIndicator {
 
-    @Value("${activemq.broker-url:localhost}")
-    private String brokerUrl;
-    
-    @Value("${activemq.port:61616}")
-    private int port;
-    
-    @Value("${activemq.connection-timeout:2000}")
-    private int connectionTimeout;
+    private static final int CONNECTION_TIMEOUT_MS = 2000;
+
+    @Autowired
+    private ActiveMqServerRegistry serverRegistry;
 
     @Override
     public Health health() {
-        try {
-            // Extract host from broker URL if needed
-            String host = brokerUrl;
-            if (brokerUrl.contains("://")) {
-                host = brokerUrl.split("://")[1].split(":")[0];
-            }
-            
-            boolean isUp = checkConnection(host, port);
-            
-            if (isUp) {
-                return Health.up()
-                        .withDetail("broker", brokerUrl)
-                        .withDetail("port", port)
-                        .build();
-            } else {
-                return Health.down()
-                        .withDetail("broker", brokerUrl)
-                        .withDetail("port", port)
-                        .withDetail("error", "Cannot connect to ActiveMQ")
-                        .build();
-            }
-        } catch (Exception e) {
-            return Health.down()
-                    .withDetail("broker", brokerUrl)
-                    .withDetail("port", port)
-                    .withDetail("error", e.getMessage())
+        Map<String, ActiveMqServerConfig> servers = serverRegistry.getAllServers();
+
+        if (servers.isEmpty()) {
+            return Health.unknown()
+                    .withDetail("info", "No ActiveMQ servers configured (activemq.registry.*)")
                     .build();
         }
+
+        Map<String, String> statuses = new LinkedHashMap<>();
+        boolean anyUp = false;
+
+        for (Map.Entry<String, ActiveMqServerConfig> entry : servers.entrySet()) {
+            String name = entry.getKey();
+            ActiveMqServerConfig cfg = entry.getValue();
+            String[] hostPort = parseHostPort(cfg.getBrokerUrl());
+            boolean up = hostPort != null && checkConnection(hostPort[0], Integer.parseInt(hostPort[1]));
+            statuses.put(name, (up ? "UP" : "DOWN") + " (" + cfg.getBrokerUrl() + ")");
+            if (up) anyUp = true;
+        }
+
+        Health.Builder builder = anyUp ? Health.up() : Health.down();
+        statuses.forEach(builder::withDetail);
+        return builder.build();
     }
-    
+
+    /** Parses host and port from a broker URL like tcp://host:61616 or ssl://host:61617 */
+    private String[] parseHostPort(String url) {
+        if (url == null) return null;
+        try {
+            String withoutScheme = url.replaceFirst("^[a-z]+://", "");
+            // Strip any path or query components
+            withoutScheme = withoutScheme.split("[/?]")[0];
+            String[] parts = withoutScheme.split(":");
+            if (parts.length == 2) return parts;
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
     private boolean checkConnection(String host, int port) {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), connectionTimeout);
+            socket.connect(new InetSocketAddress(host, port), CONNECTION_TIMEOUT_MS);
             return socket.isConnected();
-        } catch (SocketTimeoutException e) {
-            return false;
         } catch (Exception e) {
             return false;
         }
     }
-} 
+}

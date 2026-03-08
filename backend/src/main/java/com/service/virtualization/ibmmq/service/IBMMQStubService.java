@@ -137,7 +137,9 @@ public class IBMMQStubService {
                 .map(existingStub -> {
                     existingStub.setStatus(status);
                     existingStub.setUpdatedAt(LocalDateTime.now());
-                    return ibmMQStubRepository.save(existingStub);
+                    IBMMQStub updatedStub = ibmMQStubRepository.save(existingStub);
+                    updateStubListener(updatedStub);
+                    return updatedStub;
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("IBMMQStub not found with id " + id));
     }

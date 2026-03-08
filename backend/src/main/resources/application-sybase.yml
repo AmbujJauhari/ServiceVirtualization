@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Sybase profile — activated via SPRING_PROFILES_ACTIVE=sybase
+#
+# The client is responsible for creating the database tables using the DDL
+# scripts in db/migration/sybase/.  Flyway is therefore NOT enabled here.
+#
+# This file only exists to:
+#   1. Disable MongoDB auto-configuration so the app does not attempt to open
+#      a MongoDB connection on startup (which would fail with no Mongo present).
+#   2. Disable the MongoDB health indicator.
+# ─────────────────────────────────────────────────────────────────────────────
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+
+  flyway:
+    enabled: false
+
+management:
+  health:
+    mongo:
+      enabled: false

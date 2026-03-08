@@ -10,6 +10,11 @@ public record KafkaStubDTO(
     String name,
     String description,
     String userId,
+
+    // Multi-server support
+    String serverName,
+    String responseServerName,
+
     String requestTopic,
     String responseTopic,
     

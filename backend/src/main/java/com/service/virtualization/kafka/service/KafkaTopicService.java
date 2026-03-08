@@ -11,7 +11,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -30,6 +32,19 @@ public class KafkaTopicService {
     @Autowired
     public KafkaTopicService(KafkaAdmin kafkaAdmin) {
         this.kafkaAdmin = kafkaAdmin;
+    }
+
+    /**
+     * List all available Kafka topics.
+     */
+    public List<String> listTopics() {
+        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+            return new ArrayList<>(adminClient.listTopics().names().get());
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Failed to list Kafka topics", e);
+            Thread.currentThread().interrupt();
+            return List.of();
+        }
     }
 
     /**

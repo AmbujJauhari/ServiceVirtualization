@@ -9,6 +9,7 @@ import {
   ContentMatchType
 } from '../../../api/kafkaApi';
 import TextEditor from '../../../components/common/TextEditor';
+import config from '../../../config/configLoader';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -43,6 +44,9 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'direct' | 'callback'>("direct");
+  
+  // Cluster list state for multi-cluster support
+  const [clusters, setClusters] = useState<string[]>([]);
 
   // Use RTK Query hooks
   const { data: existingStub, isLoading } = useGetKafkaStubByIdQuery(id || '', { 
@@ -63,6 +67,14 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
   const [responseSchemaValidationError, setResponseSchemaValidationError] = useState('');
 
   const [tagInput, setTagInput] = useState('');
+  
+  // Fetch available clusters for multi-cluster support
+  useEffect(() => {
+    fetch('/api/kafka/stubs/clusters')
+      .then(res => res.json())
+      .then(data => setClusters(data))
+      .catch(err => console.error('Error fetching Kafka clusters:', err));
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -75,11 +87,13 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     contentMatchType: ContentMatchType.NONE,
     contentPattern: '',
     caseSensitive: false,
+    serverName: '',
     responseTopic: '',
     responseContentFormat: 'JSON' as ContentFormat,
     responseKey: '',
     responseType: 'direct' as 'direct' | 'callback',
     responseContent: '',
+    responseServerName: '',
     // Schema Registry for response validation
     useResponseSchemaRegistry: false,
     responseSchemaId: '',
@@ -220,7 +234,7 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
   const fetchAvailableResponseSchemas = async () => {
     setIsLoadingResponseSchemas(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/schemas`);
+      const response = await fetch(`${config.API_URL}/kafka/schemas`);
       if (response.ok) {
         const schemas = await response.json();
         setAvailableResponseSchemas(schemas);
@@ -236,7 +250,7 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
 
   const fetchResponseSchemaVersions = async (subject: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/schemas/${subject}/versions`);
+      const response = await fetch(`${config.API_URL}/kafka/schemas/${subject}/versions`);
       if (response.ok) {
         const versions = await response.json();
         setResponseSchemaVersions(versions);
@@ -267,7 +281,7 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
         headers['schema-version'] = formData.responseSchemaVersion;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/kafka/validate-schema`, {
+      const response = await fetch(`${config.API_URL}/kafka/validate-schema`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -494,6 +508,30 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                   />
                 </div>
                 
+                {/* Cluster Selection for Multi-Cluster Support */}
+                {clusters.length > 0 && (
+                  <div>
+                    <label htmlFor="serverName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Kafka Cluster (Optional)
+                    </label>
+                    <select
+                      id="serverName"
+                      name="serverName"
+                      value={formData.serverName || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">-- Default Cluster --</option>
+                      {clusters.map(cluster => (
+                        <option key={cluster} value={cluster}>{cluster}</option>
+                      ))}
+                    </select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Leave blank for single-cluster mode
+                    </p>
+                  </div>
+                )}
+                
                 <div>
                   <label htmlFor="requestContentFormat" className="block text-sm font-medium text-gray-700 mb-1">
                     Content Format
@@ -692,6 +730,30 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
                       Leave empty to use the request topic
                     </p>
                   </div>
+                  
+                  {/* Response Cluster Selection for Multi-Cluster Support */}
+                  {clusters.length > 0 && (
+                    <div>
+                      <label htmlFor="responseServerName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Response Cluster (Optional)
+                      </label>
+                      <select
+                        id="responseServerName"
+                        name="responseServerName"
+                        value={formData.responseServerName || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">-- Same as Request Cluster --</option>
+                        {clusters.map(cluster => (
+                          <option key={cluster} value={cluster}>{cluster}</option>
+                        ))}
+                      </select>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Leave blank to respond on same cluster
+                      </p>
+                    </div>
+                  )}
                   
                   <div>
                     <label htmlFor="responseKey" className="block text-sm font-medium text-gray-700 mb-1">

@@ -1,0 +1,70 @@
+# =============================================================================
+# Collateral Team — ActiveMQ Broker
+# =============================================================================
+# Console URLs:
+#   http://<ingress-ip>/collateral/activemq/broker1/
+# =============================================================================
+
+sv:
+  activemq:
+    enabled: true
+
+    instances:
+      - name: "broker1"
+        enabled: true
+
+        image:
+          repository: "rmohr/activemq"
+          tag: "5.15.9"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        service:
+          type: "ClusterIP"
+          port: 61616
+          adminPort: 8161
+
+        memory:
+          min: "512"
+          max: "2048"
+
+        persistence:
+          dataSize: ""
+          confSize: ""
+          storageClass: ""
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+        extraEnvVars: {}
+
+networking:
+  activemq:
+    instances:
+      broker1:
+        enabled: true
+        consolePath: "/collateral/activemq/broker1"

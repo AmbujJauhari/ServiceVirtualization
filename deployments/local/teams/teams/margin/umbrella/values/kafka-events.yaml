@@ -1,0 +1,148 @@
+# =============================================================================
+# Margin Team — Kafka Events Instance + Schema Registry + Control Center
+# =============================================================================
+# Enables:
+#   sv.kafka.instances.events         — deploys Kafka Events broker
+#   sv.kafka.schemaRegistry           — deploys Confluent Schema Registry
+#   sv.kafka.controlCenter            — deploys Confluent Control Center UI
+#   networking.kafka.instances.events — creates TLS VirtualService for Kafka wire protocol
+#   networking.kafka.schemaRegistry   — HTTP VS at /margin/schema-registry/*
+#   networking.kafka.controlCenter    — HTTP VS (host-based) for Control Center SPA
+#
+# External clients connect via: SSL://events.kafka.margin.service-virtualization.local:443
+# Internal backend connects via: PLAINTEXT://margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092
+# Schema Registry:  http://margin-service-virtualization-kafka-schema-registry.margin.svc.cluster.local:8081
+# Control Center UI: http://control-center.margin.service-virtualization.local:30099
+#
+# DNS required:
+#   events.kafka.margin.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  kafka:
+    enabled: true
+
+    instances:
+      events:
+        image:
+          repository: "confluentinc/cp-kafka"
+          tag: "7.4.0"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        # KRaft cluster ID — uniquely identifies this Kafka cluster.
+        # Generate a new one with: kafka-storage.sh random-uuid
+        clusterID: "MkU3OEVBNTcwNTJENDM2Qk"
+
+        # Certificate strategy: cert-converter init container converts
+        # the wildcard PEM cert from margin-tls-secret into JKS format.
+        certificates:
+          enabled: true
+          secretName: "margin-tls-secret"
+          secretVolumeName: "margin-tls-secret"
+
+        # Must match networking.kafka.instances.events.sniHost below.
+        externalHostname: "events.kafka.margin.service-virtualization.local"
+        # NodePort that maps to the Istio gateway TLS port (443) on local K3s.
+        # Clients reconnect to externalHostname:externalPort after bootstrap metadata.
+        # AKS / production: remove this line (defaults to 443 via the load balancer).
+        externalPort: 30501
+
+        service:
+          type: "ClusterIP"
+
+        config:
+          initContainers: []
+          extraVolumes: []
+
+        extraEnvVars: {}
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 45
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 10
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+    # ---------------------------------------------------------------------------
+    # Confluent Schema Registry — disabled to free RAM for backend + UI
+    # Re-enable when testing schema validation features.
+    # ---------------------------------------------------------------------------
+    schemaRegistry:
+      enabled: false
+      image:
+        repository: "confluentinc/cp-schema-registry"
+        tag: "7.4.0"
+        pullPolicy: "IfNotPresent"
+      bootstrapServers: "margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092"
+      service:
+        type: "ClusterIP"
+        port: 8081
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "200m"
+        limits:
+          memory: "768Mi"
+          cpu: "500m"
+
+    # ---------------------------------------------------------------------------
+    # Confluent Control Center — disabled to free RAM for backend + UI
+    # Re-enable when Kafka management UI is needed (~3Gi RAM required).
+    # ---------------------------------------------------------------------------
+    controlCenter:
+      enabled: false
+      image:
+        repository: "confluentinc/cp-enterprise-control-center"
+        tag: "7.4.0"
+        pullPolicy: "IfNotPresent"
+      bootstrapServers: "margin-service-virtualization-kafka-events.margin.svc.cluster.local:9092"
+      service:
+        type: "ClusterIP"
+        port: 9021
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "500m"
+        limits:
+          memory: "3Gi"
+          cpu: "1000m"
+
+# =============================================================================
+# Networking: Istio resources for Kafka Events + Kafka UI
+# =============================================================================
+networking:
+  kafka:
+    instances:
+      events:
+        enabled: true
+        # Must match sv.kafka.instances.events.externalHostname above
+        sniHost: "events.kafka.margin.service-virtualization.local"
+
+    # ---------------------------------------------------------------------------
+    # Schema Registry HTTP VirtualService
+    # Accessible at: http://<vm-ip>:30099/margin/schema-registry
+    # ---------------------------------------------------------------------------
+    schemaRegistry:
+      enabled: false
+      pathPrefix: "/margin/schema-registry"
+
+    controlCenter:
+      enabled: false
+      hostname: "control-center.margin.service-virtualization.local"

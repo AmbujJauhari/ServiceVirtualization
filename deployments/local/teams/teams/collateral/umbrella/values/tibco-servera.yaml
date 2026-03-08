@@ -1,0 +1,106 @@
+# =============================================================================
+# Collateral Team — Tibco EMS Server A
+# =============================================================================
+# External: ssl://servera.tibco.collateral.service-virtualization.local:443
+# Internal: tcp://collateral-service-virtualization-tibco-serverA.collateral.svc.cluster.local:7222
+#
+# DNS required:
+#   servera.tibco.collateral.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  tibco:
+    enabled: true
+    instances:
+      serverA:
+        image:
+          repository: "kytay/tibco-ems"
+          tag: "latest"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        certificates:
+          enabled: true
+          password: "changeit"
+
+        config:
+          default:
+            enabled: true
+            serverName: "COLLATERAL-EMS-A"
+            authEnabled: false
+            allowDynamicDestinations: true
+          configMapName: ""
+          initContainers:
+            - name: cert-provider
+              image: alpine/openssl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Creating PKCS12 bundle for TIBCO EMS..."
+                  openssl pkcs12 -export \
+                    -in /mnt/wildcard/tls.crt \
+                    -inkey /mnt/wildcard/tls.key \
+                    -out /etc/tibco/certs/server.p12 \
+                    -passout pass:changeit
+                  chmod 640 /etc/tibco/certs/server.p12
+                  echo "Done."
+              volumeMounts:
+                - name: tibco-pki-servera
+                  mountPath: /etc/tibco/certs
+                - name: collateral-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+          volumes:
+            - name: collateral-tls-secret
+              secret:
+                secretName: collateral-tls-secret
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+
+        auth:
+          username: "admin"
+          password: "admin"
+
+        env: {}
+
+        service:
+          type: "ClusterIP"
+          tcpPort: 7222
+          sslPort: 7243
+          httpPort: 7080
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 30
+          startupTimeout: 10
+          startupPeriod: 15
+          startupFailureThreshold: 20
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+networking:
+  tibco:
+    instances:
+      serverA:
+        enabled: true
+        sniHost: "servera.tibco.collateral.service-virtualization.local"

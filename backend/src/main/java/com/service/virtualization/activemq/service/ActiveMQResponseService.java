@@ -1,25 +1,28 @@
 package com.service.virtualization.activemq.service;
 
+import com.service.virtualization.activemq.config.ActiveMqConnectionFactoryRegistry;
 import com.service.virtualization.activemq.model.ActiveMQStub;
+import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Service for processing ActiveMQ response generation
+ * Service for processing ActiveMQ response generation.
+ * Supports multi-server ActiveMQ configuration.
  * Only active when activemq-disabled profile is NOT active
  */
 @Service
@@ -28,17 +31,16 @@ public class ActiveMQResponseService {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQResponseService.class);
 
     @Autowired
-    @Qualifier("activemqQueueJmsTemplate")
-    private JmsTemplate queueJmsTemplate;
-
-    @Autowired
-    @Qualifier("activemqTopicJmsTemplate")
-    private JmsTemplate topicJmsTemplate;
+    private ActiveMqConnectionFactoryRegistry connectionFactoryRegistry;
 
     @Autowired
     private ActiveMQWebhookService activeMQWebhookService;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    
+    // Cache of JMS templates per server
+    private final Map<String, JmsTemplate> queueTemplates = new ConcurrentHashMap<>();
+    private final Map<String, JmsTemplate> topicTemplates = new ConcurrentHashMap<>();
 
     /**
      * Process and send a response for a matched message.
@@ -52,31 +54,16 @@ public class ActiveMQResponseService {
             String responseDestination = stub.getResponseDestination();
             String responseDestinationType = stub.getResponseType();
 
-            // If no response destination is specified, use the JMSReplyTo if available
-            if (responseDestination == null || responseDestination.trim().isEmpty()) {
-                if (message.getJMSReplyTo() != null) {
-                    responseDestination = message.getJMSReplyTo().toString();
-                    // Try to determine destination type from JMSReplyTo
-                    responseDestinationType = determineDestinationTypeFromReplyTo(message.getJMSReplyTo().toString());
-                } else {
-                    logger.warn("No response destination specified and no JMSReplyTo in message for stub {}",
-                            stub.getId());
-                    return;
-                }
-            }
-
             // Process the response based on type
-            final String finalDestination = responseDestination;
-            final String finalDestinationType = responseDestinationType;
             final Map<String, String> headers = extractHeaders(message);
 
             // Handle latency if specified
             if (stub.getLatency() > 0) {
                 scheduler.schedule(() -> {
-                    sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
+                    sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
                 }, stub.getLatency(), TimeUnit.MILLISECONDS);
             } else {
-                sendResponse(stub, finalDestination, finalDestinationType, messageContent, headers);
+                sendResponse(stub, responseDestination, responseDestinationType, messageContent, headers);
             }
         } catch (Exception e) {
             logger.error("Error processing response for stub {}: {}",
@@ -96,12 +83,15 @@ public class ActiveMQResponseService {
     private void sendResponse(ActiveMQStub stub, String destination, String destinationType,
                               String originalMessageContent, Map<String, String> headers) {
         try {
-            // Determine which JmsTemplate to use based on destination type
+            // Determine which JmsTemplate to use based on destination type and server
             boolean isTopic = "topic".equalsIgnoreCase(destinationType);
-            JmsTemplate jmsTemplate = isTopic ? topicJmsTemplate : queueJmsTemplate;
+            String responseServerName = stub.getResponseServerName();
+            
+            JmsTemplate jmsTemplate = getJmsTemplate(responseServerName, isTopic);
 
-            logger.debug("Sending response to {} {} for stub {}", 
-                    isTopic ? "topic" : "queue", destination, stub.getId());
+            logger.debug("Sending response to {} {} on server '{}' for stub {}", 
+                    isTopic ? "topic" : "queue", destination, 
+                    responseServerName != null ? responseServerName : "default", stub.getId());
 
             // Check if we should get content from webhook
             String responseContent;
@@ -155,22 +145,6 @@ public class ActiveMQResponseService {
     }
 
     /**
-     * Try to determine destination type from JMSReplyTo string.
-     * This is a best-effort approach as the format may vary.
-     */
-    private String determineDestinationTypeFromReplyTo(String replyTo) {
-        if (replyTo == null) {
-            return "queue"; // Default to queue
-        }
-        
-        if (replyTo.toLowerCase().contains("topic")) {
-            return "topic";
-        } else {
-            return "queue";
-        }
-    }
-
-    /**
      * Extract headers from a JMS message.
      *
      * @param message The JMS message
@@ -195,5 +169,28 @@ public class ActiveMQResponseService {
         }
 
         return headers;
+    }
+
+    /**
+     * Gets or creates a JmsTemplate for the specified server and destination type.
+     * 
+     * @param serverName The server name (null for default)
+     * @param isTopic True for topic, false for queue
+     * @return JmsTemplate for the server
+     */
+    private JmsTemplate getJmsTemplate(String serverName, boolean isTopic) {
+        Map<String, JmsTemplate> templateCache = isTopic ? topicTemplates : queueTemplates;
+        // ConcurrentHashMap does not permit null keys; use a sentinel for single-server mode.
+        String cacheKey = (serverName != null && !serverName.trim().isEmpty()) ? serverName.trim() : "__default__";
+        return templateCache.computeIfAbsent(cacheKey, name -> {
+            ConnectionFactory connectionFactory = "__default__".equals(name)
+                ? connectionFactoryRegistry.getDefaultConnectionFactory()
+                : connectionFactoryRegistry.getConnectionFactory(name);
+            JmsTemplate template = new JmsTemplate();
+            template.setConnectionFactory(connectionFactory);
+            template.setPubSubDomain(isTopic);
+            logger.debug("Created {} JmsTemplate for server '{}'", isTopic ? "topic" : "queue", cacheKey);
+            return template;
+        });
     }
 } 

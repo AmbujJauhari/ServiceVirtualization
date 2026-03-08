@@ -1,0 +1,85 @@
+# =============================================================================
+# Margin Team — Kafka Analytics Instance
+# =============================================================================
+# Enables:
+#   sv.kafka.instances.analytics       — deploys Kafka Analytics broker
+#   networking.kafka.instances.analytics — creates TLS PASSTHROUGH VirtualService
+#
+# Note: uiEnabled is false here because the Kafka UI pod is shared and is
+# already routed via kafka-events.yaml (uiEnabled: true). Do not create a
+# second Kafka UI VirtualService — it would conflict.
+#
+# External clients connect via: SSL://analytics.kafka.margin.service-virtualization.local:443
+# Internal backend connects via: PLAINTEXT://margin-service-virtualization-kafka-analytics.margin.svc.cluster.local:9092
+#
+# DNS required:
+#   analytics.kafka.margin.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  kafka:
+    enabled: true
+
+    instances:
+      analytics:
+        image:
+          repository: "confluentinc/cp-kafka"
+          tag: "7.4.0"
+          pullPolicy: "IfNotPresent"
+
+        replicaCount: 1
+
+        # KRaft cluster ID — must differ from the events instance.
+        # Each Kafka instance is an independent cluster with its own unique ID.
+        clusterID: "NzU4OTJENDRFNkYzNDM5Qj"
+
+        certificates:
+          enabled: true
+          secretName: "margin-tls-secret"
+          secretVolumeName: "margin-tls-secret"
+
+        externalHostname: "analytics.kafka.margin.service-virtualization.local"
+
+        service:
+          type: "ClusterIP"
+
+        config:
+          initContainers: []
+          extraVolumes: []
+
+        extraEnvVars: {}
+
+        healthCheck:
+          livenessInitialDelay: 60
+          livenessTimeout: 10
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 45
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 10
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+# =============================================================================
+# Networking: Istio resources for Kafka Analytics
+# =============================================================================
+
+networking:
+  kafka:
+    instances:
+      analytics:
+        enabled: true
+        sniHost: "analytics.kafka.margin.service-virtualization.local"
+        # uiEnabled: false — Kafka UI VS already created by kafka-events.yaml
+        uiEnabled: false

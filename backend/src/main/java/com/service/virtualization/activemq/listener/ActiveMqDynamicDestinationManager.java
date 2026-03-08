@@ -1,10 +1,11 @@
 package com.service.virtualization.activemq.listener;
 
+import com.service.virtualization.activemq.config.ActiveMqConnectionFactoryRegistry;
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jms.connection.JmsTransactionManager;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Component;
@@ -16,14 +17,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages dynamic registration and unregistration of JMS listeners based on ActiveMQ stubs.
+ * Supports multi-server ActiveMQ configuration.
  */
 @Component
+@Profile("!activemq-disabled")
 public class ActiveMqDynamicDestinationManager {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMqDynamicDestinationManager.class);
     
     @Autowired
-    @Qualifier("activemqConnectionFactory")
-    private ConnectionFactory connectionFactory;
+    private ActiveMqConnectionFactoryRegistry connectionFactoryRegistry;
     
     @Autowired
     private ActiveMQMessageListener messageListener;
@@ -46,12 +48,17 @@ public class ActiveMqDynamicDestinationManager {
             
             String destinationName = stub.getDestinationName();
             boolean isTopic = "topic".equalsIgnoreCase(stub.getDestinationType());
+            String serverName = stub.getServerName();
             
-            logger.info("Registering listener for {} {}: {}", 
-                    isTopic ? "topic" : "queue", destinationName, stub.getId());
+            // Get the appropriate connection factory for this stub's server
+            ConnectionFactory connectionFactory = connectionFactoryRegistry.getConnectionFactory(serverName);
+            
+            logger.info("Registering listener for {} {} on server '{}': {}", 
+                    isTopic ? "topic" : "queue", destinationName, 
+                    serverName != null ? serverName : "default", stub.getId());
                     
             DefaultMessageListenerContainer container = createMessageListenerContainer(
-                    destinationName, isTopic, messageListener);
+                    destinationName, isTopic, connectionFactory, messageListener);
             
             // Store the selector with the listener in the MessageListener
             messageListener.registerStub(stub);
@@ -99,7 +106,7 @@ public class ActiveMqDynamicDestinationManager {
      * @return A configured message listener container
      */
     private DefaultMessageListenerContainer createMessageListenerContainer(
-            String destinationName, boolean isTopic, MessageListener listener) {
+            String destinationName, boolean isTopic, ConnectionFactory connectionFactory, MessageListener listener) {
         
         DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);

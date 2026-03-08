@@ -1,12 +1,13 @@
 package com.service.virtualization.ibmmq.listener;
 
+import com.service.virtualization.ibmmq.config.IbmMqConnectionFactoryRegistry;
 import com.service.virtualization.ibmmq.model.IBMMQStub;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jms.connection.JmsTransactionManager;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Component;
@@ -16,15 +17,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages dynamic registration and unregistration of JMS listeners based on (IBMMQ) stubs.
+ * Supports multi-server IBM MQ configuration.
  */
 @Component
+@Profile("!ibmmq-disabled")
 public class IbmMqDynamicDestinationManager {
     private static final Logger logger = LoggerFactory.getLogger(IbmMqDynamicDestinationManager.class);
     
-
     @Autowired
-    @Qualifier("ibmmqConnectionFactory")
-    private ConnectionFactory connectionFactory;
+    private IbmMqConnectionFactoryRegistry connectionFactoryRegistry;
     
     @Autowired
     private IBMMQMessageListener messageListener;
@@ -47,12 +48,17 @@ public class IbmMqDynamicDestinationManager {
             
             String destinationName = stub.getDestinationName();
             boolean isTopic = "topic".equalsIgnoreCase(stub.getDestinationType());
+            String serverName = stub.getServerName();
             
-            logger.info("Registering listener for {} {}: {}", 
-                    isTopic ? "topic" : "queue", destinationName, stub.getId());
+            // Get the appropriate connection factory for this stub's server
+            ConnectionFactory connectionFactory = connectionFactoryRegistry.getConnectionFactory(serverName);
+            
+            logger.info("Registering listener for {} {} on server '{}': {}", 
+                    isTopic ? "topic" : "queue", destinationName, 
+                    serverName != null ? serverName : "default", stub.getId());
                     
             DefaultMessageListenerContainer container = createMessageListenerContainer(
-                    destinationName, isTopic, messageListener);
+                    destinationName, isTopic, connectionFactory, messageListener);
             
             // Store the selector with the listener in the MessageListener
             messageListener.registerStub(stub);
@@ -96,11 +102,12 @@ public class IbmMqDynamicDestinationManager {
      *
      * @param destinationName The name of the destination (queue or topic)
      * @param isTopic True if the destination is a topic, false for a queue
+     * @param connectionFactory The connection factory for the specific server
      * @param listener The message listener to attach
      * @return A configured message listener container
      */
     private DefaultMessageListenerContainer createMessageListenerContainer(
-            String destinationName, boolean isTopic, MessageListener listener) {
+            String destinationName, boolean isTopic, ConnectionFactory connectionFactory, MessageListener listener) {
         
         DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);

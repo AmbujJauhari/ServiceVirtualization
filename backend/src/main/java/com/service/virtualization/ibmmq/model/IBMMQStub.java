@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents an IBM MQ message stub for service virtualization
+ * Represents an IBM MQ message stub for service virtualization.
+ * Supports multi-server IBM MQ configuration.
  */
 @Document(collection = "ibmmq_stubs")
 public class IBMMQStub {
@@ -29,6 +30,10 @@ public class IBMMQStub {
     private String name;
     private String description;
     private String userId;
+
+    // Multi-server support
+    private String serverName;         // Which IBM MQ server to listen on
+    private String responseServerName; // Which IBM MQ server to respond on (null = same as serverName)
 
     // Request configuration
     private String destinationType; // "queue" or "topic"
@@ -56,7 +61,7 @@ public class IBMMQStub {
     // Custom headers for response
     private Map<String, String> headers = new HashMap<>();
     
-    private StubStatus status = StubStatus.ACTIVE;;
+    private StubStatus status = StubStatus.ACTIVE;
     
     private LocalDateTime createdAt;
     
@@ -69,6 +74,16 @@ public class IBMMQStub {
         this.latency = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Get the effective server name to respond on.
+     * If responseServerName is set, use it; otherwise use serverName.
+     */
+    public String getEffectiveResponseServerName() {
+        return (responseServerName != null && !responseServerName.trim().isEmpty()) 
+            ? responseServerName 
+            : serverName;
     }
 
 
@@ -102,6 +117,22 @@ public class IBMMQStub {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
+    public String getResponseServerName() {
+        return responseServerName;
+    }
+
+    public void setResponseServerName(String responseServerName) {
+        this.responseServerName = responseServerName;
     }
 
     public String getDestinationType() {

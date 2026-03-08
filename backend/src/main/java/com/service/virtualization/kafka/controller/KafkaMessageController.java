@@ -1,6 +1,7 @@
 package com.service.virtualization.kafka.controller;
 
 import com.service.virtualization.kafka.service.KafkaMessageService;
+import com.service.virtualization.kafka.service.KafkaTopicService;
 import com.service.virtualization.kafka.service.SchemaRegistryService;
 import com.service.virtualization.kafka.dto.KafkaMessageRequestDTO;
 import com.service.virtualization.kafka.dto.KafkaMessageResponseDTO;
@@ -26,11 +27,15 @@ public class KafkaMessageController {
     private static final Logger logger = LoggerFactory.getLogger(KafkaMessageController.class);
 
     private final KafkaMessageService kafkaMessageService;
+    private final KafkaTopicService kafkaTopicService;
     private final SchemaRegistryService schemaRegistryService;
 
     @Autowired
-    public KafkaMessageController(KafkaMessageService kafkaMessageService, SchemaRegistryService schemaRegistryService) {
+    public KafkaMessageController(KafkaMessageService kafkaMessageService,
+                                  KafkaTopicService kafkaTopicService,
+                                  SchemaRegistryService schemaRegistryService) {
         this.kafkaMessageService = kafkaMessageService;
+        this.kafkaTopicService = kafkaTopicService;
         this.schemaRegistryService = schemaRegistryService;
     }
 
@@ -66,7 +71,7 @@ public class KafkaMessageController {
     public ResponseEntity<List<String>> getTopics() {
         logger.info("Fetching available Kafka topics");
         
-        List<String> topics = kafkaMessageService.getAvailableTopics();
+        List<String> topics = kafkaTopicService.listTopics();
         
         return ResponseEntity.ok(topics);
     }

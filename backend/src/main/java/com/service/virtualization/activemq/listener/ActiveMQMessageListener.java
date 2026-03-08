@@ -6,6 +6,7 @@ import com.service.virtualization.activemq.service.ActiveMQResponseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import jakarta.jms.JMSException;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * and processes responses according to stub configuration.
  */
 @Component
+@Profile("!activemq-disabled")
 public class ActiveMQMessageListener implements MessageListener {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQMessageListener.class);
 

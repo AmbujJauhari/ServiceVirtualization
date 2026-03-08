@@ -1,0 +1,64 @@
+# =============================================================================
+# Margin Team — WireMock HTTP VirtualService (AKS / Azure)
+# =============================================================================
+#
+# Routes external HTTP traffic arriving at the Istio ingress gateway directly
+# to the embedded WireMock server inside the backend pod (port 8081).
+#
+# Stub access pattern:
+#   Original service:  http://acadia.service.com/api/todo/1
+#   With SV (AKS):     http://wiremock.margin.service-virtualization.com/api/todo/1
+#   With SV (Docker):  http://localhost:8081/api/todo/1
+#
+# Only the host changes — the path stays exactly the same.
+#
+# Prerequisites:
+#   - Shared gateway deployed by cluster-admin (istio-ingress/shared-gateway)
+#   - Wildcard TLS cert covering *.service-virtualization.com in Secret
+#     gateway-tls-cert (same cert already used for IBM MQ)
+#   - DNS/GSLB entry: wiremock.margin.service-virtualization.com → AKS ingress IP
+#   - Helm release deployed with backend.wiremock.enabled: true so that the
+#     margin-app-wiremock Service (ClusterIP:8081) exists
+#
+# Enabled by adding to the team's backend Helm values:
+#   backend:
+#     wiremock:
+#       enabled: true
+#       port: 8081
+#
+# Apply with:
+#   kubectl apply -f deployments/azure/teams/margin/networking/istio/wiremock-http-vs.yaml \
+#     --namespace margin
+#
+# Release name convention: margin-app
+# WireMock service name:   margin-app-wiremock
+# =============================================================================
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: margin-wiremock-http-vs
+  namespace: margin
+  labels:
+    app.kubernetes.io/name: margin-networking
+    app.kubernetes.io/component: virtualservice
+    team: margin
+    service: wiremock
+    environment: azure
+  annotations:
+    description: "Routes wiremock.margin.service-virtualization.com (TLS terminated at gateway) to the embedded WireMock server on backend pod port 8081"
+spec:
+  hosts:
+  - "wiremock.margin.service-virtualization.com"
+  gateways:
+  - istio-ingress/shared-gateway
+  http:
+  - route:
+    - destination:
+        host: margin-app-wiremock.margin.svc.cluster.local
+        port:
+          number: 8081
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s

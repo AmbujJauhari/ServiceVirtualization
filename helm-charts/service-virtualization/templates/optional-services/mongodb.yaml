@@ -1,0 +1,271 @@
+{{- if and .Values.mongodb .Values.mongodb.enabled }}
+
+# =============================================================================
+# MongoDB Optional Service
+# =============================================================================
+#
+# Deploys a single MongoDB instance as an optional backing store for the
+# Service Virtualization backend.  Users who already have a MongoDB cluster
+# (or use Azure Cosmos DB / Atlas in the cloud) should set mongodb.enabled: false
+# and point MONGODB_URI in their backend-values.yaml at their own instance.
+#
+# Sybase / MSSQL users: also leave mongodb.enabled: false; configure the
+# backend with the appropriate JDBC datasource environment variables instead.
+#
+# Naming — the service name is what backend pods use in MONGODB_URI.
+# Set nameOverride to a predictable value so the URI stays constant
+# regardless of which Helm release deploys this chart.
+#
+# Example:
+#   mongodb:
+#     enabled: true
+#     nameOverride: "margin-mongodb"   # service FQDN: margin-mongodb.<ns>.svc.cluster.local
+#
+# =============================================================================
+
+{{- $name := .Values.mongodb.nameOverride | default (printf "%s-mongodb" .Release.Name) }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.mongodb.service.port | default 27017 }}
+      targetPort: 27017
+      protocol: TCP
+      name: mongo
+  selector:
+    {{- include "service-virtualization.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  replicas: {{ .Values.mongodb.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mongodb
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mongodb
+    spec:
+      {{- with .Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: mongodb
+          image: "{{ required "mongodb.image.repository is required" .Values.mongodb.image.repository }}:{{ required "mongodb.image.tag is required" .Values.mongodb.image.tag }}"
+          imagePullPolicy: {{ .Values.mongodb.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 27017
+              name: mongo
+
+          {{- if and .Values.mongodb.auth .Values.mongodb.auth.enabled }}
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: {{ required "mongodb.auth.rootUsername is required when auth.enabled=true" .Values.mongodb.auth.rootUsername | quote }}
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: {{ required "mongodb.auth.rootPassword is required when auth.enabled=true" .Values.mongodb.auth.rootPassword | quote }}
+            {{- if .Values.mongodb.auth.database }}
+            - name: MONGO_INITDB_DATABASE
+              value: {{ .Values.mongodb.auth.database | quote }}
+            {{- end }}
+          {{- end }}
+
+          {{- with .Values.mongodb.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: {{ .Values.mongodb.healthCheck.livenessInitialDelay | default 30 }}
+            periodSeconds: {{ .Values.mongodb.healthCheck.livenessPeriod | default 30 }}
+            timeoutSeconds: {{ .Values.mongodb.healthCheck.livenessTimeout | default 10 }}
+            failureThreshold: {{ .Values.mongodb.healthCheck.livenessFailureThreshold | default 3 }}
+
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: {{ .Values.mongodb.healthCheck.readinessInitialDelay | default 10 }}
+            periodSeconds: {{ .Values.mongodb.healthCheck.readinessPeriod | default 10 }}
+            timeoutSeconds: {{ .Values.mongodb.healthCheck.readinessTimeout | default 5 }}
+            failureThreshold: {{ .Values.mongodb.healthCheck.readinessFailureThreshold | default 3 }}
+
+      volumes:
+        - name: data
+          {{- if and .Values.mongodb.storage .Values.mongodb.storage.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ $name }}-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+
+{{- if and .Values.mongodb.storage .Values.mongodb.storage.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mongodb.storage.size | default "2Gi" }}
+  {{- if .Values.mongodb.storage.storageClass }}
+  storageClassName: {{ .Values.mongodb.storage.storageClass }}
+  {{- end }}
+{{- end }}
+
+{{/*
+=============================================================================
+Mongo Express (Optional)
+Lightweight browser-based MongoDB admin UI.
+Server-rendered — path-based Istio routing works correctly (no SPA asset issues).
+Requires mongodb.mongoExpress.pathPrefix — must match the Istio VS path prefix
+so Mongo Express generates correct asset and redirect URLs behind the proxy.
+=============================================================================
+*/}}
+{{- if and .Values.mongodb.mongoExpress .Values.mongodb.mongoExpress.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-mongo-express
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo-express
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo-express
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}-mongo-express
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo-express
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mongo-express
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mongo-express
+    spec:
+      {{- with .Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.serviceAccount .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+        - name: mongo-express
+          image: "{{ .Values.mongodb.mongoExpress.image.repository | default "mongo-express" }}:{{ .Values.mongodb.mongoExpress.image.tag | default "1.0.2" }}"
+          imagePullPolicy: {{ .Values.mongodb.mongoExpress.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8081
+              name: http
+          env:
+            - name: ME_CONFIG_MONGODB_SERVER
+              value: {{ $name }}.{{ .Release.Namespace }}.svc.cluster.local
+            - name: ME_CONFIG_MONGODB_PORT
+              value: {{ .Values.mongodb.service.port | default 27017 | quote }}
+            {{- if and .Values.mongodb.auth .Values.mongodb.auth.enabled }}
+            - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+              value: {{ .Values.mongodb.auth.rootUsername | quote }}
+            - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+              value: {{ .Values.mongodb.auth.rootPassword | quote }}
+            - name: ME_CONFIG_MONGODB_AUTH_DATABASE
+              value: {{ .Values.mongodb.auth.database | default "admin" | quote }}
+            {{- else }}
+            - name: ME_CONFIG_MONGODB_ENABLE_ADMIN
+              value: "true"
+            {{- end }}
+            {{- if and .Values.mongodb.mongoExpress.basicAuth .Values.mongodb.mongoExpress.basicAuth.enabled }}
+            - name: ME_CONFIG_BASICAUTH_USERNAME
+              value: {{ required "mongodb.mongoExpress.basicAuth.username is required" .Values.mongodb.mongoExpress.basicAuth.username | quote }}
+            - name: ME_CONFIG_BASICAUTH_PASSWORD
+              value: {{ required "mongodb.mongoExpress.basicAuth.password is required" .Values.mongodb.mongoExpress.basicAuth.password | quote }}
+            {{- else }}
+            - name: ME_CONFIG_BASICAUTH
+              value: "false"
+            {{- end }}
+            # No ME_CONFIG_SITE_BASEURL needed — host-based routing serves Mongo
+            # Express from the root path so all hrefs resolve correctly as-is.
+          {{- with .Values.mongodb.mongoExpress.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 5
+{{- end }}{{/* if mongodb.mongoExpress.enabled */}}
+
+{{- end }}

@@ -1,0 +1,53 @@
+{{/*
+=============================================================================
+ActiveMQ Istio Networking — Collateral Team
+=============================================================================
+For each enabled ActiveMQ instance creates ONE resource:
+  1. HTTP VirtualService — admin console (path-prefix routing → pod:8161)
+
+The ActiveMQ wire protocol (OpenWire port 61616) is cluster-internal only
+and needs no VirtualService.
+
+Service name: {{ appFullname }}-activemq-{{ instanceName }}
+  where appFullname = {{ .Release.Name }}-service-virtualization
+=============================================================================
+*/}}
+{{- if and .Values.networking.activemq .Values.networking.activemq.instances }}
+{{- range $name, $instance := .Values.networking.activemq.instances }}
+{{- if $instance.enabled }}
+---
+# HTTP VirtualService — ActiveMQ {{ $name }} admin console
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-activemq-{{ $name }}-console-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: activemq-{{ $name }}
+  annotations:
+    description: "Routes {{ $instance.consolePath }}/* to ActiveMQ {{ $name }} admin console (port 8161)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - match:
+    - uri:
+        prefix: {{ required (printf "networking.activemq.instances.%s.consolePath must be set when enabled=true" $name) $instance.consolePath | quote }}
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-activemq-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 8161
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+{{- end }}
+{{- end }}
+{{- end }}

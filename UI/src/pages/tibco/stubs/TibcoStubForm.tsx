@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useGetTibcoDestinationsQuery, useGetTibcoStubByIdQuery, useCreateTibcoStubMutation, useUpdateTibcoStubMutation, ContentMatchType, StubStatus } from '../../../api/tibcoApi';
+import { useGetTibcoDestinationsQuery, useGetTibcoStubByIdQuery, useCreateTibcoStubMutation, useUpdateTibcoStubMutation, useGetTibcoServersQuery, ContentMatchType, StubStatus } from '../../../api/tibcoApi';
 
 interface TibcoStubFormProps {
   isEdit?: boolean;
@@ -23,6 +23,8 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [serverName, setServerName] = useState('');
+  const [responseServerName, setResponseServerName] = useState('');
   const [destinationType, setDestinationType] = useState('queue');
   const [destinationName, setDestinationName] = useState('');
   const [messageSelector, setMessageSelector] = useState('');
@@ -47,16 +49,19 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newHeaderType, setNewHeaderType] = useState('string');
 
-  // Mutations
+  // Mutations and queries
   const [createStub, { isLoading: isCreating }] = useCreateTibcoStubMutation();
   const [updateStub, { isLoading: isUpdating }] = useUpdateTibcoStubMutation();
   const { data: existingStub, isLoading: isLoadingStub } = useGetTibcoStubByIdQuery(id!, { skip: !isEditMode || !id });
+  const { data: availableServers = [], isLoading: isLoadingServers } = useGetTibcoServersQuery();
 
   // Populate form with existing data in edit mode
   useEffect(() => {
     if (existingStub) {
       setName(existingStub.name || '');
       setDescription(existingStub.description || '');
+      setServerName(existingStub.serverName || '');
+      setResponseServerName(existingStub.responseServerName || '');
       
       // Map from flat destination structure
       if (existingStub.destinationType) {
@@ -141,6 +146,8 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
       id: isEditMode ? id : undefined,
         name,
         description,
+      serverName: serverName || undefined,
+      responseServerName: responseServerName || undefined,
       destinationType: destinationType.toUpperCase(),
       destinationName,
       responseType: responseDestinationType.toUpperCase(),
@@ -233,6 +240,57 @@ const TibcoStubForm: React.FC<TibcoStubFormProps> = ({ isEdit = false }) => {
             </div>
           </div>
         </div>
+
+        {/* Server Configuration */}
+        {availableServers.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Server Configuration</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="serverName">
+                  Request Server
+                </label>
+                <select
+                  id="serverName"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">Select server...</option>
+                  {availableServers.map((server) => (
+                    <option key={server} value={server}>
+                      {server}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  TIBCO server to listen for requests. Leave empty for default.
+                </p>
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseServerName">
+                  Response Server (Optional)
+                </label>
+                <select
+                  id="responseServerName"
+                  value={responseServerName}
+                  onChange={(e) => setResponseServerName(e.target.value)}
+                  className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">Same as request server</option>
+                  {availableServers.map((server) => (
+                    <option key={server} value={server}>
+                      {server}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  Leave empty to respond on the same server as the request.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Destination Configuration */}
           <div className="mb-6">

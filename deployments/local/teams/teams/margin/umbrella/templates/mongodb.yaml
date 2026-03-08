@@ -1,0 +1,41 @@
+{{/*
+=============================================================================
+MongoDB Istio Networking — Margin Team
+=============================================================================
+MongoDB itself needs no VirtualService — it is cluster-internal and accessed
+by the backend directly via ClusterIP DNS. No external traffic routes to it.
+
+Mongo Express uses host-based routing (consistent with Control Center) so all
+browser requests — page loads, asset fetches, redirects — hit the same hostname
+match without any URI rewriting.
+
+DNS required: mongo.margin.service-virtualization.local → <vm-bridged-ip>
+Access:       http://mongo.margin.service-virtualization.local:30099
+=============================================================================
+*/}}
+{{- if and .Values.networking.mongodb .Values.networking.mongodb.mongoExpress .Values.networking.mongodb.mongoExpress.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-mongo-express-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: mongo-express
+  annotations:
+    description: "Routes {{ required "networking.mongodb.mongoExpress.hostname must be set" .Values.networking.mongodb.mongoExpress.hostname }}:80 to Mongo Express UI (port 8081)"
+spec:
+  hosts:
+  - {{ required "networking.mongodb.mongoExpress.hostname must be set" .Values.networking.mongodb.mongoExpress.hostname | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - route:
+    - destination:
+        host: {{ $.Values.sv.mongodb.nameOverride }}-mongo-express.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 8081
+    timeout: 30s
+{{- end }}

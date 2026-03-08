@@ -159,6 +159,56 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!--
+              Jib Maven Plugin — builds an OCI-compliant Docker image without a Docker daemon.
+              Usage:
+                Local Docker (dev):
+                  mvn package jib:dockerBuild -Djib.to.image=sv-backend:local
+                Push to ACR (CI):
+                  mvn package jib:build -Djib.to.image=<acr>.azurecr.io/sv-backend:<tag>
+                Build to tarball (import into k3s):
+                  mvn package jib:buildTar -Djib.outputPaths.tar=sv-backend.tar
+                  sudo k3s ctr images import sv-backend.tar
+              The image tag defaults to the Maven project version (1.0.0-SNAPSHOT).
+              Override via -Djib.to.image=... at the command line.
+            -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:21-jre-alpine</image>
+                    </from>
+                    <to>
+                        <!-- Override at build time: -Djib.to.image=registry/repo:tag -->
+                        <image>service-virtualization-backend</image>
+                        <tags>
+                            <tag>${project.version}</tag>
+                        </tags>
+                    </to>
+                    <container>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                        <environment>
+                            <SPRING_PROFILES_ACTIVE>docker</SPRING_PROFILES_ACTIVE>
+                        </environment>
+                        <!-- Base JVM flags; SSL truststore injected at runtime via Kubernetes JAVA_OPTS env -->
+                        <jvmFlags>
+                            <jvmFlag>-XX:+UseContainerSupport</jvmFlag>
+                            <jvmFlag>-XX:+UseG1GC</jvmFlag>
+                            <jvmFlag>-XX:MaxRAMPercentage=75.0</jvmFlag>
+                            <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+                            <jvmFlag>-Djava.security.egd=file:/dev/./urandom</jvmFlag>
+                        </jvmFlags>
+                        <user>1000:1000</user>
+                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+                        <mainClass>com.service.virtualization.ServiceVirtualizationApplication</mainClass>
+                    </container>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

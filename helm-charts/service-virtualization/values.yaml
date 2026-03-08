@@ -1,0 +1,13 @@
+# =============================================================================
+# Service Virtualization Platform - Helm Chart
+# =============================================================================
+#
+# This chart has NO default values.
+# Every field used by a template must be supplied explicitly in the caller's
+# values file.  Templates enforce required fields via Helm's `required` /
+# `fail` functions so a missing value produces a clear error at deploy-time.
+#
+# Schema documentation lives in README.md.
+# Per-team values live under deployments/<env>/teams/<team>/
+#
+# =============================================================================

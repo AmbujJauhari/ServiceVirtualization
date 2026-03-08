@@ -1,0 +1,84 @@
+{{/*
+=============================================================================
+Backend and UI Istio Networking — Collateral Team
+=============================================================================
+Backend VirtualService:
+  Matches /{{ pathPrefix }}/api/* → rewrite to /api/* → pod:8080
+
+UI VirtualService:
+  Matches /{{ pathPrefix }}/* → rewrite to / → pod:80
+
+Service names:
+  Backend : {{ appFullname }}-backend
+  UI      : {{ appFullname }}-ui
+  where appFullname = {{ .Release.Name }}-service-virtualization
+=============================================================================
+*/}}
+{{- if and .Values.networking.backend .Values.networking.backend.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}-backend-vs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "networking.labels" . | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: backend
+  annotations:
+    description: "Routes {{ .Values.networking.backend.pathPrefix }}/api/* → backend service port 8080"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - {{ .Values.networking.gateway }}
+  http:
+  - match:
+    - uri:
+        prefix: {{ required "networking.backend.pathPrefix must be set when backend.enabled=true" .Values.networking.backend.pathPrefix | printf "%s/api/" | quote }}
+    rewrite:
+      uri: "/api/"
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" . }}-backend.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+{{- end }}
+{{- if and .Values.networking.ui .Values.networking.ui.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}-ui-vs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "networking.labels" . | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: ui
+  annotations:
+    description: "Routes {{ .Values.networking.ui.pathPrefix }}/* → UI service port 80"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - {{ .Values.networking.gateway }}
+  http:
+  - match:
+    - uri:
+        prefix: {{ required "networking.ui.pathPrefix must be set when ui.enabled=true" .Values.networking.ui.pathPrefix | printf "%s/" | quote }}
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" . }}-ui.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 80
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+{{- end }}

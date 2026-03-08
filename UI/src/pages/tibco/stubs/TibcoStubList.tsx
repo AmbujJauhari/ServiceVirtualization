@@ -98,6 +98,9 @@ const TibcoStubList: React.FC = () => {
                   Name
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Server
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Destination
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -129,6 +132,18 @@ const TibcoStubList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {stub.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {stub.serverName ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-600">Req: {stub.serverName}</span>
+                        {stub.responseServerName && stub.responseServerName !== stub.serverName && (
+                          <span className="text-xs text-gray-600">Res: {stub.responseServerName}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

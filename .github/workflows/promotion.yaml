@@ -1,0 +1,65 @@
+name: Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_environment:
+        description: 'Source Environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - uat
+          - staging
+          - prod
+      target_environment:
+        description: 'Target Environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - uat
+          - staging
+          - prod
+      version:
+        description: 'Version to promote'
+        required: true
+        type: string
+
+jobs:
+  validate-promotion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Environment Promotion
+        run: |
+          # Define valid promotion paths
+          declare -A valid_promotions
+          valid_promotions["dev"]="uat"
+          valid_promotions["uat"]="staging"
+          valid_promotions["staging"]="prod"
+          
+          if [[ "${{ github.event.inputs.source_environment }}" == "${{ github.event.inputs.target_environment }}" ]]; then
+            echo "Error: Source and target environments cannot be the same"
+            exit 1
+          fi
+          
+          if [[ "${valid_promotions[${{ github.event.inputs.source_environment }}]}" != "${{ github.event.inputs.target_environment }}" ]]; then
+            echo "Error: Invalid promotion path. Valid paths are:"
+            echo "dev -> uat -> staging -> prod"
+            exit 1
+          fi
+
+  deploy:
+    needs: validate-promotion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Target Environment
+        run: |
+          helm upgrade --install sv-${{ github.event.inputs.target_environment }} ./iac/app \
+            --namespace service-virtualization-${{ github.event.inputs.target_environment }} \
+            --create-namespace \
+            -f ./iac/app/values.yaml \
+            -f ./iac/app/values-${{ github.event.inputs.target_environment }}.yaml 

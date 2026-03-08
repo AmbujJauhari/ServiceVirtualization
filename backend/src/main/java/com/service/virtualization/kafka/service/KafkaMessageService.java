@@ -1,31 +1,27 @@
 package com.service.virtualization.kafka.service;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.ListTopicsResult;
+import com.service.virtualization.kafka.config.KafkaProducerFactoryRegistry;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Profile;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Service for handling Kafka message operations
+ * Service for handling Kafka message operations.
+ * Supports multi-cluster Kafka configuration.
  * Only active when kafka-disabled profile is NOT active
  */
 @Service
@@ -34,27 +30,46 @@ public class KafkaMessageService {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaMessageService.class);
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaAdmin kafkaAdmin;
+    private final KafkaProducerFactoryRegistry producerFactoryRegistry;
     private final SchemaRegistryService schemaRegistryService;
-    
-    @Value("${kafka.bootstrap-servers:localhost:9092}")
-    private String bootstrapServers;
 
     // Schema Registry header constants
     private static final String SCHEMA_ID_HEADER = "schema-id";
     private static final String SCHEMA_SUBJECT_HEADER = "schema-subject";
     private static final String SCHEMA_VERSION_HEADER = "schema-version";
 
+    // Template cache per cluster
+    private final Map<String, KafkaTemplate<String, String>> kafkaTemplates = new ConcurrentHashMap<>();
+
     @Autowired
-    public KafkaMessageService(KafkaTemplate<String, String> kafkaTemplate, KafkaAdmin kafkaAdmin, SchemaRegistryService schemaRegistryService) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.kafkaAdmin = kafkaAdmin;
+    public KafkaMessageService(KafkaProducerFactoryRegistry producerFactoryRegistry,
+                               SchemaRegistryService schemaRegistryService) {
+        this.producerFactoryRegistry = producerFactoryRegistry;
         this.schemaRegistryService = schemaRegistryService;
+    }
+    
+    /**
+     * Gets KafkaTemplate for the specified cluster.
+     */
+    private KafkaTemplate<String, String> getKafkaTemplate(String clusterName) {
+        if (clusterName == null || clusterName.trim().isEmpty()) {
+            return producerFactoryRegistry.getDefaultKafkaTemplate();
+        }
+        return kafkaTemplates.computeIfAbsent(clusterName, name -> {
+            logger.debug("Creating KafkaTemplate for cluster '{}'", name);
+            return producerFactoryRegistry.getKafkaTemplate(name);
+        });
     }
 
     public void publishMessage(String topic, String key, String content, Map<String, String> headers) {
-        logger.info("Publishing message to topic: {}", topic);
+        publishMessage(topic, key, content, headers, null);
+    }
+
+    public void publishMessage(String topic, String key, String content, Map<String, String> headers, String clusterName) {
+        logger.info("Publishing message to topic: {} on cluster '{}'", topic, 
+                    clusterName != null ? clusterName : "default");
+        
+        KafkaTemplate<String, String> kafkaTemplate = getKafkaTemplate(clusterName);
         
         // Validate schema registry headers if present
         if (headers != null) {
@@ -136,16 +151,4 @@ public class KafkaMessageService {
         );
     }
 
-    public List<String> getAvailableTopics() {
-        logger.info("Getting available Kafka topics");
-        
-        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
-            ListTopicsResult topics = adminClient.listTopics();
-            return new ArrayList<>(topics.names().get());
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Failed to get Kafka topics", e);
-            Thread.currentThread().interrupt();
-            return List.of(); // Return empty list on error
-        }
-    }
 } 

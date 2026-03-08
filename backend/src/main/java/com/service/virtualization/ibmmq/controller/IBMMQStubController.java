@@ -1,5 +1,6 @@
 package com.service.virtualization.ibmmq.controller;
 
+import com.service.virtualization.ibmmq.config.IbmMqServerRegistry;
 import com.service.virtualization.ibmmq.model.IBMMQStub;
 import com.service.virtualization.ibmmq.service.IBMMQStubService;
 import com.service.virtualization.model.MessageHeader;
@@ -31,10 +32,12 @@ public class IBMMQStubController {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubController.class);
 
     private final IBMMQStubService ibmMQStubService;
+    private final IbmMqServerRegistry serverRegistry;
 
     @Autowired
-    public IBMMQStubController(IBMMQStubService ibmMQStubService) {
+    public IBMMQStubController(IBMMQStubService ibmMQStubService, IbmMqServerRegistry serverRegistry) {
         this.ibmMQStubService = ibmMQStubService;
+        this.serverRegistry = serverRegistry;
     }
 
     /**
@@ -122,9 +125,11 @@ public class IBMMQStubController {
      */
     @PatchMapping("/{id}/status")
     public ResponseEntity<IBMMQStub> updateStubStatus(@PathVariable String id, @RequestBody Map<String, String> statusUpdate) {
-        StubStatus status = StubStatus.valueOf(statusUpdate.get("status"));
-
-        if (status == null) {
+        StubStatus status;
+        try {
+            status = StubStatus.valueOf(statusUpdate.get("status"));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid stub status value: {}", statusUpdate.get("status"));
             return ResponseEntity.badRequest().build();
         }
 
@@ -189,5 +194,15 @@ public class IBMMQStubController {
                     "message", "Error publishing message: " + e.getMessage()
             ));
         }
+    }
+
+    /**
+     * Get list of available IBM MQ servers (for multi-server support)
+     */
+    @GetMapping("/servers")
+    public ResponseEntity<List<String>> getAvailableServers() {
+        logger.debug("Fetching available IBM MQ servers");
+        List<String> servers = serverRegistry.getAvailableServerNames();
+        return ResponseEntity.ok(servers);
     }
 }

@@ -1,6 +1,7 @@
 package com.service.virtualization.activemq.controller;
 
 
+import com.service.virtualization.activemq.config.ActiveMqServerRegistry;
 import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.activemq.service.ActiveMQStubService;
 import com.service.virtualization.model.MessageHeader;
@@ -31,6 +32,9 @@ public class ActiveMQStubController {
     
     @Autowired
     private ActiveMQStubService activeMQStubService;
+    
+    @Autowired
+    private ActiveMqServerRegistry serverRegistry;
     
     /**
      * Get all ActiveMQ stubs.
@@ -170,5 +174,15 @@ public class ActiveMQStubController {
                     "message", "Error publishing message: " + e.getMessage()
             ));
         }
+    }
+
+    /**
+     * Get list of available ActiveMQ servers (for multi-server support)
+     */
+    @GetMapping("/servers")
+    public ResponseEntity<List<String>> getAvailableServers() {
+        logger.debug("Fetching available ActiveMQ servers");
+        List<String> servers = serverRegistry.getAvailableServerNames();
+        return ResponseEntity.ok(servers);
     }
 } 

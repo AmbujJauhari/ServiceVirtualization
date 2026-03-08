@@ -1,0 +1,45 @@
+# =============================================================================
+# Collateral Team — MongoDB (Optional Service)
+# =============================================================================
+# nameOverride pins the service name to "collateral-mongodb".
+# Must match MONGODB_URI in backend.yaml.
+# =============================================================================
+
+sv:
+  mongodb:
+    enabled: true
+    nameOverride: "collateral-mongodb"
+
+    image:
+      repository: "mongo"
+      tag: "7.0"
+      pullPolicy: "IfNotPresent"
+
+    replicaCount: 1
+
+    service:
+      port: 27017
+
+    auth:
+      enabled: false
+
+    storage:
+      enabled: false
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    healthCheck:
+      livenessInitialDelay: 30
+      livenessPeriod: 30
+      livenessTimeout: 10
+      livenessFailureThreshold: 3
+      readinessInitialDelay: 10
+      readinessPeriod: 10
+      readinessTimeout: 5
+      readinessFailureThreshold: 3

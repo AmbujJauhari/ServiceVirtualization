@@ -7,6 +7,7 @@ import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -18,6 +19,7 @@ import java.util.regex.Pattern;
  * Handles matching of JMS messages against registered IBMMQ stubs.
  */
 @Component
+@Profile("!ibmmq-disabled")
 public class IBMMQStubMatcher {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQStubMatcher.class);
     

@@ -1,0 +1,90 @@
+{{- if and .Values.ui .Values.ui.enabled }}
+# =============================================================================
+# UI Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  type: {{ required "ui.service.type is required (ClusterIP | NodePort | LoadBalancer)" .Values.ui.service.type }}
+  ports:
+    - port: {{ required "ui.service.port is required" .Values.ui.service.port }}
+      targetPort: {{ required "ui.service.targetPort is required" .Values.ui.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  replicas: {{ required "ui.replicaCount is required" .Values.ui.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ui
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ui
+    spec:
+      {{- with .Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      containers:
+      - name: ui
+        image: "{{ required "ui.image.repository is required" .Values.ui.image.repository }}:{{ required "ui.image.tag is required" .Values.ui.image.tag }}"
+        imagePullPolicy: {{ required "ui.image.pullPolicy is required (IfNotPresent | Always | Never)" .Values.ui.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.ui.service.targetPort }}
+          name: http
+          protocol: TCP
+        
+        {{- if .Values.ui.env }}
+        env:
+          {{- range $key, $value := .Values.ui.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+        {{- end }}
+        
+        {{- with .Values.ui.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        
+        {{- with .Values.ui.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        
+        {{- with .Values.ui.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}

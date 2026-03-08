@@ -1,0 +1,23 @@
+---
+description: Documentation convention — always confirm which doc to update before writing
+alwaysApply: true
+---
+
+# Documentation Convention
+
+This project has exactly 4 canonical documentation files in `docs/`:
+
+| File | Purpose |
+|------|---------|
+| `docs/README.md` | Product overview, architecture, supported protocols, optional services |
+| `docs/LOCAL_DEPLOYMENT_GUIDE.md` | Local K3s/Vagrant deployment, all phases, commands |
+| `docs/AKS_DEPLOYMENT_GUIDE.md` | AKS/private cluster deployment (stub, to be filled) |
+| `docs/TROUBLESHOOTING_GUIDE.md` | Errors, fixes, debugging steps per protocol |
+
+## Rules
+
+- NEVER create a new documentation file unless the user explicitly asks for one.
+- NEVER update documentation without first telling the user which of the 4 files above will be updated and asking for confirmation.
+- Always say: "This belongs in `docs/X.md` — shall I update it there?" before writing.
+- If content could fit in more than one doc, state both options and ask which the user prefers.
+- Do NOT add documentation to `deployments/`, `helm-charts/`, or any other folder unless the user explicitly requests it.

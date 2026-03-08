@@ -1,0 +1,127 @@
+# =============================================================================
+# Margin Team — IBM MQ ICG Instance
+# =============================================================================
+# Enables:
+#   sv.ibmmq.instances.icg       — deploys the IBM MQ ICG pod + service
+#   networking.ibmmq.instances.icg — creates TLS VS + console VS + DR
+#
+# IBM MQ channel name: MARGIN.ICG.SVRCONN
+# Derived SNI: margin2e-icg2e-svrconn.chl.mq.ibm.com
+#   Formula: lowercase(channel), replace '.' with '2e-', append '.chl.mq.ibm.com'
+#
+# DNS required (point to Istio ingress-gateway NodePort IP):
+#   margin2e-icg2e-svrconn.chl.mq.ibm.com  → <ingress-gateway-ip>  (MQ wire)
+#   icg.ibmmq.margin.service-virtualization.local → <ingress-gateway-ip> (console)
+# =============================================================================
+
+sv:
+  ibmmq:
+    enabled: true
+    instances:
+      icg:
+        image:
+          repository: "icr.io/ibm-messaging/mq"
+          tag: "9.3.0.0-r1"
+          pullPolicy: "IfNotPresent"
+        replicaCount: 1
+        service:
+          type: "ClusterIP"
+          port: 1414
+        license: "accept"
+        queueManager:
+          name: "QM_ICG"
+
+        # Certificate strategy: initContainer copies wildcard cert into
+        # /etc/mqm/pki/keys/default/ from margin-tls-secret. IBM MQ startup
+        # auto-builds the key database from those PEM files.
+        #
+        # Prerequisite — create the shared TLS secret once per namespace:
+        #   kubectl create secret generic margin-tls-secret \
+        #     --from-file=tls.crt=deployments/local/cluster-admin/wildcard.crt \
+        #     --from-file=tls.key=deployments/local/cluster-admin/wildcard.key \
+        #     -n margin
+        certificates:
+          enabled: true
+          volumeName: mq-pki-icg
+
+        extraVolumes:
+          - name: margin-tls-secret
+            secret:
+              secretName: margin-tls-secret
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+
+        config:
+          default:
+            enabled: true
+            auth:
+              appPassword: "passw0rd"
+              adminPassword: "admin"
+            channels:
+              # Channel name drives the TLS SNI. IBM MQ formula:
+              #   MARGIN.ICG.SVRCONN → margin2e-icg2e-svrconn.chl.mq.ibm.com
+              # This MUST match networking.ibmmq.instances.icg.sniHost below.
+              - name: "MARGIN.ICG.SVRCONN"
+                type: "SVRCONN"
+            queues:
+              - name: "DEV.QUEUE.1"
+                type: "QLOCAL"
+          initContainers:
+            - name: cert-provider
+              image: busybox:1.36
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Placing wildcard certificate into IBM MQ PKI directory..."
+                  cp /mnt/wildcard/tls.crt /etc/mqm/pki/keys/default/tls.crt
+                  cp /mnt/wildcard/tls.key /etc/mqm/pki/keys/default/tls.key
+                  chmod 644 /etc/mqm/pki/keys/default/tls.crt
+                  chmod 644 /etc/mqm/pki/keys/default/tls.key
+                  echo "Done. IBM MQ will auto-build the key database on startup."
+              volumeMounts:
+                - name: mq-pki-icg
+                  mountPath: /etc/mqm/pki/keys/default
+                - name: margin-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+
+        healthCheck:
+          livenessInitialDelay: 90
+          livenessTimeout: 5
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 5
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+# =============================================================================
+# Networking: Istio resources for IBM MQ ICG
+# =============================================================================
+
+networking:
+  ibmmq:
+    instances:
+      icg:
+        enabled: true
+        # Derived from channel name MARGIN.ICG.SVRCONN (see formula above)
+        sniHost: "margin2e-icg2e-svrconn.chl.mq.ibm.com"
+        consoleHost: "icg.ibmmq.margin.service-virtualization.local"

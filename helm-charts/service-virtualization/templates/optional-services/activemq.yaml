@@ -1,0 +1,257 @@
+{{- if and .Values.activemq .Values.activemq.enabled }}
+
+#==================================================
+# Multi-Instance ActiveMQ Support with SSL/TLS
+# Each instance is deployed as a separate deployment/service
+# with its own configuration and queues
+# Supports: SSL enabled (SNI routing) or disabled (port routing)
+#==================================================
+{{- if not .Values.activemq.instances }}
+{{- fail "activemq.instances is REQUIRED. Please define at least one ActiveMQ instance" }}
+{{- end }}
+
+{{- if eq (len .Values.activemq.instances) 0 }}
+{{- fail "activemq.instances cannot be empty. Please define at least one ActiveMQ instance" }}
+{{- end }}
+
+{{- $sslEnabled := eq (include "service-virtualization.sslEnabled" $) "true" }}
+{{- $globalCertConfig := $.Values.global.certificates | default dict }}
+
+{{- range .Values.activemq.instances }}
+
+{{- if not .name }}
+{{- fail "Each ActiveMQ instance must have a 'name' field" }}
+{{- end }}
+
+#==================================================
+# ActiveMQ Instance: {{ .name }}
+#==================================================
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: activemq
+    app.kubernetes.io/instance-name: {{ .name }}
+spec:
+  type: {{ required (printf "activemq instance '%s': service.type is required" .name) .service.type }}
+  ports:
+    - port: {{ required (printf "activemq instance '%s': service.port is required" .name) .service.port }}
+      targetPort: 61616
+      protocol: TCP
+      name: openwire
+    - port: {{ required (printf "activemq instance '%s': service.adminPort is required" .name) .service.adminPort }}
+      targetPort: 8161
+      protocol: TCP
+      name: admin
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: activemq
+    app.kubernetes.io/instance-name: {{ .name }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: activemq
+    app.kubernetes.io/instance-name: {{ .name }}
+spec:
+  replicas: {{ required (printf "activemq instance '%s': replicaCount is required" .name) .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: activemq
+      app.kubernetes.io/instance-name: {{ .name }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: activemq
+        app.kubernetes.io/instance-name: {{ .name }}
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      
+      {{- with $.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- $instanceCertConfig := .certificates | default dict }}
+      {{- $certConfig := merge $instanceCertConfig $globalCertConfig }}
+      {{- $instanceSslEnabled := and $sslEnabled (ne $certConfig.enabled false) }}
+      
+      {{- if or .config.initContainers $instanceSslEnabled }}
+      initContainers:
+      {{- if $instanceSslEnabled }}
+      {{- include "service-virtualization.certificateInitContainer" (dict "root" $ "certConfig" $certConfig "serviceName" (printf "activemq-%s" .name)) | nindent 6 }}
+      {{- end }}
+      {{- if .config.initContainers }}
+        {{- toYaml .config.initContainers | nindent 6 }}
+      {{- end }}
+      {{- end }}
+      
+      containers:
+      - name: activemq
+        image: "{{ required (printf "activemq instance '%s': image.repository is required" .name) .image.repository }}:{{ required (printf "activemq instance '%s': image.tag is required" .name) .image.tag }}"
+        imagePullPolicy: {{ required (printf "activemq instance '%s': image.pullPolicy is required" .name) .image.pullPolicy }}
+        ports:
+        - containerPort: 61616
+          name: openwire
+        - containerPort: 8161
+          name: admin
+        env:
+        {{- if $instanceSslEnabled }}
+        # SSL/TLS Configuration
+        - name: ACTIVEMQ_SSL_ENABLED
+          value: "true"
+        - name: ACTIVEMQ_SSL_KEYSTORE
+          value: {{ $certConfig.mountPath | default "/etc/ssl/certs" }}/keystore.jks
+        - name: ACTIVEMQ_SSL_KEYSTORE_PASSWORD
+          value: "changeit"
+        - name: ACTIVEMQ_SSL_TRUSTSTORE
+          value: {{ $certConfig.mountPath | default "/etc/ssl/certs" }}/truststore.jks
+        - name: ACTIVEMQ_SSL_TRUSTSTORE_PASSWORD
+          value: "changeit"
+        {{- end }}
+        {{- if .auth.username }}
+        - name: ACTIVEMQ_ADMIN_LOGIN
+          value: {{ .auth.username | quote }}
+        {{- end }}
+        {{- if .auth.password }}
+        - name: ACTIVEMQ_ADMIN_PASSWORD
+          value: {{ .auth.password | quote }}
+        {{- end }}
+        {{- if .memory.min }}
+        - name: ACTIVEMQ_MIN_MEMORY
+          value: {{ .memory.min | quote }}
+        {{- end }}
+        {{- if .memory.max }}
+        - name: ACTIVEMQ_MAX_MEMORY
+          value: {{ .memory.max | quote }}
+        {{- end }}
+        {{- range $key, $value := .extraEnvVars }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- with .resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if or .persistence.dataSize .persistence.confSize $instanceSslEnabled }}
+        volumeMounts:
+        {{- if $instanceSslEnabled }}
+        {{- include "service-virtualization.certificateVolumeMount" $certConfig | nindent 8 }}
+        {{- end }}
+        {{- if .persistence.dataSize }}
+        - name: data
+          mountPath: /opt/activemq/data
+        {{- end }}
+        {{- if .persistence.confSize }}
+        - name: conf
+          mountPath: /opt/activemq/conf
+        {{- end }}
+        {{- end }}
+        {{- with .healthCheck }}
+        livenessProbe:
+          tcpSocket:
+            port: 61616
+          initialDelaySeconds: {{ .livenessInitialDelay }}
+          timeoutSeconds: {{ .livenessTimeout }}
+          periodSeconds: {{ .livenessPeriod }}
+          failureThreshold: {{ .livenessFailureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: 61616
+          initialDelaySeconds: {{ .readinessInitialDelay }}
+          timeoutSeconds: {{ .readinessTimeout }}
+          periodSeconds: {{ .readinessPeriod }}
+          failureThreshold: {{ .readinessFailureThreshold }}
+        startupProbe:
+          tcpSocket:
+            port: 61616
+          initialDelaySeconds: {{ .startupInitialDelay }}
+          timeoutSeconds: {{ .startupTimeout }}
+          periodSeconds: {{ .startupPeriod }}
+          failureThreshold: {{ .startupFailureThreshold }}
+        {{- end }}
+      {{- if or .persistence.dataSize .persistence.confSize $instanceSslEnabled }}
+      volumes:
+      {{- if $instanceSslEnabled }}
+      {{- include "service-virtualization.certificateVolume" (dict "root" $ "certConfig" $certConfig "serviceName" (printf "activemq-%s" .name)) | nindent 6 }}
+      {{- include "service-virtualization.apiAuthVolume" $certConfig | nindent 6 }}
+      {{- end }}
+      {{- if .persistence.dataSize }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}-data
+      {{- end }}
+      {{- if .persistence.confSize }}
+      - name: conf
+        persistentVolumeClaim:
+          claimName: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}-conf
+      {{- end }}
+      {{- end }}
+
+{{- if .persistence.dataSize }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}-data
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: activemq
+    app.kubernetes.io/instance-name: {{ .name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .persistence.storageClass }}
+  storageClassName: {{ .persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .persistence.dataSize }}
+{{- end }}
+
+{{- if .persistence.confSize }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-activemq-{{ .name }}-conf
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: activemq
+    app.kubernetes.io/instance-name: {{ .name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .persistence.storageClass }}
+  storageClassName: {{ .persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .persistence.confSize }}
+{{- end }}
+
+{{- include "service-virtualization.embeddedCertSecret" (dict "root" $ "certConfig" $certConfig "serviceName" (printf "activemq-%s" .name)) }}
+
+{{- end }}
+{{- end }}

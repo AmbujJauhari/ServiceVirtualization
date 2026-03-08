@@ -1,0 +1,99 @@
+{{/*
+=============================================================================
+IBM MQ Istio Networking — Collateral Team
+=============================================================================
+For each enabled IBM MQ instance creates THREE resources:
+  1. TLS VirtualService  — wire protocol (clients → port 443 → pod:1414)
+  2. HTTPS VirtualService — web console (browser → port 8443 → pod:9443)
+  3. DestinationRule      — TLS origination scoped to port 9443 only
+
+SNI derivation for IBM MQ:
+  Channel COLLATERAL.ICG.SVRCONN → collateral2e-icg2e-svrconn.chl.mq.ibm.com
+  Formula: lowercase(channel), replace '.' with '2e-', append '.chl.mq.ibm.com'
+
+Service name: {{ .Release.Name }}-mq-{{ instanceName }}
+  Example: release=collateral, instance=icg → collateral-mq-icg
+=============================================================================
+*/}}
+{{- if and .Values.networking.ibmmq .Values.networking.ibmmq.instances }}
+{{- range $name, $instance := .Values.networking.ibmmq.instances }}
+{{- if $instance.enabled }}
+---
+# TLS VirtualService — IBM MQ {{ $name }} wire protocol (PASSTHROUGH)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-ibmmq-{{ $name }}-tcp-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: ibmmq-{{ $name }}
+  annotations:
+    description: "Routes {{ $instance.sniHost }}:443 (TLS passthrough, SNI from MQ channel) to IBM MQ {{ $name }} pod port 1414"
+spec:
+  hosts:
+  - {{ required (printf "networking.ibmmq.instances.%s.sniHost must be set when enabled=true" $name) $instance.sniHost | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - {{ $instance.sniHost | quote }}
+    route:
+    - destination:
+        host: {{ $.Release.Name }}-mq-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 1414
+---
+# HTTPS VirtualService — IBM MQ {{ $name }} web console
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-ibmmq-{{ $name }}-console-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: ibmmq-{{ $name }}
+  annotations:
+    description: "Routes {{ $instance.consoleHost }}:8443 → IBM MQ {{ $name }} console:9443"
+spec:
+  hosts:
+  - {{ required (printf "networking.ibmmq.instances.%s.consoleHost must be set when enabled=true" $name) $instance.consoleHost | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - route:
+    - destination:
+        host: {{ $.Release.Name }}-mq-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 9443
+    timeout: 30s
+---
+# DestinationRule — TLS origination to IBM MQ {{ $name }} console port 9443
+# portLevelSettings scopes TLS origination to port 9443 only (port 1414 unaffected).
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ $.Release.Name }}-ibmmq-{{ $name }}-console-tls
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: destinationrule
+    service: ibmmq-{{ $name }}
+  annotations:
+    description: "TLS origination from Istio to IBM MQ {{ $name }} console port 9443 (port 1414 unaffected)"
+spec:
+  host: {{ $.Release.Name }}-mq-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 9443
+      tls:
+        mode: SIMPLE
+        insecureSkipVerify: true
+{{- end }}
+{{- end }}
+{{- end }}

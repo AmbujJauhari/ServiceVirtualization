@@ -1,0 +1,23 @@
+# =============================================================================
+# Collateral Team — Global Configuration
+# =============================================================================
+
+sv:
+  # nameOverride ensures fullname = "<release>-service-virtualization" when deployed
+  # via the umbrella chart (alias "sv" would otherwise produce "<release>-sv").
+  nameOverride: "service-virtualization"
+
+  global:
+    imageRegistry: ""
+    imagePullSecrets: []
+    securityContext: {}
+
+  serviceAccount:
+    name: "collateral-sa"
+
+  team:
+    name: "collateral"
+    namespace: "collateral"
+
+networking:
+  gateway: "istio-ingress/shared-gateway"

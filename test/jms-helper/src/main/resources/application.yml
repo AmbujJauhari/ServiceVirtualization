@@ -1,0 +1,39 @@
+server:
+  port: ${JMS_HELPER_PORT:9999}
+
+spring:
+  application:
+    name: jms-helper
+  # Disable all JMS/broker auto-configuration — we manage connections manually
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration
+      - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
+
+# ── IBM MQ ────────────────────────────────────────────────────────────────────
+# Defaults match the IBM MQ Developer container in docker-compose.yml.
+# Override via environment variables:
+#   IBMMQ_HOST, IBMMQ_PORT, IBMMQ_QMGR, IBMMQ_CHANNEL, IBMMQ_USERNAME, IBMMQ_PASSWORD
+jms-helper:
+  ibmmq:
+    host: ${IBMMQ_HOST:localhost}
+    port: ${IBMMQ_PORT:1414}
+    queue-manager: ${IBMMQ_QMGR:QM1}
+    channel: ${IBMMQ_CHANNEL:DEV.APP.SVRCONN}
+    username: ${IBMMQ_USERNAME:app}
+    password: ${IBMMQ_PASSWORD:passw0rd}
+
+  # ── Tibco EMS ──────────────────────────────────────────────────────────────
+  # Defaults match the kytay/tibco-ems container in docker-compose.yml.
+  # Override via environment variables:
+  #   TIBCO_URL, TIBCO_USERNAME, TIBCO_PASSWORD
+  tibco:
+    url: ${TIBCO_URL:tcp://localhost:7222}
+    username: ${TIBCO_USERNAME:admin}
+    password: ${TIBCO_PASSWORD:admin}
+
+logging:
+  level:
+    com.service.virtualization.jmshelper: INFO
+    com.ibm.mq: WARN
+    com.tibco: WARN

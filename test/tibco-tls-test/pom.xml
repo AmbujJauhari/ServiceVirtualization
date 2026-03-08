@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.servicevirtualization.test</groupId>
+    <artifactId>tibco-tls-test</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Tibco EMS TLS Integration Tests</name>
+    <description>
+        Integration tests validating Tibco EMS TLS connectivity through the Istio
+        ingressgateway using SNI-based passthrough routing.
+        Tests cover: TLS connection, SNI routing isolation, and message flow
+        for both margin and collateral team Tibco EMS instances.
+    </description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency versions -->
+        <junit.version>5.10.1</junit.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.14</logback.version>
+
+        <!--
+            TIBCO EMS client JARs are NOT on Maven Central (commercial product).
+            Install them to your local Maven repository before running tests:
+
+            mvn install:install-file -Dfile=/path/to/tibco-ems/lib/tibjms.jar \
+              -DgroupId=com.tibco.ems -DartifactId=tibjms -Dversion=10.2 -Dpackaging=jar
+
+            mvn install:install-file -Dfile=/path/to/tibco-ems/lib/tibcrypt.jar \
+              -DgroupId=com.tibco.ems -DartifactId=tibcrypt -Dversion=10.2 -Dpackaging=jar
+
+            The JARs are found in the TIBCO EMS installation directory under /lib.
+            For the Docker image (kytay/tibco-ems), copy them out with:
+              docker create kytay/tibco-ems:latest (get container ID)
+              docker cp <id>:/opt/tibco/ems/current-version/lib/tibjms.jar .
+              docker cp <id>:/opt/tibco/ems/current-version/lib/tibcrypt.jar .
+        -->
+        <tibjms.version>8.6</tibjms.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- TIBCO EMS JMS Client — must be installed to local Maven repo first (see above) -->
+        <dependency>
+            <groupId>com.tibco.ems</groupId>
+            <artifactId>tibjms</artifactId>
+            <version>${tibjms.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tibco.ems</groupId>
+            <artifactId>tibcrypt</artifactId>
+            <version>${tibjms.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.2</version>
+                <configuration>
+                    <!-- Integration tests are skipped in unit test phase by default -->
+                    <!-- Run with: mvn test -Pintegration -->
+                    <skipTests>${skipIntegrationTests}</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Run integration tests: mvn test -Pintegration -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <skipIntegrationTests>false</skipIntegrationTests>
+                <ssl.trustStorePath>${project.basedir}/src/test/resources/certs/truststore.jks</ssl.trustStorePath>
+                <ssl.trustStorePassword>changeit</ssl.trustStorePassword>
+            </properties>
+        </profile>
+    </profiles>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>tibjms</id>
+            <url>http://repository.openmindonline.it/</url>
+        </repository>
+    </repositories>
+</project>

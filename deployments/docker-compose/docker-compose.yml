@@ -1,0 +1,127 @@
+# =============================================================================
+# Service Virtualization Platform — On-Prem Docker Compose
+# =============================================================================
+#
+# Every service is opt-in via Docker Compose profiles.
+# Control what runs by editing the .env file (copy from .env.example).
+#
+# Usage:
+#   cp .env.example .env
+#   # Edit .env to set COMPOSE_PROFILES and SPRING_PROFILES_ACTIVE
+#   docker compose up -d
+#
+# To change what's running:
+#   # Edit .env, then:
+#   docker compose up -d    (Compose reconciles — starts/stops as needed)
+#
+# =============================================================================
+
+networks:
+  sv-net:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+
+services:
+
+  # ── MongoDB ─────────────────────────────────────────────────────────────────
+  mongodb:
+    profiles: ["mongodb"]
+    image: mongo:7
+    container_name: sv-mongodb
+    networks: [sv-net]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    profiles: ["backend"]
+    image: service-virtualization-backend:latest
+    container_name: sv-backend
+    networks: [sv-net]
+    ports:
+      - "8080:8080"       # Spring Boot management / stub CRUD API
+      - "8081:8081"       # WireMock — clients call stubs directly here
+    volumes:
+      - ./config/backend.properties:/app/config/application.properties:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker,mongodb,kafka-disabled,ibmmq-disabled,tibco-disabled,activemq-disabled}
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    restart: unless-stopped
+
+  # ── UI ───────────────────────────────────────────────────────────────────────
+  ui:
+    profiles: ["ui"]
+    image: service-virtualization-ui:latest
+    container_name: sv-ui
+    networks: [sv-net]
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: "http://backend:8080"
+      NGINX_PORT: "3000"
+    restart: unless-stopped
+
+  # ── Kafka (KRaft — no ZooKeeper) ─────────────────────────────────────────────
+  kafka:
+    profiles: ["kafka"]
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: sv-kafka
+    hostname: kafka
+    networks: [sv-net]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    restart: unless-stopped
+
+  # ── IBM MQ ───────────────────────────────────────────────────────────────────
+  ibmmq:
+    profiles: ["ibmmq"]
+    image: icr.io/ibm-messaging/mq:9.3.0.0-r1
+    container_name: sv-ibmmq
+    networks: [sv-net]
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: passw0rd
+    restart: unless-stopped
+
+  # ── TIBCO EMS ────────────────────────────────────────────────────────────────
+  tibco:
+    profiles: ["tibco"]
+    image: kytay/tibco-ems:latest
+    container_name: sv-tibco
+    networks: [sv-net]
+    ports:
+      - "7222:7222"
+    restart: unless-stopped
+
+  # ── ActiveMQ ─────────────────────────────────────────────────────────────────
+  activemq:
+    profiles: ["activemq"]
+    image: rmohr/activemq:5.15.9
+    container_name: sv-activemq
+    networks: [sv-net]
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    restart: unless-stopped

@@ -1,0 +1,47 @@
+# =============================================================================
+# Margin Team - Global Configuration (AKS / Azure)
+# =============================================================================
+# Pass this file FIRST on every helm install / upgrade in the margin namespace.
+# It carries the three concerns shared by every chart deployment:
+#   1. Registry credentials  (where to pull images from)
+#   2. Pod security context  (UID/GID all containers run as)
+#   3. ServiceAccount name   (pre-existing SA created by the RBAC chart)
+#
+# Usage — always combine with a service-specific values file:
+#   helm install <release> ./helm-charts/service-virtualization \
+#     -f deployments/azure/teams/margin/sv-global.yaml \
+#     -f deployments/azure/teams/margin/optional-services/ibmmq-values.yaml \
+#     --namespace margin
+#
+# -----------------------------------------------------------------------------
+# NOTE — Local vs AKS securityContext difference
+# -----------------------------------------------------------------------------
+# Local (K3s): securityContext is intentionally left empty ({}).
+#   K3s enforces the AppArmor profile "cri-containerd.apparmor.d" which blocks
+#   the IPC and file operations IBM MQ needs to initialise its queue manager.
+#   Removing the securityContext lets the IBM MQ image handle user setup
+#   internally (it always runs as USER 1001 / mqm via its own Dockerfile).
+#
+# AKS (this file): securityContext is fully set.
+#   AKS uses a less restrictive AppArmor profile so runAsUser: 1001 works fine.
+#   IBM MQ container image default user is 1001 (mqm), group 1001 (mqm).
+#   Using 1001 here keeps the pod spec explicit and satisfies any Azure Policy
+#   add-on rules that enforce runAsNonRoot.
+# =============================================================================
+
+global:
+  # Replace with your actual ACR login server name, e.g. myregistry.azurecr.io
+  imageRegistry: "your-registry.azurecr.io"
+  imagePullSecrets:
+    - name: acr-secret
+
+  # AKS does not apply the restrictive K3s AppArmor profile, so the full
+  # securityContext is safe here. IBM MQ requires user 1001 (mqm) / group 1001.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+
+serviceAccount:
+  name: "margin-sa"

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.servicevirtualization.test</groupId>
+    <artifactId>kafka-tls-test</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Kafka TLS Integration Tests</name>
+    <description>
+        Integration tests validating Kafka SSL connectivity through the Istio
+        ingressgateway using SNI-based passthrough routing.
+        Tests cover: SSL connection, SNI routing isolation, producer/consumer
+        message flow for both margin and collateral team Kafka instances.
+
+        Architecture note on external port:
+        The Kafka broker advertises its SSL listener as:
+          SSL://events.kafka.margin.service-virtualization.local:30501
+        (externalPort is set to 30501 in kafka-events.yaml for local K3s).
+        This ensures that after the initial bootstrap connection, the Kafka
+        client reconnects to the same NodePort (30501 → Istio port 443 → pod:9094)
+        rather than trying port 443 directly (which is not the NodePort).
+        For AKS, externalPort is omitted and defaults to 443 (the load balancer port).
+    </description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency versions -->
+        <kafka.version>3.5.1</kafka.version>
+        <junit.version>5.10.1</junit.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.14</logback.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- Kafka Client — available on Maven Central -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.2</version>
+                <configuration>
+                    <!-- Integration tests are skipped in unit test phase by default -->
+                    <!-- Run with: mvn test -Pintegration -->
+                    <skipTests>${skipIntegrationTests}</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Run integration tests: mvn test -Pintegration -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <skipIntegrationTests>false</skipIntegrationTests>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>

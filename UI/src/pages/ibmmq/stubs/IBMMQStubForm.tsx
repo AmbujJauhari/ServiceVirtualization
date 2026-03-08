@@ -26,6 +26,9 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
 
   // Error state
   const [error, setError] = useState<string | null>(null);
+  
+  // Server list state for multi-server support
+  const [servers, setServers] = useState<string[]>([]);
 
   // Fetch existing stub for edit mode
   const { data: existingStub, isLoading: isLoadingStub } = useGetIBMMQStubQuery(id ?? '', {
@@ -42,6 +45,8 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
   const [destinationType, setDestinationType] = useState('queue');
   const [destinationName, setDestinationName] = useState('');
   const [messageSelector, setMessageSelector] = useState('');
+  const [serverName, setServerName] = useState<string>('');
+  const [responseServerName, setResponseServerName] = useState<string>('');
   
   // Standardized content matching configuration
   const [contentMatchType, setContentMatchType] = useState<ContentMatchType>(ContentMatchType.NONE);
@@ -62,6 +67,14 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
   const [newHeaderName, setNewHeaderName] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newHeaderType, setNewHeaderType] = useState('string');
+  
+  // Fetch available servers for multi-server support
+  useEffect(() => {
+    fetch('/api/ibmmq/stubs/servers')
+      .then(res => res.json())
+      .then(data => setServers(data))
+      .catch(err => console.error('Error fetching IBM MQ servers:', err));
+  }, []);
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -71,6 +84,8 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
       setDestinationType(existingStub.destinationType || 'queue');
       setDestinationName(existingStub.destinationName || '');
       setMessageSelector(existingStub.messageSelector || '');
+      setServerName(existingStub.serverName || '');
+      setResponseServerName(existingStub.responseServerName || '');
       
       // Load standardized content matching configuration
       setContentMatchType(existingStub.contentMatchType || ContentMatchType.NONE);
@@ -140,6 +155,8 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
       destinationType,
       destinationName,
       messageSelector,
+      serverName: serverName || undefined,
+      responseServerName: responseServerName || undefined,
       
       // Standardized content matching configuration
       contentMatchType,
@@ -267,6 +284,30 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
                 />
               </div>
             </div>
+            
+            {/* Server Selection for Multi-Server Support */}
+            {servers.length > 0 && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="serverName">
+                  IBM MQ Server (Optional)
+                </label>
+                <select
+                  id="serverName"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">-- Default Server --</option>
+                  {servers.map(server => (
+                    <option key={server} value={server}>{server}</option>
+                  ))}
+                </select>
+                <p className="text-gray-600 text-sm mt-1">
+                  Leave blank for single-server mode
+                </p>
+              </div>
+            )}
+            
             <div className="mt-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="messageSelector">
                 Message Selector
@@ -419,6 +460,29 @@ const IBMMQStubForm: React.FC<IBMMQStubFormProps> = ({ isEdit = false }) => {
                 Destination where the response will be sent. If empty, uses JMSReplyTo from the incoming message.
               </p>
             </div>
+
+            {/* Response Server Selection for Multi-Server Support */}
+            {servers.length > 0 && (
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="responseServerName">
+                  Response Server (Optional)
+                </label>
+                <select
+                  id="responseServerName"
+                  value={responseServerName}
+                  onChange={(e) => setResponseServerName(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="">-- Same as Request Server --</option>
+                  {servers.map(server => (
+                    <option key={server} value={server}>{server}</option>
+                  ))}
+                </select>
+                <p className="text-gray-600 text-sm mt-1">
+                  Leave blank to respond on same server
+                </p>
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="webhookUrl">

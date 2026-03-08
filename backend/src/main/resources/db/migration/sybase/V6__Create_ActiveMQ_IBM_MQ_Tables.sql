@@ -1,39 +1,39 @@
--- Create ActiveMQ stubs table with database-generated UUID
+-- ActiveMQ stubs — JSON blob storage (mirrors REST, SOAP, Kafka, Tibco approach)
+-- All fields of ActiveMQStub (serverName, messageSelector, contentMatchType,
+-- webhookUrl, headers, latency, etc.) are preserved in the stub_data column.
 CREATE TABLE active_mq_stubs (
-    id VARCHAR(36) DEFAULT NEWID() PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    user_id VARCHAR(100) NOT NULL,
-    destination_name VARCHAR(255) NOT NULL,
-    destination_type VARCHAR(50) NOT NULL,
-    priority INT NOT NULL,
-    status VARCHAR(20) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    id        VARCHAR(36)   DEFAULT NEWID() PRIMARY KEY,
+    stub_data NVARCHAR(MAX) NOT NULL
 );
 
--- Create IBM MQ stubs table with database-generated UUID
+CREATE INDEX idx_active_mq_stubs_status
+    ON active_mq_stubs (JSON_VALUE(stub_data, '$.status'));
+
+CREATE INDEX idx_active_mq_stubs_user_id
+    ON active_mq_stubs (JSON_VALUE(stub_data, '$.userId'));
+
+CREATE INDEX idx_active_mq_stubs_destination
+    ON active_mq_stubs (
+        JSON_VALUE(stub_data, '$.destinationName'),
+        JSON_VALUE(stub_data, '$.destinationType')
+    );
+
+
+-- IBM MQ stubs — JSON blob storage
+-- All fields of IBMMQStub are preserved in the stub_data column.
 CREATE TABLE ibmmq_stubs (
-    id VARCHAR(36) DEFAULT NEWID() PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    user_id VARCHAR(100) NOT NULL,
-    queue_manager VARCHAR(255) NOT NULL,
-    queue_name VARCHAR(255) NOT NULL,
-    selector VARCHAR(1000),
-    response_content TEXT,
-    response_type VARCHAR(50),
-    latency INT DEFAULT 0,
-    status VARCHAR(20) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    id        VARCHAR(36)   DEFAULT NEWID() PRIMARY KEY,
+    stub_data NVARCHAR(MAX) NOT NULL
 );
 
--- Create indexes for efficient querying
-CREATE INDEX idx_active_mq_stubs_status ON active_mq_stubs (status);
-CREATE INDEX idx_active_mq_stubs_user_id ON active_mq_stubs (user_id);
-CREATE INDEX idx_active_mq_stubs_destination ON active_mq_stubs (destination_name, destination_type);
+CREATE INDEX idx_ibmmq_stubs_status
+    ON ibmmq_stubs (JSON_VALUE(stub_data, '$.status'));
 
-CREATE INDEX idx_ibmmq_stubs_status ON ibmmq_stubs (status);
-CREATE INDEX idx_ibmmq_stubs_user_id ON ibmmq_stubs (user_id);
-CREATE INDEX idx_ibmmq_stubs_queue ON ibmmq_stubs (queue_manager, queue_name); 
+CREATE INDEX idx_ibmmq_stubs_user_id
+    ON ibmmq_stubs (JSON_VALUE(stub_data, '$.userId'));
+
+CREATE INDEX idx_ibmmq_stubs_queue
+    ON ibmmq_stubs (
+        JSON_VALUE(stub_data, '$.queueManager'),
+        JSON_VALUE(stub_data, '$.queueName')
+    );

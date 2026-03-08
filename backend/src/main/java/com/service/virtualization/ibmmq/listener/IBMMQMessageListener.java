@@ -10,6 +10,7 @@ import jakarta.jms.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -21,11 +22,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * and processes responses according to stub configuration.
  */
 @Component
+@Profile("!ibmmq-disabled")
 public class IBMMQMessageListener implements MessageListener {
     private static final Logger logger = LoggerFactory.getLogger(IBMMQMessageListener.class);
 
     @Autowired
-    private IBMMQStubMatcher IBMMQStubMatcher;
+    private IBMMQStubMatcher ibmmqStubMatcher;
     
     @Autowired
     private IBMMQResponseService responseService;
@@ -48,7 +50,7 @@ public class IBMMQMessageListener implements MessageListener {
             String messageContent = extractMessageContent(message);
             
             // Find matching stub
-            IBMMQStub matchingStub = IBMMQStubMatcher.findMatchingStub(message, registeredStubs.values());
+            IBMMQStub matchingStub = ibmmqStubMatcher.findMatchingStub(message, registeredStubs.values());
             
             if (matchingStub != null) {
                 logger.info("Found matching stub {} for message on {}", 

@@ -1,0 +1,29 @@
+---
+description: Pending work items and backlog for this project
+alwaysApply: true
+---
+
+# Pending Work
+
+## Observability — LGTM Stack (not started)
+
+Add a new Terraform module at `deployments/local/cluster-admin/terraform/istio/observability/`
+that wires Istio telemetry into a local LGTM stack.
+
+### What to build
+- Install `kube-prometheus-stack` (Prometheus + Grafana) via Helm
+- Install `grafana/loki-stack` via Helm (access logs from Envoy)
+- Install `grafana/tempo` via Helm (distributed traces)
+- Patch Istio `meshConfig.extensionProviders` to point at Tempo/OTel collector
+- Apply a `Telemetry` resource to enable Envoy access logging to Loki
+
+### Why
+- Tempo traces will show the two-leg request model visually:
+  `IngressGateway span → IBM MQ pod span` confirming TLS termination + re-origination
+- Loki access logs show per-request: protocol, hostname, path, status, upstream host, duration
+- Metrics confirm request rates and error rates per service
+- Note: TCP (port 443, IBM MQ wire) only gets metrics/access logs — no traces (protocol is opaque)
+
+### Next step when resuming
+Start with Tempo + Istio tracing config, test with an HTTPS console request,
+verify the two spans appear in Grafana. Then add Loki for access logs.

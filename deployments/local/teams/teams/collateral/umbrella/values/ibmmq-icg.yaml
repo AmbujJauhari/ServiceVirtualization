@@ -1,0 +1,103 @@
+# =============================================================================
+# Collateral Team — IBM MQ ICG Instance
+# =============================================================================
+# Channel: COLLATERAL.ICG.SVRCONN
+# Derived SNI: collateral2e-icg2e-svrconn.chl.mq.ibm.com
+#
+# DNS required:
+#   collateral2e-icg2e-svrconn.chl.mq.ibm.com → <ingress-gateway-ip>
+#   icg.ibmmq.collateral.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  ibmmq:
+    enabled: true
+    instances:
+      icg:
+        image:
+          repository: "icr.io/ibm-messaging/mq"
+          tag: "9.3.0.0-r1"
+          pullPolicy: "IfNotPresent"
+        replicaCount: 1
+        service:
+          type: "ClusterIP"
+          port: 1414
+        license: "accept"
+        queueManager:
+          name: "QM_ICG"
+
+        certificates:
+          enabled: true
+          volumeName: mq-pki-icg
+
+        extraVolumes:
+          - name: collateral-tls-secret
+            secret:
+              secretName: collateral-tls-secret
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+
+        config:
+          default:
+            enabled: true
+            auth:
+              appPassword: "passw0rd"
+              adminPassword: "admin"
+            channels:
+              - name: "COLLATERAL.ICG.SVRCONN"
+                type: "SVRCONN"
+            queues:
+              - name: "DEV.QUEUE.1"
+                type: "QLOCAL"
+          initContainers:
+            - name: cert-provider
+              image: busybox:1.36
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  cp /mnt/wildcard/tls.crt /etc/mqm/pki/keys/default/tls.crt
+                  cp /mnt/wildcard/tls.key /etc/mqm/pki/keys/default/tls.key
+                  chmod 644 /etc/mqm/pki/keys/default/tls.crt
+                  chmod 644 /etc/mqm/pki/keys/default/tls.key
+              volumeMounts:
+                - name: mq-pki-icg
+                  mountPath: /etc/mqm/pki/keys/default
+                - name: collateral-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+
+        healthCheck:
+          livenessInitialDelay: 90
+          livenessTimeout: 5
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 5
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+networking:
+  ibmmq:
+    instances:
+      icg:
+        enabled: true
+        sniHost: "collateral2e-icg2e-svrconn.chl.mq.ibm.com"
+        consoleHost: "icg.ibmmq.collateral.service-virtualization.local"

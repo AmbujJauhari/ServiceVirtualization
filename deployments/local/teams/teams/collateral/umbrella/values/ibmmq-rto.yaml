@@ -1,0 +1,101 @@
+# =============================================================================
+# Collateral Team — IBM MQ RTO Instance
+# =============================================================================
+# Channel: COLLATERAL.RTO.SVRCONN
+# Derived SNI: collateral2e-rto2e-svrconn.chl.mq.ibm.com
+#
+# DNS required:
+#   collateral2e-rto2e-svrconn.chl.mq.ibm.com → <ingress-gateway-ip>
+#   rto.ibmmq.collateral.service-virtualization.local → <ingress-gateway-ip>
+# =============================================================================
+
+sv:
+  ibmmq:
+    enabled: true
+    instances:
+      rto:
+        image:
+          repository: "icr.io/ibm-messaging/mq"
+          tag: "9.3.0.0-r1"
+          pullPolicy: "IfNotPresent"
+        replicaCount: 1
+        service:
+          type: "ClusterIP"
+          port: 1414
+        license: "accept"
+        queueManager:
+          name: "QM_RTO"
+
+        certificates:
+          enabled: true
+          volumeName: mq-pki-rto
+
+        extraVolumes:
+          - name: collateral-tls-secret
+            secret:
+              secretName: collateral-tls-secret
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+
+        config:
+          default:
+            enabled: false
+          custom:
+            mqsc: |
+              DEFINE CHANNEL('COLLATERAL.RTO.SVRCONN') CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCIPH(ECDHE_RSA_AES_256_GCM_SHA384) SSLCAUTH(OPTIONAL) MCAUSER('app') REPLACE
+              SET CHLAUTH('COLLATERAL.RTO.SVRCONN') TYPE(ADDRESSMAP) ADDRESS('*') USERSRC(CHANNEL) CHCKCLNT(ASQMGR)
+              DEFINE QLOCAL('RTO.QUEUE.1') REPLACE
+              ALTER AUTHINFO('DEV.AUTHINFO') AUTHTYPE(IDPWOS) CHCKCLNT(NONE) ADOPTCTX(NO)
+              REFRESH SECURITY(*) TYPE(CONNAUTH)
+          initContainers:
+            - name: cert-provider
+              image: busybox:1.36
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  cp /mnt/wildcard/tls.crt /etc/mqm/pki/keys/default/tls.crt
+                  cp /mnt/wildcard/tls.key /etc/mqm/pki/keys/default/tls.key
+                  chmod 644 /etc/mqm/pki/keys/default/tls.crt
+                  chmod 644 /etc/mqm/pki/keys/default/tls.key
+              volumeMounts:
+                - name: mq-pki-rto
+                  mountPath: /etc/mqm/pki/keys/default
+                - name: collateral-tls-secret
+                  mountPath: /mnt/wildcard
+                  readOnly: true
+
+        healthCheck:
+          livenessInitialDelay: 90
+          livenessTimeout: 5
+          livenessPeriod: 30
+          livenessFailureThreshold: 3
+          readinessInitialDelay: 30
+          readinessTimeout: 5
+          readinessPeriod: 10
+          readinessFailureThreshold: 3
+          startupInitialDelay: 10
+          startupTimeout: 5
+          startupPeriod: 10
+          startupFailureThreshold: 30
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+networking:
+  ibmmq:
+    instances:
+      rto:
+        enabled: true
+        sniHost: "collateral2e-rto2e-svrconn.chl.mq.ibm.com"
+        consoleHost: "rto.ibmmq.collateral.service-virtualization.local"

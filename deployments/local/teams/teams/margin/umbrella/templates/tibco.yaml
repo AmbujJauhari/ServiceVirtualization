@@ -1,0 +1,49 @@
+{{/*
+=============================================================================
+Tibco EMS Istio Networking — Margin Team
+=============================================================================
+For each enabled Tibco instance creates ONE resource:
+  1. TLS VirtualService — EMS wire protocol (clients → port 443 → pod:7243)
+
+SNI = exactly the hostname in the client's ssl:// URL (not derived from a
+channel name like IBM MQ). The pod also listens on port 7222 (plain TCP) for
+internal backend connections — no VirtualService needed for that port.
+
+Service name: {{ appFullname }}-tibco-{{ instanceName }}
+  where appFullname = {{ .Release.Name }}-service-virtualization
+=============================================================================
+*/}}
+{{- if and .Values.networking.tibco .Values.networking.tibco.instances }}
+{{- range $name, $instance := .Values.networking.tibco.instances }}
+{{- if $instance.enabled }}
+---
+# TLS VirtualService — Tibco EMS {{ $name }} wire protocol (PASSTHROUGH)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-tibco-{{ $name | lower }}-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: tibco-{{ $name | lower }}
+  annotations:
+    description: "Routes {{ $instance.sniHost }}:443 (TLS passthrough, SNI = client URL hostname) to Tibco EMS {{ $name }} pod port 7243"
+spec:
+  hosts:
+  - {{ required (printf "networking.tibco.instances.%s.sniHost must be set when enabled=true" $name) $instance.sniHost | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - {{ $instance.sniHost | quote }}
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-tibco-{{ $name | lower }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 7243
+{{- end }}
+{{- end }}
+{{- end }}

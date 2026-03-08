@@ -1,0 +1,86 @@
+{{/*
+=============================================================================
+Kafka Istio Networking — Collateral Team
+=============================================================================
+For each enabled Kafka instance creates ONE or TWO resources:
+  1. TLS VirtualService — Kafka wire protocol (clients → port 443 → pod:9094)
+  2. HTTP VirtualService — Kafka UI console (optional, uiEnabled=true)
+
+Internal backend connections use PLAINTEXT on port 9092 and need no VS.
+
+Service names:
+  Kafka broker : {{ appFullname }}-kafka-{{ instanceName }}
+  Kafka UI     : {{ appFullname }}-kafka-ui
+  where appFullname = {{ .Release.Name }}-service-virtualization
+=============================================================================
+*/}}
+{{- if and .Values.networking.kafka .Values.networking.kafka.instances }}
+{{- range $name, $instance := .Values.networking.kafka.instances }}
+{{- if $instance.enabled }}
+---
+# TLS VirtualService — Kafka {{ $name }} wire protocol (PASSTHROUGH)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-kafka-{{ $name }}-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: kafka-{{ $name }}
+  annotations:
+    description: "Routes {{ $instance.sniHost }}:443 (TLS passthrough) to Kafka {{ $name }} pod port 9094"
+spec:
+  hosts:
+  - {{ required (printf "networking.kafka.instances.%s.sniHost must be set when enabled=true" $name) $instance.sniHost | quote }}
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - {{ $instance.sniHost | quote }}
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-kafka-{{ $name }}.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 9094
+{{- if $instance.uiEnabled }}
+---
+# HTTP VirtualService — Kafka UI console
+# Enable on one instance only — the UI pod is shared across all Kafka instances.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $.Release.Name }}-kafka-ui-vs
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "networking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: virtualservice
+    service: kafka-ui
+  annotations:
+    description: "Routes {{ $instance.uiPathPrefix }}/* to Kafka UI console (port 8080)"
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - {{ $.Values.networking.gateway }}
+  http:
+  - match:
+    - uri:
+        prefix: {{ required (printf "networking.kafka.instances.%s.uiPathPrefix must be set when uiEnabled=true" $name) $instance.uiPathPrefix | quote }}
+    rewrite:
+      uri: "/"
+    route:
+    - destination:
+        host: {{ include "networking.appFullname" $ }}-kafka-ui.{{ $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: 8080
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

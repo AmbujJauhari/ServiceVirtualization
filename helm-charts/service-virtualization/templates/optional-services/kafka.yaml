@@ -1,0 +1,531 @@
+{{- if and .Values.kafka .Values.kafka.enabled }}
+{{- /*
+Multi-Instance Kafka Support (KRaft Mode — No Zookeeper)
+Each instance is an independent broker+controller pod with its own Service.
+
+Port layout per instance pod:
+  9092 PLAINTEXT  — internal cluster access (backend connects here without TLS)
+  9093 CONTROLLER — KRaft consensus (always internal, never exposed externally)
+  9094 SSL        — external access via Istio TLS PASSTHROUGH on port 443
+                    (only present when instance.certificates.enabled: true)
+
+SSL strategy follows the Confluent cp-kafka image convention:
+  - Init container (same cp-kafka image, already pulled) converts the PEM cert
+    from the team TLS secret into JKS keystore + truststore and writes credential
+    files to /etc/kafka/secrets (emptyDir).
+  - KAFKA_SSL_KEYSTORE_FILENAME / KAFKA_SSL_TRUSTSTORE_FILENAME point to filenames
+    inside /etc/kafka/secrets; the Confluent entrypoint prepends the path.
+  - KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM is cleared so Kafka does not
+    verify the peer hostname (wildcard cert does not cover multi-level subdomains).
+  - KAFKA_ADVERTISED_LISTENERS for the SSL listener uses the external hostname
+    (instance.externalHostname) so clients that reconnect after bootstrap still go
+    through Istio rather than trying to reach the internal pod directly.
+*/}}
+{{- if not .Values.kafka.instances }}
+{{- fail "kafka.instances is REQUIRED. Please define at least one Kafka instance" }}
+{{- end }}
+
+{{- if eq (len .Values.kafka.instances) 0 }}
+{{- fail "kafka.instances cannot be empty. Please define at least one Kafka instance" }}
+{{- end }}
+
+{{- range $name, $instance := .Values.kafka.instances }}
+{{- with $instance }}
+{{- if not .clusterID }}
+{{- fail (printf "Instance '%s': clusterID is REQUIRED for KRaft mode. Generate with: kafka-storage.sh random-uuid" $name) }}
+{{- end }}
+
+{{- $instanceSslEnabled := and .certificates .certificates.enabled }}
+{{- $serviceFQDN := printf "%s-kafka-%s.%s.svc.cluster.local" (include "service-virtualization.fullname" $) $name $.Release.Namespace }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-{{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: {{ $name }}
+spec:
+  type: {{ required (printf "kafka instance '%s': service.type is required" $name) .service.type }}
+  ports:
+    - port: 9092
+      targetPort: 9092
+      protocol: TCP
+      name: plaintext
+    - port: 9093
+      targetPort: 9093
+      protocol: TCP
+      name: controller
+    {{- if $instanceSslEnabled }}
+    - port: 9094
+      targetPort: 9094
+      protocol: TCP
+      name: ssl
+    {{- end }}
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: {{ $name }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-{{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka
+    app.kubernetes.io/instance-name: {{ $name }}
+spec:
+  replicas: {{ required (printf "kafka instance '%s': replicaCount is required" $name) .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: kafka
+      app.kubernetes.io/instance-name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: kafka
+        app.kubernetes.io/instance-name: {{ $name }}
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+
+      {{- with $.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if or $instanceSslEnabled .config.initContainers }}
+      initContainers:
+      {{- if $instanceSslEnabled }}
+      # -----------------------------------------------------------------------
+      # cert-converter: PEM → JKS using the same cp-kafka image (already pulled).
+      # The Confluent cp-kafka image includes both openssl and keytool, so no
+      # extra image is needed. This follows the Confluent-standard approach of
+      # placing JKS files + credential files in /etc/kafka/secrets.
+      # -----------------------------------------------------------------------
+      - name: cert-converter
+        image: "{{ .image.repository }}:{{ .image.tag }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            mkdir -p /etc/kafka/secrets
+
+            echo "Converting PEM certificate to PKCS12..."
+            openssl pkcs12 -export \
+              -in /mnt/wildcard/tls.crt \
+              -inkey /mnt/wildcard/tls.key \
+              -out /tmp/kafka.p12 \
+              -passout pass:changeit \
+              -name kafka
+
+            echo "Converting PKCS12 to JKS keystore..."
+            keytool -importkeystore \
+              -srckeystore /tmp/kafka.p12 \
+              -srcstoretype PKCS12 \
+              -srcstorepass changeit \
+              -destkeystore /etc/kafka/secrets/kafka.keystore.jks \
+              -deststorepass changeit \
+              -noprompt
+
+            echo "Creating JKS truststore from server certificate..."
+            keytool -importcert \
+              -alias wildcard \
+              -file /mnt/wildcard/tls.crt \
+              -keystore /etc/kafka/secrets/kafka.truststore.jks \
+              -storepass changeit \
+              -noprompt
+
+            echo "Writing Confluent credential files..."
+            echo "changeit" > /etc/kafka/secrets/keystore_credentials
+            echo "changeit" > /etc/kafka/secrets/key_credentials
+            echo "changeit" > /etc/kafka/secrets/truststore_credentials
+
+            echo "Done. JKS files:"
+            ls -lh /etc/kafka/secrets/
+        volumeMounts:
+          - name: kafka-secrets-{{ $name }}
+            mountPath: /etc/kafka/secrets
+          - name: {{ .certificates.secretVolumeName | default (printf "%s-tls-secret" $.Release.Namespace) }}
+            mountPath: /mnt/wildcard
+            readOnly: true
+      {{- end }}
+      {{- if .config.initContainers }}
+        {{- toYaml .config.initContainers | nindent 6 }}
+      {{- end }}
+      {{- end }}
+
+      containers:
+      - name: kafka
+        image: "{{ required (printf "kafka instance '%s': image.repository is required" $name) .image.repository }}:{{ required (printf "kafka instance '%s': image.tag is required" $name) .image.tag }}"
+        imagePullPolicy: {{ required (printf "kafka instance '%s': image.pullPolicy is required" $name) .image.pullPolicy }}
+        ports:
+        - containerPort: 9092
+          name: plaintext
+        - containerPort: 9093
+          name: controller
+        {{- if $instanceSslEnabled }}
+        - containerPort: 9094
+          name: ssl
+        {{- end }}
+        env:
+        # =======================================================================
+        # KRaft Mode (no Zookeeper)
+        # =======================================================================
+        # This broker also acts as controller — single-node setup for service virt.
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_NODE_ID
+          value: "1"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@{{ include "service-virtualization.fullname" $ }}-kafka-{{ $name }}:9093"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_LOG_DIRS
+          value: "/var/lib/kafka/data"
+        # KRaft cluster ID — must be a valid 22-char base64-encoded UUID.
+        # Generate a new one with: kafka-storage.sh random-uuid
+        - name: CLUSTER_ID
+          value: {{ required (printf "kafka instance '%s': clusterID is required" $name) .clusterID | quote }}
+        # =======================================================================
+        # Listener Configuration
+        # Internal: PLAINTEXT://9092  (backend → no TLS needed inside cluster)
+        # Controller: CONTROLLER://9093  (KRaft, always internal)
+        {{- if $instanceSslEnabled }}
+        # External: SSL://9094 (Istio TLS PASSTHROUGH → pod:9094)
+        # =======================================================================
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092,SSL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          # SSL listener advertises the external hostname so clients that reconnect
+          # after bootstrap still route through Istio and not directly to the pod.
+          value: "PLAINTEXT://{{ $serviceFQDN }}:9092,SSL://{{ required (printf "kafka instance '%s': externalHostname is required when certificates.enabled is true" $name) .externalHostname }}:{{ .externalPort | default 443 }}"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        # =======================================================================
+        # SSL Configuration (Confluent convention)
+        # Files are placed in /etc/kafka/secrets/ by the cert-converter init container.
+        # KAFKA_SSL_KEYSTORE_FILENAME / TRUSTSTORE_FILENAME are relative filenames;
+        # the Confluent entrypoint prepends /etc/kafka/secrets/ automatically.
+        # =======================================================================
+        - name: KAFKA_SSL_KEYSTORE_FILENAME
+          value: "kafka.keystore.jks"
+        - name: KAFKA_SSL_KEYSTORE_CREDENTIALS
+          value: "keystore_credentials"
+        - name: KAFKA_SSL_KEY_CREDENTIALS
+          value: "key_credentials"
+        - name: KAFKA_SSL_TRUSTSTORE_FILENAME
+          value: "kafka.truststore.jks"
+        - name: KAFKA_SSL_TRUSTSTORE_CREDENTIALS
+          value: "truststore_credentials"
+        - name: KAFKA_SSL_CLIENT_AUTH
+          value: "none"
+        # Disable hostname verification — our wildcard cert (*.service-virtualization.local)
+        # does not cover multi-level hostnames like events.kafka.margin.service-virtualization.local.
+        - name: KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM
+          value: ""
+        {{- else }}
+        # =======================================================================
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://{{ $serviceFQDN }}:9092"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        {{- end }}
+        # =======================================================================
+        # Single-node replication settings (service virtualization — not HA)
+        # =======================================================================
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: "1"
+        # Speeds up consumer group rebalance in single-broker setup
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+
+        {{- range $key, $value := .extraEnvVars }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+
+        {{- with .resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        {{- if $instanceSslEnabled }}
+        - name: kafka-secrets-{{ $name }}
+          mountPath: /etc/kafka/secrets
+          readOnly: false
+        {{- end }}
+
+        {{- with .healthCheck }}
+        livenessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: {{ .livenessInitialDelay }}
+          timeoutSeconds: {{ .livenessTimeout }}
+          periodSeconds: {{ .livenessPeriod }}
+          failureThreshold: {{ .livenessFailureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: {{ .readinessInitialDelay }}
+          timeoutSeconds: {{ .readinessTimeout }}
+          periodSeconds: {{ .readinessPeriod }}
+          failureThreshold: {{ .readinessFailureThreshold }}
+        startupProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: {{ .startupInitialDelay }}
+          timeoutSeconds: {{ .startupTimeout }}
+          periodSeconds: {{ .startupPeriod }}
+          failureThreshold: {{ .startupFailureThreshold }}
+        {{- end }}
+
+      volumes:
+      {{- if $instanceSslEnabled }}
+      # emptyDir populated by the cert-converter init container.
+      # Contains: kafka.keystore.jks, kafka.truststore.jks, and three credential files.
+      - name: kafka-secrets-{{ $name }}
+        emptyDir: {}
+      # The team TLS secret — read by the init container, not the main container.
+      - name: {{ .certificates.secretVolumeName | default (printf "%s-tls-secret" $.Release.Namespace) }}
+        secret:
+          secretName: {{ .certificates.secretName | default (printf "%s-tls-secret" $.Release.Namespace) }}
+          items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+      {{- end }}
+      {{- with .config.extraVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+{{- end }}{{/* with $instance */}}
+{{- end }}{{/* range $name, $instance */}}
+
+{{- /*
+Kafka UI (provectuslabs/kafka-ui) removed — use Confluent Control Center instead.
+Enable via sv.kafka.controlCenter.enabled in your values file.
+*/}}
+
+{{/*
+=============================================================================
+Schema Registry (Optional)
+Stores and serves Avro/JSON/Protobuf schemas. Connects to Kafka via PLAINTEXT.
+=============================================================================
+*/}}
+{{- if and .Values.kafka.schemaRegistry .Values.kafka.schemaRegistry.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-schema-registry
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-schema-registry
+spec:
+  type: {{ .Values.kafka.schemaRegistry.service.type }}
+  ports:
+    - port: {{ .Values.kafka.schemaRegistry.service.port }}
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-schema-registry
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-schema-registry
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: kafka-schema-registry
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: kafka-schema-registry
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and $.Values.serviceAccount $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+      - name: schema-registry
+        image: "{{ required "kafka.schemaRegistry.image.repository is required" .Values.kafka.schemaRegistry.image.repository }}:{{ required "kafka.schemaRegistry.image.tag is required" .Values.kafka.schemaRegistry.image.tag }}"
+        imagePullPolicy: {{ .Values.kafka.schemaRegistry.image.pullPolicy | default "IfNotPresent" }}
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: {{ required "kafka.schemaRegistry.bootstrapServers is required" .Values.kafka.schemaRegistry.bootstrapServers | quote }}
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http://0.0.0.0:8081"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL
+          value: "PLAINTEXT"
+        {{- with .Values.kafka.schemaRegistry.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /subjects
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 10
+{{- end }}{{/* if kafka.schemaRegistry.enabled */}}
+
+{{/*
+=============================================================================
+Confluent Control Center (Optional)
+Web UI for managing Kafka clusters, consumer groups, and schema registry.
+Requires ~2Gi RAM — only enable when sufficient cluster resources are available.
+=============================================================================
+*/}}
+{{- if and .Values.kafka.controlCenter .Values.kafka.controlCenter.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-control-center
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-control-center
+spec:
+  type: {{ .Values.kafka.controlCenter.service.type }}
+  ports:
+    - port: {{ .Values.kafka.controlCenter.service.port }}
+      targetPort: 9021
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-control-center
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" $ }}-kafka-control-center
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: kafka-control-center
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: kafka-control-center
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: kafka-control-center
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and $.Values.serviceAccount $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+      - name: control-center
+        image: "{{ required "kafka.controlCenter.image.repository is required" .Values.kafka.controlCenter.image.repository }}:{{ required "kafka.controlCenter.image.tag is required" .Values.kafka.controlCenter.image.tag }}"
+        imagePullPolicy: {{ .Values.kafka.controlCenter.image.pullPolicy | default "IfNotPresent" }}
+        ports:
+        - containerPort: 9021
+          name: http
+        env:
+        - name: CONTROL_CENTER_BOOTSTRAP_SERVERS
+          value: {{ required "kafka.controlCenter.bootstrapServers is required" .Values.kafka.controlCenter.bootstrapServers | quote }}
+        {{- if .Values.kafka.schemaRegistry.enabled }}
+        - name: CONTROL_CENTER_SCHEMA_REGISTRY_URL
+          value: "http://{{ include "service-virtualization.fullname" $ }}-kafka-schema-registry.{{ $.Release.Namespace }}.svc.cluster.local:8081"
+        {{- end }}
+        - name: CONTROL_CENTER_REPLICATION_FACTOR
+          value: "1"
+        - name: CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS
+          value: "1"
+        - name: CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS
+          value: "1"
+        - name: CONFLUENT_METRICS_TOPIC_REPLICATION
+          value: "1"
+        - name: CONFLUENT_CONTROLCENTER_COMMAND_TOPIC_REPLICATION
+          value: "1"
+        - name: PORT
+          value: "9021"
+        {{- with .Values.kafka.controlCenter.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9021
+          initialDelaySeconds: 180
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9021
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          failureThreshold: 10
+{{- end }}{{/* if kafka.controlCenter.enabled */}}
+
+{{- end }}{{/* if kafka.enabled */}}

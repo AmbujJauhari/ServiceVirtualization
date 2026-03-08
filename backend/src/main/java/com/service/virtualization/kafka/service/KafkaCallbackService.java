@@ -244,11 +244,13 @@ public class KafkaCallbackService {
                 responseTopic,
                 responseKey,
                 callbackResponse.getResponseContent(),
-                kafkaHeaders
+                kafkaHeaders,
+                stub.getEffectiveResponseServerName() // Multi-cluster support
             );
             
-            logger.info("📨 Webhook response published to Kafka - Topic: {}, Key: {}, Format: {}", 
-                       responseTopic, responseKey, callbackResponse.getResponseFormat());
+            logger.info("📨 Webhook response published to Kafka - Topic: {}, Key: {}, Cluster: {}, Format: {}", 
+                       responseTopic, responseKey, stub.getEffectiveResponseServerName(), 
+                       callbackResponse.getResponseFormat());
             
         } catch (Exception e) {
             logger.error("💥 Error publishing webhook response to Kafka: {}", e.getMessage(), e);

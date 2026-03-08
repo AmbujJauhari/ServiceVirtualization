@@ -4,6 +4,7 @@ import com.service.virtualization.activemq.model.ActiveMQStub;
 import com.service.virtualization.model.StubStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import jakarta.jms.JMSException;
@@ -18,6 +19,7 @@ import java.util.regex.Pattern;
  * Handles matching of JMS messages against registered ActiveMQ stubs.
  */
 @Component
+@Profile("!activemq-disabled")
 public class ActiveMQStubMatcher {
     private static final Logger logger = LoggerFactory.getLogger(ActiveMQStubMatcher.class);
     

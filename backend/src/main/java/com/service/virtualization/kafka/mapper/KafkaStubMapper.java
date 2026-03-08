@@ -26,6 +26,8 @@ public class KafkaStubMapper {
                 stub.name(),
                 stub.description(),
                 stub.userId(),
+                stub.serverName(),
+                stub.responseServerName(),
                 stub.requestTopic(),
                 stub.responseTopic(),
 
@@ -80,6 +82,8 @@ public class KafkaStubMapper {
                 dto.name(),
                 dto.description(),
                 dto.userId(),
+                dto.serverName(),
+                dto.responseServerName(),
                 dto.requestTopic(),
                 dto.responseTopic(),
 

@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Extract version from Chart.yaml
+        id: version
+        run: |
+          VERSION=$(grep "version:" iac/app/Chart.yaml | cut -d' ' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build and Push Images
+        run: |
+          # Build and push backend
+          docker build -t ${{ secrets.ACR_SERVER }}/service-virtualization-backend:${{ env.VERSION }} ./backend
+          docker push ${{ secrets.ACR_SERVER }}/service-virtualization-backend:${{ env.VERSION }}
+          
+          # Build and push UI
+          docker build -t ${{ secrets.ACR_SERVER }}/service-virtualization-ui:${{ env.VERSION }} ./ui
+          docker push ${{ secrets.ACR_SERVER }}/service-virtualization-ui:${{ env.VERSION }}
+
+      - name: Package Helm Chart
+        run: |
+          helm package ./iac/app
+          helm repo add myrepo ${{ secrets.HELM_REPO_URL }}
+          helm repo update
+          helm push service-virtualization-${{ env.VERSION }}.tgz myrepo 

@@ -1,0 +1,365 @@
+{{- if and .Values.ibmmq .Values.ibmmq.enabled }}
+
+#==================================================
+# Multi-Instance IBM MQ Support
+# Each instance is deployed as a separate Deployment, Service, and ConfigMap.
+# The product exposes a plain TCP Service on the configured port.
+# How that Service is exposed externally (Istio VirtualService, Ingress,
+# NodePort, etc.) is the operator's responsibility and lives outside this chart.
+#==================================================
+{{- if not .Values.ibmmq.instances }}
+{{- fail "ibmmq.instances is REQUIRED. Please define at least one IBM MQ instance" }}
+{{- end }}
+
+{{- if eq (len .Values.ibmmq.instances) 0 }}
+{{- fail "ibmmq.instances cannot be empty. Please define at least one IBM MQ instance" }}
+{{- end }}
+
+{{- range $name, $instance := .Values.ibmmq.instances }}
+{{- with $instance }}
+---
+#==================================================
+# Validation for instance: {{ $name }}
+# config.default.enabled=true  → auto-generated MQSC ConfigMap
+# config.default.enabled=false → config.custom.mqsc inline content is REQUIRED
+#==================================================
+{{- if not (hasKey .config.default "enabled") }}
+{{- fail (printf "Instance '%s': config.default.enabled is REQUIRED. Set to true for default configuration or false for custom configuration" $name) }}
+{{- end }}
+
+{{- if not (kindIs "bool" .config.default.enabled) }}
+{{- fail (printf "Instance '%s': config.default.enabled must be a boolean (true or false)" $name) }}
+{{- end }}
+
+{{- if not .config.default.enabled }}
+  {{- if or (not .config.custom.mqsc) (eq (trim .config.custom.mqsc) "") }}
+  {{- fail (printf "Instance '%s': config.default.enabled is false, so 'config.custom.mqsc' is REQUIRED" $name) }}
+  {{- end }}
+{{- end }}
+
+# =============================================================================
+# IBM MQ Optional Service - Enterprise Configuration
+# =============================================================================
+#
+# Four-layer configuration approach:
+# Layer 0: Bootstrap (auto-generate MQSC config) - for local dev / quick start
+# Layer 1: MQSC Configuration (structured) - via ConfigMap or init containers
+# Layer 2: Authentication (secure) - License + admin/app passwords
+# Layer 3: Additional Settings (flexible) - via direct environment variables
+#
+# Bootstrap is built into the template - clients just enable/disable it!
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # This is a function defined in _helpers.tpl file this is the deployment name not the pod name
+  # deployment is a standalone resource in kubernetes the name here should not be confused with pod name
+  # this function checks if in the yaml we have provided fullnameOverride then it will pick that else
+  # we create full name by first picking up chart name from Chart.yaml unless chart name is itself overridden
+  # in values.yaml, then we check if the chart name contains release name , release name is the name we provide
+  # when running the install command e.g. helm install <release-name> ./my-chart . If the release name contains
+  # chart name then we simply use the release name if not then final name is decided as releasename-chartname
+  # Instance-specific deployment name: {release}-mq-{instance-name}
+  # Shortened to avoid IBM MQ internal path length limits (max ~48 chars)
+  # This allows multiple IBM MQ instances to coexist in the same namespace
+  # Each instance has its own deployment, service, and configuration
+  name: {{ $.Release.Name }}-mq-{{ $name | trim }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: ibmmq
+    app.kubernetes.io/instance-name: {{ $name }}
+spec:
+  replicas: {{ required (printf "Instance '%s': replicaCount is REQUIRED" $name) .replicaCount }}
+  selector:
+    # This tells a deployment to manage pods with labels
+    # in our case we are using by default pod labels as
+    # app.kubernetes.io/name: chartName unless overridden in values
+    # app.kubernetes.io/instance: release name
+    # since matchLabels have to match with labels in template 
+    # these labels will also be used by service to route requests to pods hence all these labels
+    # at spec level, template level and service as well as we did not want to define
+    # labels multiple times hence created a function
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: ibmmq
+      app.kubernetes.io/instance-name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: ibmmq
+        app.kubernetes.io/instance-name: {{ $name }}
+    spec:
+      {{- with $.Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if $.Values.serviceAccount.name }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      
+      {{- $certConfig := .certificates | default dict }}
+      {{- $instanceSslEnabled := and .certificates .certificates.enabled }}
+      {{- $certVolumeName := $certConfig.volumeName | default "tls-certs" }}
+
+      {{- if .config.initContainers }}
+      initContainers:
+      # User-provided init containers.
+      # For method: initContainer, mount the cert volume declared below using
+      # the name from certificates.volumeName (default: "tls-certs") and write
+      # tls.crt + tls.key to /etc/mqm/pki/keys/default/ before IBM MQ starts.
+        {{- toYaml .config.initContainers | nindent 6 }}
+      {{- end }}
+      
+      containers:
+      - name: ibmmq
+        image: "{{ .image.repository }}:{{ .image.tag }}"
+        imagePullPolicy: {{ required (printf "Instance '%s': image.pullPolicy is REQUIRED" $name) .image.pullPolicy}}
+        
+        ports:
+        - name: mq-port
+          containerPort: {{ .service.port }}
+
+        - name: console
+          containerPort: 9443
+        
+        env:
+        # Minimal environment variables (matches working test configuration)
+        - name: LICENSE
+          value: {{ required (printf "Instance '%s': license is REQUIRED" $name) .license | quote }}
+        - name: MQ_QMGR_NAME
+          value: {{ required (printf "Instance '%s': queueManager.name is REQUIRED" $name) .queueManager.name | quote }}
+        - name: MQ_DEV
+          value: "true"
+        
+        {{- if $instanceSslEnabled }}
+        # SSL/TLS Configuration
+        # IBM MQ container image processes PEM files mounted at /etc/mqm/pki/keys/<label>/
+        # and auto-generates a CMS key database at /run/runmqserver/tls/key on startup.
+        # MQ_SSLKEYR must point to that auto-generated path (without file extension).
+        - name: MQ_SSL_ENABLED
+          value: "true"
+        - name: MQ_SSLKEYR
+          value: "/run/runmqserver/tls/key"
+        - name: MQ_SSL_CHANNEL
+          value: SYSTEM.SSL.SVRCONN
+        {{- end }}
+        
+        {{- if .config.default.enabled}}
+
+        {{- if .config.default.auth.adminPassword }}
+        - name: MQ_ADMIN_PASSWORD
+          value: {{ .config.default.auth.adminPassword | quote }}
+        {{- end }}
+
+        {{- if .config.default.auth.appPassword }}
+        - name: MQ_APP_PASSWORD
+          value: {{ .config.default.auth.appPassword | quote }}
+        {{- end }}
+
+        {{- end}}
+        
+        # Optional: Additional environment variables from values
+        {{- range $key, $value := .env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+
+        volumeMounts:
+        {{- if $instanceSslEnabled }}
+        # Mount PEM cert files into the IBM MQ PKI directory.
+        # The IBM MQ container entrypoint (runmqserver) scans /etc/mqm/pki/keys/<label>/
+        # and automatically builds a CMS key database from the PEM files found there.
+        - name: {{ $certVolumeName }}
+          mountPath: /etc/mqm/pki/keys/default
+          readOnly: true
+        {{- end }}
+        # Mount custom MQSC configuration to /etc/mqm (works with MQ_DEV mode)
+        # Files in /etc/mqm are automatically executed during queue manager creation
+        - name: mqsc-config
+          mountPath: /etc/mqm/20-config.mqsc
+          subPath: 20-config.mqsc
+          readOnly: true
+
+        {{- with .resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        livenessProbe:
+          exec:
+            command:
+            - dspmq
+            - -m
+            - {{ required (printf "Instance '%s': queueManager.name is REQUIRED" $name) .queueManager.name }}
+            - -n
+          initialDelaySeconds: {{ required (printf "Instance '%s': healthCheck.livenessInitialDelay is REQUIRED" $name) .healthCheck.livenessInitialDelay }}
+          timeoutSeconds: {{ required (printf "Instance '%s': healthCheck.livenessTimeout is REQUIRED" $name) .healthCheck.livenessTimeout }}
+          periodSeconds: {{ required (printf "Instance '%s': healthCheck.livenessPeriod is REQUIRED" $name) .healthCheck.livenessPeriod }}
+          failureThreshold: {{ required (printf "Instance '%s': healthCheck.livenessFailureThreshold is REQUIRED" $name) .healthCheck.livenessFailureThreshold }}
+        
+        readinessProbe:
+          exec:
+            command:
+            - dspmq
+            - -m
+            - {{ required (printf "Instance '%s': queueManager.name is REQUIRED" $name) .queueManager.name }}
+            - -n
+          initialDelaySeconds: {{ required (printf "Instance '%s': healthCheck.readinessInitialDelay is REQUIRED" $name) .healthCheck.readinessInitialDelay }}
+          timeoutSeconds: {{ required (printf "Instance '%s': healthCheck.readinessTimeout is REQUIRED" $name) .healthCheck.readinessTimeout }}
+          periodSeconds: {{ required (printf "Instance '%s': healthCheck.readinessPeriod is REQUIRED" $name) .healthCheck.readinessPeriod }}
+          failureThreshold: {{ required (printf "Instance '%s': healthCheck.readinessFailureThreshold is REQUIRED" $name) .healthCheck.readinessFailureThreshold }}
+        
+        startupProbe:
+          exec:
+            command:
+            - dspmq
+            - -m
+            - {{ required (printf "Instance '%s': queueManager.name is REQUIRED" $name) .queueManager.name }}
+            - -n
+          initialDelaySeconds: {{ required (printf "Instance '%s': healthCheck.startupInitialDelay is REQUIRED" $name) .healthCheck.startupInitialDelay }}
+          timeoutSeconds: {{ required (printf "Instance '%s': healthCheck.startupTimeout is REQUIRED" $name) .healthCheck.startupTimeout }}
+          periodSeconds: {{ required (printf "Instance '%s': healthCheck.startupPeriod is REQUIRED" $name) .healthCheck.startupPeriod }}
+          failureThreshold: {{ required (printf "Instance '%s': healthCheck.startupFailureThreshold is REQUIRED" $name) .healthCheck.startupFailureThreshold }}
+
+      volumes:
+      {{- if $instanceSslEnabled }}
+      # Cert volume — name comes from certificates.volumeName (default: "tls-certs").
+      # Use the same name in your init container's volumeMounts (config.initContainers)
+      # so Kubernetes wires them to the same storage. Your init container writes
+      # tls.crt + tls.key here; IBM MQ startup reads them and builds the key database.
+      - name: {{ $certVolumeName }}
+        emptyDir: {}
+      {{- end }}
+      {{- with .extraVolumes }}
+      # Extra volumes defined by the team — e.g. a Secret or ConfigMap that the
+      # cert-provider init container reads when using method: initContainer.
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      - name: mqsc-config
+        configMap:
+          name: {{ $.Release.Name }}-mq-mqsc-{{ $name | trim }}
+          defaultMode: 0644
+
+---
+# IBM MQ Service - Instance: {{ $name }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-mq-{{ $name | trim }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: ibmmq
+    app.kubernetes.io/instance-name: {{ $name }}
+spec:
+  type: {{ required (printf "Instance '%s': service.type is REQUIRED" $name) .service.type }}
+  ports:
+  - port: {{ .service.port }}
+    targetPort: {{ .service.port }}
+    protocol: TCP
+    name: mq
+  - port: 9157
+    targetPort: 9157
+    protocol: TCP
+    name: metrics
+  - port: 9443
+    targetPort: 9443
+    protocol: TCP
+    name: web-console
+  selector:
+    {{- include "service-virtualization.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: ibmmq
+    app.kubernetes.io/instance-name: {{ $name }}
+
+---
+# MQSC Configuration ConfigMap - Instance: {{ $name }}
+# Created for BOTH default and custom modes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-mq-mqsc-{{ $name | trim }}
+  labels:
+    {{- include "service-virtualization.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: ibmmq
+    app.kubernetes.io/instance-name: {{ $name }}
+
+data:
+  20-config.mqsc: |
+{{- if .config.default.enabled }}
+    * =============================================================================
+    * IBM MQ Custom Configuration
+    * Auto-generated for Service Virtualization Platform
+    * NOTE: Security (CHLAUTH/AUTHREC) is handled by MQ_DEV mode auto-configuration
+    * =============================================================================
+    
+    * =============================================================================
+    * Channel Definitions
+    * =============================================================================
+    
+    {{- $instanceSslEnabled := and .certificates .certificates.enabled }}
+    
+    {{- if $instanceSslEnabled }}
+    * SSL/TLS Channel Configuration
+    * SSLCIPH uses the IBM MQ CipherSpec name (not the JSSE name).
+    * IBM MQ CipherSpec: ECDHE_RSA_AES_256_GCM_SHA384
+    * JSSE equivalent (used by Java client setSSLCipherSuite): TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    DEFINE CHANNEL('SYSTEM.SSL.SVRCONN') CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCIPH(ECDHE_RSA_AES_256_GCM_SHA384) SSLCAUTH(OPTIONAL) REPLACE
+    {{- end }}
+    
+    * Define user-configured channels.
+    * MCAUSER('app'): all connections on this channel run as 'app' for authorization.
+    * SET CHLAUTH per channel: overrides the dev back-stop rule CHLAUTH(*) USERSRC(NOACCESS)
+    *   that IBM MQ auto-config adds for all unnamed channels. Without an explicit rule
+    *   the channel matches the wildcard catch-all and the connection is rejected (MQRC 2035)
+    *   before authentication is even attempted. CHCKCLNT(ASQMGR) inherits from the QM
+    *   AUTHINFO (currently CHCKCLNT(NONE)), so no credentials are required.
+    {{- range required (printf "Instance '%s': config.default.channels is REQUIRED" $name) .config.default.channels }}
+    {{- if $instanceSslEnabled }}
+    DEFINE CHANNEL('{{ .name }}') CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCIPH(ECDHE_RSA_AES_256_GCM_SHA384) SSLCAUTH(OPTIONAL) MCAUSER('app') REPLACE
+    {{- else }}
+    DEFINE CHANNEL('{{ .name }}') CHLTYPE(SVRCONN) TRPTYPE(TCP) MCAUSER('app') REPLACE
+    {{- end }}
+    SET CHLAUTH('{{ .name }}') TYPE(ADDRESSMAP) ADDRESS('*') USERSRC(CHANNEL) CHCKCLNT(ASQMGR)
+    {{- end }}
+    
+    * =============================================================================
+    * Queue Definitions
+    * =============================================================================
+    
+    * Define user-configured queues (REQUIRED)
+    {{- range required (printf "Instance '%s': config.default.queues is REQUIRED" $name) .config.default.queues }}
+    DEFINE QLOCAL('{{ .name }}') REPLACE
+    {{- end }}
+    
+    * =============================================================================
+    * Authentication Configuration
+    * =============================================================================
+    * Override 10-dev.mqsc which sets CHCKCLNT(REQDADM) + ADOPTCTX(YES).
+    * ADOPTCTX(YES) validates the client-supplied OS username against Linux container
+    * users. Windows usernames (e.g. 'ambuj') don't exist there, causing MQRC 2035.
+    * CHCKCLNT(NONE): disables credential check entirely.
+    * ADOPTCTX(NO): stops IBM MQ from resolving the client username against the OS.
+    * Together these let clients connect without credentials; MCAUSER on the channel
+    * provides the authorization identity ('app') for all MQ object access.
+    ALTER AUTHINFO('DEV.AUTHINFO') AUTHTYPE(IDPWOS) CHCKCLNT(NONE) ADOPTCTX(NO)
+    REFRESH SECURITY(*) TYPE(CONNAUTH)
+
+    * =============================================================================
+    * Topic Definitions
+    * =============================================================================
+    
+    {{- if .config.default.topics }}
+    * Define user-configured topics
+    {{- range $index, $topic := .config.default.topics }}
+    DEFINE TOPIC(TOPIC.{{ add1 $index }}) TOPICSTR('{{ $topic }}') REPLACE
+  {{- end }}
+{{- end }}
+{{- else }}
+{{ .config.custom.mqsc | indent 4 }}
+{{- end }}
+
+{{- end }}{{/* with $instance */}}
+{{- end }}{{/* range $name, $instance */}}
+{{- end }}{{/* if ibmmq.enabled */}}

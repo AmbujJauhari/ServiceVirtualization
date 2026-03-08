@@ -1,0 +1,196 @@
+{{- if and .Values.backend .Values.backend.enabled }}
+# =============================================================================
+# Backend ConfigMap — operational configuration supplied by the team.
+# Mounted at /app/config/ inside the pod; Spring Boot auto-discovers
+# /app/config/application.properties at startup.
+# =============================================================================
+{{- if and .Values.backend.configMap .Values.backend.configMap.data }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-backend-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  {{- range $filename, $content := .Values.backend.configMap.data }}
+  {{ $filename }}: |
+    {{- $content | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
+# =============================================================================
+# Backend Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  type: {{ required "backend.service.type is required (ClusterIP | NodePort | LoadBalancer)" .Values.backend.service.type }}
+  ports:
+    - port: {{ required "backend.service.port is required" .Values.backend.service.port }}
+      targetPort: {{ required "backend.service.targetPort is required" .Values.backend.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "service-virtualization.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ required "backend.replicaCount is required" .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "service-virtualization.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "service-virtualization.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      {{- with .Values.global.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- if .Values.backend.initContainers }}
+      initContainers:
+        {{- toYaml .Values.backend.initContainers | nindent 8 }}
+      {{- end }}
+      
+      containers:
+      - name: backend
+        image: "{{ required "backend.image.repository is required" .Values.backend.image.repository }}:{{ required "backend.image.tag is required" .Values.backend.image.tag }}"
+        imagePullPolicy: {{ required "backend.image.pullPolicy is required (IfNotPresent | Always | Never)" .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.backend.service.targetPort }}
+          name: http
+          protocol: TCP
+        {{- if and .Values.backend.wiremock .Values.backend.wiremock.enabled }}
+        - containerPort: {{ .Values.backend.wiremock.port | default 8081 }}
+          name: http-wiremock
+          protocol: TCP
+        {{- end }}
+        
+        {{- if .Values.backend.env }}
+        env:
+          {{- range $key, $value := .Values.backend.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+        {{- end }}
+        
+        {{- with .Values.backend.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        
+        {{- $hasConfigMap := and .Values.backend.configMap (or .Values.backend.configMap.data .Values.backend.configMap.name) }}
+        {{- if or $hasConfigMap .Values.backend.volumeMounts .Values.backend.certificateVolumes }}
+        volumeMounts:
+        {{- if $hasConfigMap }}
+        - name: backend-config
+          mountPath: /app/config
+          readOnly: true
+        {{- end }}
+        {{- with .Values.backend.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.backend.certificateVolumes }}
+        {{- range .Values.backend.certificateVolumes }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        
+        {{- with .Values.backend.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        
+        {{- with .Values.backend.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      
+      {{- $hasConfigMap := and .Values.backend.configMap (or .Values.backend.configMap.data .Values.backend.configMap.name) }}
+      {{- if or $hasConfigMap .Values.backend.volumes .Values.backend.certificateVolumes }}
+      volumes:
+      {{- if $hasConfigMap }}
+      - name: backend-config
+        configMap:
+          {{- if .Values.backend.configMap.data }}
+          name: {{ include "service-virtualization.fullname" . }}-backend-config
+          {{- else }}
+          name: {{ .Values.backend.configMap.name }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.backend.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- if .Values.backend.certificateVolumes }}
+      {{- range .Values.backend.certificateVolumes }}
+      - name: {{ .name }}
+        secret:
+          secretName: {{ .secretName }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+
+{{- if and .Values.backend .Values.backend.wiremock .Values.backend.wiremock.enabled }}
+---
+# =============================================================================
+# WireMock Service — exposes the embedded WireMock server (port 8081) so that
+# clients can call stubs directly without going through the Spring Boot proxy.
+#
+# Clients change only the host:
+#   before:  http://real-service.internal/api/todo/1
+#   after:   http://wiremock.<team>.service-virtualization.com/api/todo/1  (AKS)
+#            http://localhost:8081/api/todo/1                              (Docker)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service-virtualization.fullname" . }}-wiremock
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "service-virtualization.labels" . | nindent 4 }}
+    app.kubernetes.io/component: wiremock
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.backend.wiremock.port | default 8081 }}
+      targetPort: {{ .Values.backend.wiremock.port | default 8081 }}
+      protocol: TCP
+      name: http-wiremock
+  selector:
+    {{- include "service-virtualization.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+{{- end }}

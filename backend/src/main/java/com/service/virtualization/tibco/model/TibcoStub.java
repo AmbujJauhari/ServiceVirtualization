@@ -1,6 +1,8 @@
 package com.service.virtualization.tibco.model;
 
 import com.service.virtualization.model.StubStatus;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.Map;
 /**
  * Model class representing a TIBCO EMS stub.
  */
+@Document(collection = "tibco_stubs")
 public class TibcoStub {
 
     /**
@@ -21,10 +24,16 @@ public class TibcoStub {
         REGEX       // Message content matches the regex pattern
     }
 
+    @Id
     private String id;
     private String name;
     private String description;
     private String userId;
+    
+    // Multi-server support
+    private String serverName;         // TIBCO server for request listening (e.g., "serverA")
+    private String responseServerName; // TIBCO server for response sending (e.g., "serverC")
+                                       // If null, uses same server as request
 
     // Request configuration
     private String destinationType; // "queue" or "topic"
@@ -54,7 +63,6 @@ public class TibcoStub {
     private Map<String, String> headers = new HashMap<>();
 
     private StubStatus status = StubStatus.ACTIVE;
-    ;
 
     private LocalDateTime createdAt;
 
@@ -97,6 +105,22 @@ public class TibcoStub {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+    
+    public String getServerName() {
+        return serverName;
+    }
+    
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+    
+    public String getResponseServerName() {
+        return responseServerName;
+    }
+    
+    public void setResponseServerName(String responseServerName) {
+        this.responseServerName = responseServerName;
     }
 
     public String getDestinationType() {

@@ -1,0 +1,138 @@
+# =============================================================================
+# Collateral Team — Backend Service
+# =============================================================================
+# Prerequisites:
+#   1. collateral-tls-secret exists in the collateral namespace
+#   2. MongoDB is running or MONGODB_URI points to an external instance
+# =============================================================================
+
+sv:
+  backend:
+    enabled: true
+
+    image:
+      repository: "service-virtualization-backend"
+      tag: "1.0.0-SNAPSHOT"
+      pullPolicy: "IfNotPresent"
+
+    replicaCount: 1
+
+    initContainers:
+      - name: truststore-creator
+        image: eclipse-temurin:21-jre-alpine
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            echo "Creating JKS truststore from wildcard certificate..."
+            keytool -import \
+              -file /tmp/tls/tls.crt \
+              -keystore /app/certs/truststore.jks \
+              -storetype JKS \
+              -storepass changeit \
+              -noprompt \
+              -alias sv-wildcard-ca
+            chmod 644 /app/certs/truststore.jks
+            echo "Truststore created."
+        volumeMounts:
+          - name: collateral-tls-secret
+            mountPath: /tmp/tls
+            readOnly: true
+          - name: app-truststore
+            mountPath: /app/certs
+
+    volumes:
+      - name: collateral-tls-secret
+        secret:
+          secretName: collateral-tls-secret
+      - name: app-truststore
+        emptyDir: {}
+
+    volumeMounts:
+      - name: app-truststore
+        mountPath: /app/certs
+        readOnly: true
+
+    env:
+      MONGODB_URI: "mongodb://collateral-mongodb.collateral.svc.cluster.local:27017"
+      MONGODB_DATABASE: "service_virtualization"
+
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:+UseG1GC
+        -XX:MaxRAMPercentage=75.0
+        -XX:+ExitOnOutOfMemoryError
+        -Djava.security.egd=file:/dev/./urandom
+        -Djavax.net.ssl.trustStore=/app/certs/truststore.jks
+        -Djavax.net.ssl.trustStorePassword=changeit
+        -Dcom.ibm.mq.cfg.preferTLS=true
+
+      SPRING_AUTOCONFIGURE_EXCLUDE: >-
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,
+        org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+
+      IBMMQ_REGISTRY_ICG_HOST: "collateral-mq-icg.collateral.svc.cluster.local"
+      IBMMQ_REGISTRY_ICG_PORT: "1414"
+      IBMMQ_REGISTRY_ICG_QUEUE_MANAGER: "QM_ICG"
+      IBMMQ_REGISTRY_ICG_CHANNEL: "COLLATERAL.ICG.SVRCONN"
+      IBMMQ_REGISTRY_ICG_SSL_ENABLED: "true"
+      IBMMQ_REGISTRY_ICG_SSL_CIPHER_SUITE: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+
+      TIBCO_REGISTRY_SERVERA_URL: "tcp://collateral-service-virtualization-tibco-serverA.collateral.svc.cluster.local:7222"
+      TIBCO_REGISTRY_SERVERA_USERNAME: "admin"
+      TIBCO_REGISTRY_SERVERA_PASSWORD: "admin"
+      TIBCO_REGISTRY_SERVERA_SSL_ENABLED: "false"
+
+      TIBCO_REGISTRY_SERVERB_URL: "tcp://collateral-service-virtualization-tibco-serverB.collateral.svc.cluster.local:7222"
+      TIBCO_REGISTRY_SERVERB_USERNAME: "admin"
+      TIBCO_REGISTRY_SERVERB_PASSWORD: "admin"
+      TIBCO_REGISTRY_SERVERB_SSL_ENABLED: "false"
+
+      KAFKA_BOOTSTRAP_SERVERS: "collateral-service-virtualization-kafka-events.collateral.svc.cluster.local:9092"
+      KAFKA_CONSUMER_GROUP_ID: "sv-collateral-backend"
+
+      KAFKA_REGISTRY_EVENTS_BOOTSTRAP_SERVERS: "collateral-service-virtualization-kafka-events.collateral.svc.cluster.local:9092"
+      KAFKA_REGISTRY_EVENTS_CONSUMER_GROUP_ID: "sv-collateral-events"
+      KAFKA_REGISTRY_EVENTS_SSL_ENABLED: "false"
+
+      KAFKA_REGISTRY_ANALYTICS_BOOTSTRAP_SERVERS: "collateral-service-virtualization-kafka-analytics.collateral.svc.cluster.local:9092"
+      KAFKA_REGISTRY_ANALYTICS_CONSUMER_GROUP_ID: "sv-collateral-analytics"
+      KAFKA_REGISTRY_ANALYTICS_SSL_ENABLED: "false"
+
+    service:
+      type: ClusterIP
+      port: 8080
+      targetPort: 8080
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+    livenessProbe:
+      httpGet:
+        path: "/actuator/health"
+        port: 8080
+      initialDelaySeconds: 90
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+
+    readinessProbe:
+      httpGet:
+        path: "/actuator/health"
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+networking:
+  backend:
+    enabled: true
+    pathPrefix: "/collateral"

@@ -1,0 +1,42 @@
+# =============================================================================
+# Margin Team — Global Configuration
+# =============================================================================
+# Pass this file FIRST on every helm upgrade command.
+# Applies to the sv (product) subchart only.
+# =============================================================================
+
+sv:
+  # nameOverride ensures fullname = "<release>-service-virtualization" when deployed
+  # via the umbrella chart. Without this, the alias "sv" would make fullname "<release>-sv",
+  # breaking all service names for Tibco, Kafka, ActiveMQ, Backend, and UI.
+  nameOverride: "service-virtualization"
+
+  global:
+    # Local k3s: leave imageRegistry empty and imagePullSecrets empty.
+    # Images are imported directly into containerd via:
+    #   docker save <image>:<tag> -o image.tar
+    #   vagrant ssh -- sudo k3s ctr images import /vagrant/<path>/image.tar
+    # AKS: set imageRegistry to your ACR (e.g. myregistry.azurecr.io) and
+    #   create an acr-secret pull secret in the namespace.
+    imageRegistry: ""
+    imagePullSecrets: []
+
+    # securityContext intentionally omitted for local dev.
+    # IBM MQ image sets USER 1001 (mqm) internally; the K3s AppArmor profile
+    # blocks the IPC/file ops IBM MQ needs when a pod-level securityContext
+    # is applied.
+    securityContext: {}
+
+  serviceAccount:
+    name: "margin-sa"
+
+  team:
+    name: "margin"
+    namespace: "margin"
+
+# =============================================================================
+# Networking subchart global config
+# =============================================================================
+
+networking:
+  gateway: "istio-ingress/shared-gateway"
