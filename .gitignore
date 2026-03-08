@@ -54,6 +54,10 @@ deployments/local/cluster-admin/terraform/**/.terraform.lock.hcl
 deployments/local/cluster-admin/terraform/**/terraform.tfstate
 deployments/local/cluster-admin/terraform/**/terraform.tfstate.backup
 
+# Playwright test artifacts
+test/ui-e2e/test-results/
+test/ui-e2e/playwright-report/
+
 # Temporary files
 *.swp
 *.swo
