@@ -79,6 +79,9 @@ public class KafkaConfig {
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        // Refresh topic-pattern metadata every 5 s so newly created stub topics
+        // are discovered quickly (default is 5 minutes, too slow for E2E tests).
+        configProps.put("metadata.max.age.ms", "5000");
         return new DefaultKafkaConsumerFactory<>(configProps);
     }
 

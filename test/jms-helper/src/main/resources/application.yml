@@ -32,6 +32,12 @@ jms-helper:
     username: ${TIBCO_USERNAME:admin}
     password: ${TIBCO_PASSWORD:admin}
 
+  # ── Kafka ──────────────────────────────────────────────────────────────────
+  # Defaults match the cp-kafka container in docker-compose.yml.
+  # Override via environment variable: KAFKA_BOOTSTRAP_SERVERS
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+
 logging:
   level:
     com.service.virtualization.jmshelper: INFO

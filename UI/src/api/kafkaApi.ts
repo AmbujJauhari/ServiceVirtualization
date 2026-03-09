@@ -115,14 +115,14 @@ export const kafkaApi = createApi({
       invalidatesTags: ['KafkaStub']
     }),
     
-    updateKafkaStubStatus: builder.mutation<KafkaStub, { id: string; status: StubStatus }>({
-      query: ({ id, status }) => ({
-        url: `/kafka/stubs/${id}/status`,
-        method: 'PATCH',
-        params: { status }
+      updateKafkaStubStatus: builder.mutation<KafkaStub, { id: string; status: StubStatus }>({
+        query: ({ id, status }) => ({
+          url: `/kafka/stubs/${id}/status`,
+          method: 'PATCH',
+          params: { status }
+        }),
+        invalidatesTags: ['KafkaStub']
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'KafkaStub', id }]
-    }),
     
     // Topic-specific stub queries
     getStubsByRequestTopic: builder.query<KafkaStub[], string>({

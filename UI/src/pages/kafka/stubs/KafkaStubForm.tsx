@@ -101,7 +101,7 @@ const KafkaStubForm: React.FC<KafkaStubFormProps> = ({ mode }) => {
     responseSchemaVersion: 'latest',
     latency: undefined as number | undefined,
     callbackUrl: '',
-    status: 'active',
+    status: 'ACTIVE',
     tags: [] as string[],
   });
 

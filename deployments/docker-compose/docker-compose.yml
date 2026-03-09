@@ -74,15 +74,18 @@ services:
     hostname: kafka
     networks: [sv-net]
     ports:
-      - "9092:9092"
+      - "9092:9092"     # Internal (Docker containers use kafka:9092)
+      - "9093:9093"     # External (host processes use localhost:9093)
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # Two data-plane listeners: INTERNAL for Docker containers, EXTERNAL for host
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -110,6 +113,8 @@ services:
     profiles: ["tibco"]
     image: kytay/tibco-ems:latest
     container_name: sv-tibco
+    # tibemsd refuses to start as root; create a non-root user and run as them
+    command: ["/bin/bash", "-c", "useradd -m tibco 2>/dev/null; mkdir -p /home/tibco/ems/datastore && cp /opt/tibco/ems/10.2/samples/config/*.conf /home/tibco/ems/ && chown -R tibco:tibco /home/tibco/ems && exec su -c 'cd /home/tibco/ems && /opt/tibco/ems/10.2/bin/tibemsd' tibco"]
     networks: [sv-net]
     ports:
       - "7222:7222"

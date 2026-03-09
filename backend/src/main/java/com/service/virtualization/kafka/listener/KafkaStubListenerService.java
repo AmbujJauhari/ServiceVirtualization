@@ -69,9 +69,9 @@ public class KafkaStubListenerService {
     public void onMessage(
             @Payload String message,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
-            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) String key,
             ConsumerRecord<String, String> record) {
-        
+
         logger.info("Received message on topic: {}, with key: {}", topic, key);
         
         // Find active stubs for this request topic
@@ -92,18 +92,45 @@ public class KafkaStubListenerService {
      * Process stub based on message content
      */
     private void processStub(KafkaStub stub, String message, String key, String topic, ConsumerRecord<String, String> record) {
-        // Skip if key pattern doesn't match
-        if (stub.keyPattern() != null && !stub.keyPattern().isEmpty() && key != null) {
-            if (!Pattern.matches(stub.keyPattern(), key)) {
+        // Key matching — honour keyMatchType (EXACT, CONTAINS, REGEX, NONE)
+        String keyMatchType = stub.keyMatchType();
+        String keyPattern   = stub.keyPattern();
+        if (keyPattern != null && !keyPattern.isEmpty()
+                && keyMatchType != null && !keyMatchType.equalsIgnoreCase("NONE")) {
+            boolean keyMatches = switch (keyMatchType.toUpperCase()) {
+                case "EXACT"    -> key != null && key.equals(keyPattern);
+                case "CONTAINS" -> key != null && key.contains(keyPattern);
+                case "REGEX"    -> key != null && key.matches(keyPattern);
+                default         -> true;
+            };
+            if (!keyMatches) {
                 logger.debug("Key pattern didn't match for stub: {}", stub.name());
                 return;
             }
         }
-        
-        // Skip if value pattern doesn't match
-        if (stub.valuePattern() != null && !stub.valuePattern().isEmpty()) {
-            if (!Pattern.matches(stub.valuePattern(), message)) {
-                logger.debug("Value pattern didn't match for stub: {}", stub.name());
+
+        // Content/value matching — prefer contentMatchType + contentPattern (new fields)
+        // and fall back to valuePattern (legacy) for backwards compatibility
+        String contentMatchType = stub.contentMatchType();
+        String contentPattern   = stub.contentPattern() != null && !stub.contentPattern().isEmpty()
+                ? stub.contentPattern() : stub.valuePattern();
+
+        if (contentPattern != null && !contentPattern.isEmpty()
+                && contentMatchType != null && !contentMatchType.equalsIgnoreCase("NONE")) {
+            boolean contentMatches = switch (contentMatchType.toUpperCase()) {
+                case "EXACT"    -> message.equals(contentPattern);
+                case "CONTAINS" -> message.contains(contentPattern);
+                case "REGEX"    -> message.matches(contentPattern);
+                default         -> true;
+            };
+            if (!contentMatches) {
+                logger.debug("Content pattern didn't match for stub: {}", stub.name());
+                return;
+            }
+        } else if (contentPattern != null && !contentPattern.isEmpty()) {
+            // Legacy fallback: valuePattern with no contentMatchType → treat as regex
+            if (!Pattern.matches(contentPattern, message)) {
+                logger.debug("Legacy value pattern didn't match for stub: {}", stub.name());
                 return;
             }
         }
