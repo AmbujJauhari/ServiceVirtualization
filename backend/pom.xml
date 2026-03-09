@@ -11,11 +11,73 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.service.virtualization</groupId>
+    <!--
+        Published to Maven Central under: io.github.ambugjauhari:service-virtualization-backend
+        The source-bundle zip (classifier=src) bundles UI, backend, deployments, docs and test.
+
+        One-time setup before publishing:
+          1. Register at https://central.sonatype.com (sign in with GitHub — namespace auto-approved)
+          2. Account → Generate User Token  →  copy username + password
+          3. gpg ‑‑gen‑key   (note the KEY_ID)
+             gpg ‑‑keyserver keyserver.ubuntu.com ‑‑send‑keys KEY_ID
+          4. Add to ~/.m2/settings.xml  (never commit this file):
+
+             <servers>
+               <server>
+                 <id>central</id>
+                 <username>TOKEN_USERNAME</username>
+                 <password>TOKEN_PASSWORD</password>
+               </server>
+             </servers>
+             <profiles>
+               <profile>
+                 <id>gpg</id>
+                 <properties>
+                   <gpg.passphrase>YOUR_GPG_PASSPHRASE</gpg.passphrase>
+                 </properties>
+               </profile>
+             </profiles>
+
+        Publish commands (run from the backend/ directory):
+          mvn clean package                   # local build + zip only
+          mvn clean deploy -P release         # sign + publish snapshot
+          mvn versions:set -DnewVersion=1.0.0 # bump to release version
+          mvn clean deploy -P release         # sign + publish release
+    -->
+    <groupId>io.github.ambugjauhari</groupId>
     <artifactId>service-virtualization-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>Service Virtualization Backend</name>
-    <description>Backend for the Service Virtualization Platform</description>
+    <name>Service Virtualization</name>
+    <description>Multi-protocol service virtualisation platform (REST, SOAP, Kafka, IBM MQ, TIBCO, ActiveMQ)</description>
+    <url>https://github.com/AmbujJauhari/ServiceVirtualization</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>AmbujJauhari</id>
+            <name>Ambuj Jauhari</name>
+            <url>https://github.com/AmbujJauhari</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/AmbujJauhari/ServiceVirtualization</url>
+        <connection>scm:git:git://github.com/AmbujJauhari/ServiceVirtualization.git</connection>
+        <developerConnection>scm:git:ssh://github.com/AmbujJauhari/ServiceVirtualization.git</developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <java.version>21</java.version>
@@ -147,6 +209,27 @@
 
     <build>
         <plugins>
+
+            <!-- ── Source bundle zip (always built during package phase) ── -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>src-bundle</id>
+                        <phase>package</phase>
+                        <goals><goal>single</goal></goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/src-bundle.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -214,7 +297,7 @@
 
     <repositories>
         <repository>
-            <id>central</id>
+            <id>maven-central</id>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
         <repository>
@@ -222,4 +305,80 @@
             <url>http://repository.openmindonline.it/</url>
         </repository>
     </repositories>
+
+    <!--
+        Release profile — activated with: mvn clean deploy -P release
+        Signs all artifacts with GPG and publishes to Sonatype Central Portal.
+    -->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+
+                    <!-- Attach -sources.jar (required by Maven Central) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals><goal>jar-no-fork</goal></goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Attach -javadoc.jar (required by Maven Central) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals><goal>jar</goal></goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Suppress strict doclint warnings from third-party code -->
+                            <doclint>none</doclint>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                    </plugin>
+
+                    <!-- GPG-sign every artifact before upload -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.4</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals><goal>sign</goal></goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Upload to Sonatype Central Portal (new API) -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <!-- Must match the <server id> in ~/.m2/settings.xml -->
+                            <publishingServerId>central</publishingServerId>
+                            <!-- Automatically release after validation (set to false to review first) -->
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project> 

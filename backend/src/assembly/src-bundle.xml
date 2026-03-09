@@ -1,0 +1,71 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0
+                              https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <id>src</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>service-virtualization-${project.version}</baseDirectory>
+
+    <fileSets>
+
+        <!-- ── UI (React / TypeScript frontend) ──────────────────────────── -->
+        <fileSet>
+            <directory>${project.basedir}/../UI</directory>
+            <outputDirectory>UI</outputDirectory>
+            <excludes>
+                <exclude>node_modules/**</exclude>
+                <exclude>dist/**</exclude>
+                <exclude>*.tar</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- ── backend (Spring Boot source, no compiled output) ─────────── -->
+        <fileSet>
+            <directory>${project.basedir}/../backend</directory>
+            <outputDirectory>backend</outputDirectory>
+            <excludes>
+                <exclude>target/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- ── deployments (docker-compose, helm, terraform, vagrant) ───── -->
+        <fileSet>
+            <directory>${project.basedir}/../deployments</directory>
+            <outputDirectory>deployments</outputDirectory>
+            <excludes>
+                <!-- Vagrant VM state -->
+                <exclude>local/cluster-admin/.vagrant/**</exclude>
+                <!-- Terraform downloaded provider binaries -->
+                <exclude>local/cluster-admin/terraform/.terraform/**</exclude>
+                <!-- Terraform state files (may contain secrets) -->
+                <exclude>local/cluster-admin/terraform/**/*.tfstate</exclude>
+                <exclude>local/cluster-admin/terraform/**/*.tfstate.backup</exclude>
+                <!-- Large tarballs (container images) -->
+                <exclude>local/cluster-admin/*.tar</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- ── docs ──────────────────────────────────────────────────────── -->
+        <fileSet>
+            <directory>${project.basedir}/../docs</directory>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+
+        <!-- ── test (jms-helper + ui-e2e, no build artifacts) ───────────── -->
+        <fileSet>
+            <directory>${project.basedir}/../test</directory>
+            <outputDirectory>test</outputDirectory>
+            <excludes>
+                <exclude>**/target/**</exclude>
+                <exclude>ui-e2e/node_modules/**</exclude>
+                <exclude>ui-e2e/test-results/**</exclude>
+                <exclude>ui-e2e/playwright-report/**</exclude>
+            </excludes>
+        </fileSet>
+
+    </fileSets>
+</assembly>
