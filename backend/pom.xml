@@ -359,6 +359,17 @@
                                 <goals><goal>sign</goal></goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <!--
+                                On Windows, GPG defaults to the pinentry-w32 GUI dialog and ignores
+                                the passphrase supplied by Maven. Loopback mode forces GPG to accept
+                                the passphrase from Maven's system property instead.
+                            -->
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
                     </plugin>
 
                     <!-- Upload to Sonatype Central Portal (new API) -->
