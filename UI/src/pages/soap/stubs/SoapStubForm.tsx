@@ -429,12 +429,13 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
                     <option value="contains">Contains</option>
                     <option value="equals">Equals</option>
                     <option value="matches">Regex Match</option>
+                    <option value="xpath">XPath</option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="requestBody" className="block text-sm font-medium text-gray-700 mb-1">
-                    XML Request Body Pattern
+                    {formData.requestBodyMatchType === 'xpath' ? 'XPath Expression' : 'XML Request Body Pattern'}
                   </label>
                   <textarea
                     id="requestBody"
@@ -442,10 +443,18 @@ const SoapStubForm: React.FC<SoapStubFormProps> = ({ isEdit = false }) => {
                     value={formData.requestBody}
                     onChange={handleInputChange}
                     rows={8}
-                    placeholder="<soap:Envelope>&#10;  <soap:Body>&#10;    <!-- XML content to match -->&#10;  </soap:Body>&#10;</soap:Envelope>"
+                    placeholder={
+                      formData.requestBodyMatchType === 'xpath'
+                        ? '//soap:Body/ns:Operation[ns:param="value"]'
+                        : '<soap:Envelope>\n  <soap:Body>\n    <!-- XML content to match -->\n  </soap:Body>\n</soap:Envelope>'
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">XML content to match in the request body</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.requestBodyMatchType === 'xpath'
+                      ? 'XPath expression evaluated against the SOAP request body. Use local-name() to avoid namespace issues, e.g. //*[local-name()="Operation"]'
+                      : 'XML content to match in the request body'}
+                  </p>
                 </div>
               </div>
             )}
